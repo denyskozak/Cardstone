@@ -291,6 +291,7 @@ export default function Board({
   const attackIndicator = targeting ? (
     <pixiGraphics
       key="attack-indicator"
+      eventMode="none"
       draw={(g) => {
         g.clear();
         g.lineStyle(4, 0xffeaa7, 0.95);
