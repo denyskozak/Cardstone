@@ -8,6 +8,7 @@ import {
 } from '@cardstone/shared/types';
 import { getCardDefinition } from '@cardstone/shared/cards/demo';
 import { CARD_IDS, DRAW_PER_TURN, MATCH_CONFIG } from '@cardstone/shared/constants';
+import { getTargetingPredicate } from '@cardstone/shared/targeting.js';
 
 export function gainMana(state: GameState, side: PlayerSide): void {
   const player = state.players[side];
@@ -100,12 +101,14 @@ function resolveSpell(
       if (!target) {
         throw new Error('Firebolt requires target');
       }
+      assertSpellTargetAllowed(side, card.effect, target);
       applyDamage(state, target, card.amount ?? 0, side);
       break;
     case 'Heal':
       if (!target) {
         throw new Error('Heal requires target');
       }
+      assertSpellTargetAllowed(side, card.effect, target);
       applyHeal(state, target, card.amount ?? 0);
       break;
     case 'Coin':
@@ -114,6 +117,17 @@ function resolveSpell(
     default:
       const effect: never = card.effect;
       throw new Error(`Unhandled spell effect ${effect}`);
+  }
+}
+
+function assertSpellTargetAllowed(
+  actingSide: PlayerSide,
+  effect: SpellCard['effect'],
+  target: TargetDescriptor
+): void {
+  const predicate = getTargetingPredicate({ kind: 'spell', effect }, actingSide);
+  if (!predicate(target)) {
+    throw new Error('Invalid target for spell effect');
   }
 }
 
