@@ -5,6 +5,7 @@ import type {
   PlayerSide,
   TargetDescriptor
 } from '@cardstone/shared/types';
+import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import type { FederatedPointerEvent } from 'pixi.js';
 import { Container, DisplayObject, Point } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -120,23 +121,32 @@ export default function Board({
     [canAttack, setCurrentTarget, setTargeting, targeting]
   );
 
+  const targetingPredicate = useMemo(() => {
+    if (!targeting) {
+      return null;
+    }
+    if (targeting.source.kind === 'minion') {
+      return getTargetingPredicate({ kind: 'minion' }, playerSide);
+    }
+    return getTargetingPredicate(
+      { kind: 'spell', effect: targeting.source.card.card.effect },
+      playerSide
+    );
+  }, [playerSide, targeting]);
+
   const handleTargetOver = useCallback(
     (target: TargetDescriptor) => {
-      if (!targeting) {
-        return;
-      }
-      const source = targeting.source;
-      if (!isValidTarget(source, target, playerSide)) {
+      if (!targetingPredicate || !targetingPredicate(target)) {
         return;
       }
       setCurrentTarget(target);
     },
-    [playerSide, setCurrentTarget, targeting]
+    [setCurrentTarget, targetingPredicate]
   );
 
   const handleTargetOut = useCallback(
     (target: TargetDescriptor) => {
-      if (!targeting) {
+      if (!targetingPredicate) {
         return;
       }
       setCurrentTarget((prev) => {
@@ -152,7 +162,7 @@ export default function Board({
         return prev;
       });
     },
-    [setCurrentTarget, targeting]
+    [setCurrentTarget, targetingPredicate]
   );
 
   const boardTopY = height * 0.2;
@@ -173,8 +183,8 @@ export default function Board({
         const canAttackThisMinion = isFriendly && canAttack(entity);
         const targetDescriptor: TargetDescriptor = { type: 'minion', side, entityId: entity.instanceId };
 
-        const canBeSpellTarget = targeting
-          ? isValidTarget(targeting.source, targetDescriptor, playerSide)
+        const canBeSpellTarget = targetingPredicate
+          ? targetingPredicate(targetDescriptor)
           : false;
         const isTargeted =
           currentTarget?.type === 'minion' &&
@@ -200,19 +210,27 @@ export default function Board({
             y={y}
             interactive={
               isFriendly
-                ? canAttackThisMinion || Boolean(targeting && canBeSpellTarget)
-                : Boolean(targeting && canBeSpellTarget)
+                ? canAttackThisMinion || Boolean(targetingPredicate && canBeSpellTarget)
+                : Boolean(targetingPredicate && canBeSpellTarget)
             }
             cursor={
               isFriendly && canAttackThisMinion
                 ? 'pointer'
-                : targeting && canBeSpellTarget
+                : targetingPredicate && canBeSpellTarget
                   ? 'pointer'
                   : undefined
             }
             onPointerDown={handleDown}
-            onPointerOver={targeting && canBeSpellTarget ? () => handleTargetOver(targetDescriptor) : undefined}
-            onPointerOut={targeting && canBeSpellTarget ? () => handleTargetOut(targetDescriptor) : undefined}
+            onPointerOver={
+              targetingPredicate && canBeSpellTarget
+                ? () => handleTargetOver(targetDescriptor)
+                : undefined
+            }
+            onPointerOut={
+              targetingPredicate && canBeSpellTarget
+                ? () => handleTargetOut(targetDescriptor)
+                : undefined
+            }
           >
             <pixiGraphics
               draw={(g) => {
@@ -256,7 +274,7 @@ export default function Board({
       laneX,
       playerSide,
       state.board,
-      targeting
+      targetingPredicate
     ]
   );
 
@@ -308,10 +326,12 @@ export default function Board({
         x={40}
         y={boardTopY - 80}
         interactive={
-          Boolean(targeting && isValidTarget(targeting.source, { type: 'hero', side: opponentSide }, playerSide))
+          Boolean(
+            targetingPredicate && targetingPredicate({ type: 'hero', side: opponentSide })
+          )
         }
         cursor={
-          targeting && isValidTarget(targeting.source, { type: 'hero', side: opponentSide }, playerSide)
+          targetingPredicate && targetingPredicate({ type: 'hero', side: opponentSide })
             ? 'pointer'
             : undefined
         }
@@ -332,10 +352,12 @@ export default function Board({
         x={40}
         y={boardBottomY + MINION_HEIGHT - 20}
         interactive={
-          Boolean(targeting && isValidTarget(targeting.source, { type: 'hero', side: playerSide }, playerSide))
+          Boolean(
+            targetingPredicate && targetingPredicate({ type: 'hero', side: playerSide })
+          )
         }
         cursor={
-          targeting && isValidTarget(targeting.source, { type: 'hero', side: playerSide }, playerSide)
+          targetingPredicate && targetingPredicate({ type: 'hero', side: playerSide })
             ? 'pointer'
             : undefined
         }
@@ -357,23 +379,4 @@ export default function Board({
       {attackIndicator}
     </pixiContainer>
   );
-}
-
-function isValidTarget(source: TargetingState['source'], target: TargetDescriptor, playerSide: PlayerSide): boolean {
-  if (source.kind === 'minion') {
-    if (target.type === 'hero') {
-      return target.side !== playerSide;
-    }
-    return target.side !== playerSide;
-  }
-
-  const effect = source.card.card.effect;
-  switch (effect) {
-    case 'Firebolt':
-      return target.side !== playerSide;
-    case 'Heal':
-      return target.side === playerSide;
-    default:
-      return false;
-  }
 }

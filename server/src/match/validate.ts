@@ -1,4 +1,5 @@
-import type { GameState, PlayerSide, TargetDescriptor } from '@cardstone/shared/types.js';
+import type { GameState, PlayerSide, SpellCard, TargetDescriptor } from '@cardstone/shared/types.js';
+import { getTargetingPredicate } from '@cardstone/shared/targeting.js';
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -32,13 +33,14 @@ export function validatePlayCard(
     throw new ValidationError('Not enough mana');
   }
   if (handCard.card.type === 'Spell') {
-    validateSpellTarget(state, handCard.card.effect, target);
+    validateSpellTarget(state, side, handCard.card.effect, target);
   }
 }
 
 function validateSpellTarget(
   state: GameState,
-  effect: string,
+  actingSide: PlayerSide,
+  effect: SpellCard['effect'],
   target: TargetDescriptor | undefined
 ): void {
   if (effect === 'Coin') {
@@ -47,6 +49,12 @@ function validateSpellTarget(
   if (!target) {
     throw new ValidationError('Target required');
   }
+
+  const predicate = getTargetingPredicate({ kind: 'spell', effect }, actingSide);
+  if (!predicate(target)) {
+    throw new ValidationError('Invalid target for spell');
+  }
+
   if (target.type === 'hero') {
     if (!state.players[target.side]) {
       throw new ValidationError('Target hero not found');
