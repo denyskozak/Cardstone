@@ -67,8 +67,9 @@ export default function StageRoot({
   }, [app]);
 
   useEffect(() => {
-    app.renderer.resize(targetWidth, targetHeight);
+    app.renderer?.resize(targetWidth, targetHeight);
   }, [app, targetHeight, targetWidth]);
+
   window.__PIXI_DEVTOOLS__ = {
     app: app,
   };

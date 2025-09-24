@@ -1,15 +1,11 @@
 import type { CardInHand } from '@cardstone/shared/types';
-import type { FederatedPointerEvent } from 'pixi.js';
-import { useMemo } from 'react';
+import { Assets, Texture, type FederatedPointerEvent } from 'pixi.js';
+import { useEffect, useMemo, useState } from 'react';
 
-import cardTemplateUrl from './cart-template.webp';
 
 const CARD_WIDTH = 120;
 const CARD_HEIGHT = 160;
 
-const CARD_BORDER_COLOR = 0xffffff;
-const CARD_HIGHLIGHT_COLOR = 0xfff200;
-const CARD_DISABLED_TINT = 0xb0b0b0;
 
 interface CardProps {
   card: CardInHand;
@@ -40,9 +36,27 @@ export function Card({
   scale = 1,
   zIndex = 0
 }: CardProps) {
-  const costLabel = useMemo(() => `${card.card.cost}`, [card.card.cost]);
-  const statsLabel =
-    card.card.type === 'Minion' ? `${card.card.attack}/${card.card.health}` : card.card.effect;
+  console.log('card: ', card);
+  const [texture, setTexture] = useState(Texture.EMPTY)
+  const [innerTexture, setInnerTexture] = useState(Texture.EMPTY)
+  // Preload the sprite if it hasn't been loaded yet
+  useEffect(() => {
+    if (texture === Texture.EMPTY) {
+      Assets
+        .load('/cart-template.webp')
+        .then((result) => {
+          setTexture(result)
+        });
+    }
+    if (innerTexture === Texture.EMPTY) {
+      Assets
+        .load(`/assets/cards/${card.card.id}.jpg`)
+        .then((result) => {
+          setInnerTexture(result)
+        });
+    }
+  }, [texture]);
+
   return (
     <pixiContainer
       x={x}
@@ -84,52 +98,52 @@ export function Card({
       }}
     >
       <pixiSprite
-        image={cardTemplateUrl}
+        texture={innerTexture}
+        width={CARD_WIDTH * 0.6}
+        height={CARD_HEIGHT * 0.5}
+        x={CARD_WIDTH * 0.2}
+        y={CARD_HEIGHT * 0.07}
+      />
+      <pixiSprite
+        texture={texture}
         width={CARD_WIDTH}
         height={CARD_HEIGHT}
-        tint={disabled ? CARD_DISABLED_TINT : 0xffffff}
-        alpha={disabled ? 0.75 : 1}
-      />
-      <pixiGraphics
-        draw={(g) => {
-          g.clear();
-          const borderColor = selected ? CARD_HIGHLIGHT_COLOR : CARD_BORDER_COLOR;
-          const borderAlpha = disabled ? 0.5 : selected ? 1 : 0.9;
-          g.lineStyle(selected ? 4 : 2, borderColor, borderAlpha);
-          g.drawRoundedRect(0, 0, CARD_WIDTH, CARD_HEIGHT, 12);
-
-          if (disabled) {
-            g.lineStyle(0);
-            g.beginFill(0x000000, 0.35);
-            g.drawRoundedRect(0, 0, CARD_WIDTH, CARD_HEIGHT, 12);
-            g.endFill();
-          }
-        }}
       />
       <pixiText
         text={card.card.name}
-        x={8}
-        y={18}
+        x={CARD_WIDTH * 0.2}
+        y={CARD_HEIGHT * 0.50}
         style={{
           fill: 0xffffff,
-          fontSize: 16,
+          fontSize: CARD_WIDTH * 0.1,
           fontWeight: 'bold',
-          wordWrap: true,
-          wordWrapWidth: CARD_WIDTH - 16
+          transform: 'translateX(-50%)',
         }}
       />
       <pixiText
-        text={costLabel}
+        text={card.card.cost}
+        x={CARD_WIDTH * 0.1}
+        y={CARD_HEIGHT * 0.03}
+        style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
+      />
+      {card.card.effect && (<pixiText
+        text={card.card.effect}
+        x={CARD_WIDTH * 0.25}
+        y={CARD_HEIGHT * 0.7}
+        style={{ fill: 0x000000, fontSize: CARD_WIDTH * 0.1, fontWeight: 'bold' }}
+      />)}
+      {card.card.attack && (<pixiText
+        text={card.card.attack}
         x={12}
-        y={CARD_HEIGHT - 44}
-        style={{ fill: 0x74b9ff, fontSize: 22, fontWeight: 'bold' }}
-      />
-      <pixiText
-        text={statsLabel}
-        x={CARD_WIDTH - 64}
-        y={CARD_HEIGHT - 40}
-        style={{ fill: 0xff6b81, fontSize: 20, fontWeight: 'bold' }}
-      />
+        y={CARD_HEIGHT * 0.85}
+        style={{ fill: 0xffffff, fontSize: 20, fontWeight: 'bold' }}
+      />)}
+      {card.card?.health && (<pixiText
+        text={card.card?.health}
+        x={CARD_WIDTH * 0.85}
+        y={CARD_HEIGHT * 0.85}
+        style={{ fill: 0xffffff, fontSize: 20, fontWeight: 'bold' }}
+      />)}
     </pixiContainer>
   );
 }
