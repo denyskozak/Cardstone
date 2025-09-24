@@ -7,7 +7,7 @@ import type {
 } from '@cardstone/shared/types';
 import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import type { FederatedPointerEvent } from 'pixi.js';
-import { Container, DisplayObject, Point } from 'pixi.js';
+import { Container, DisplayObject, Point, Rectangle } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useUiStore, type TargetingState } from '../../state/store';
 
@@ -173,6 +173,7 @@ export default function Board({
   const opponentSide: PlayerSide = playerSide === 'A' ? 'B' : 'A';
   const opponentHero = state.players[opponentSide];
   const playerHero = state.players[playerSide];
+  const boardHitArea = useMemo(() => new Rectangle(0, 0, width, height), [height, width]);
 
   const renderRow = useCallback(
     (side: PlayerSide, y: number) => {
@@ -310,6 +311,7 @@ export default function Board({
     <pixiContainer
       ref={boardRef}
       eventMode="static"
+      hitArea={boardHitArea}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerUpOutside={handlePointerUp}
