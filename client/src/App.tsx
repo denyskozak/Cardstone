@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   CardInHand,
   GameState,
@@ -34,6 +34,7 @@ const PLAYER_STORAGE_KEY = 'cardstone:playerId';
 
 export default function App() {
   const [socket] = useState(() => new GameSocket());
+  const stageContainerRef = useRef<HTMLDivElement | null>(null);
   const [playerId, setPlayerId] = useState<string | undefined>(() => {
     if (typeof window === 'undefined') {
       return undefined;
@@ -43,6 +44,7 @@ export default function App() {
   const [side, setSide] = useState<PlayerSide | null>(null);
   const [state, setState] = useState<GameState | null>(null);
   const [log, setLog] = useState<string[]>([]);
+  const [stageBounds, setStageBounds] = useState({ width: 0, height: 0 });
 
   const appendLog = useCallback((entry: string) => {
     setLog((prev) => [entry, ...prev].slice(0, 10));
@@ -100,6 +102,37 @@ export default function App() {
       window.localStorage.setItem(PLAYER_STORAGE_KEY, playerId);
     }
   }, [playerId]);
+
+  useEffect(() => {
+    const node = stageContainerRef.current;
+    if (!node) {
+      return;
+    }
+    const updateBounds = () => {
+      const rect = node.getBoundingClientRect();
+      setStageBounds({ width: rect.width, height: rect.height });
+    };
+    updateBounds();
+    window.addEventListener('resize', updateBounds);
+    if (typeof ResizeObserver === 'undefined') {
+      return () => {
+        window.removeEventListener('resize', updateBounds);
+      };
+    }
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === node) {
+          const { width, height } = entry.contentRect;
+          setStageBounds({ width, height });
+        }
+      }
+    });
+    observer.observe(node);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateBounds);
+    };
+  }, []);
 
   const canPlayCard = useCallback(
     (card: CardInHand) => {
@@ -179,7 +212,7 @@ export default function App() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.stageWrapper}>
+      <div ref={stageContainerRef} className={styles.stageWrapper}>
         <Application autoStart sharedTicker>
           <StageRoot
             state={state}
@@ -188,6 +221,8 @@ export default function App() {
             canPlayCard={canPlayCard}
             onAttack={handleAttack}
             canAttack={canAttackMinion}
+            width={stageBounds.width}
+            height={stageBounds.height}
           />
         </Application>
       </div>
