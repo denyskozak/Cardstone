@@ -110,7 +110,6 @@ export default function App() {
 
   const handlePlayCard = useCallback(
     (card: CardInHand) => {
-      console.log('card: ', card);
       if (!side || !canPlayCard(card)) {
         return;
       }

@@ -1,4 +1,5 @@
 import type { CardInHand } from '@cardstone/shared/types';
+import type { FederatedPointerEvent } from 'pixi.js';
 import { useMemo } from 'react';
 
 const CARD_WIDTH = 120;
@@ -18,31 +19,54 @@ interface CardProps {
   onHover: (id?: string) => void;
   disabled?: boolean;
   selected?: boolean;
+  onDragStart?: (card: CardInHand, event: FederatedPointerEvent) => void;
+  onDragEnd?: (card: CardInHand, event: FederatedPointerEvent) => void;
 }
 
-export function Card({ card, x, y, onClick, onHover, disabled, selected }: CardProps) {
+export function Card({
+  card,
+  x,
+  y,
+  onClick,
+  onHover,
+  disabled,
+  selected,
+  onDragStart,
+  onDragEnd
+}: CardProps) {
   const costLabel = useMemo(() => `${card.card.cost}`, [card.card.cost]);
   const statsLabel =
     card.card.type === 'Minion' ? `${card.card.attack}/${card.card.health}` : card.card.effect;
-  console.log('!disabled: ', !disabled);
   return (
     <pixiContainer
       x={x}
       y={y}
       interactive={!disabled}
       onPointerTap={() => {
-        console.log('onPointerTap: ');
         if (!disabled) {
           onClick(card);
         }
       }}
       onPointerOver={() => {
-        console.log('onPointerOver: ');
-        onHover(card.instanceId)
+        onHover(card.instanceId);
       }}
       onPointerOut={() => {
-        console.log('onPointerOut: ');
-        onHover(undefined)
+        onHover(undefined);
+      }}
+      onPointerDown={(event) => {
+        if (!disabled) {
+          onDragStart?.(card, event);
+        }
+      }}
+      onPointerUp={(event) => {
+        if (!disabled) {
+          onDragEnd?.(card, event);
+        }
+      }}
+      onPointerUpOutside={(event) => {
+        if (!disabled) {
+          onDragEnd?.(card, event);
+        }
       }}
     >
       <pixiGraphics
