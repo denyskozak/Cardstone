@@ -1,4 +1,5 @@
 import type {
+  CardInHand,
   GameState,
   MinionEntity,
   PlayerSide,
@@ -7,7 +8,8 @@ import type {
 import { useApplication } from '@pixi/react';
 import type { FederatedPointerEvent } from 'pixi.js';
 import { Container, DisplayObject, Point } from 'pixi.js';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useUiStore, type TargetingState } from '../../state/store';
 
 interface BoardProps {
   state: GameState;
@@ -16,23 +18,29 @@ interface BoardProps {
   height: number;
   onAttack: (attackerId: string, target: TargetDescriptor) => void;
   canAttack: (minion: MinionEntity) => boolean;
-}
-
-interface AttackDrag {
-  attackerId: string;
-  pointerId: number;
-  origin: { x: number; y: number };
-  current: { x: number; y: number };
+  onCastSpell: (card: CardInHand, target: TargetDescriptor) => void;
 }
 
 const MINION_WIDTH = 100;
 const MINION_HEIGHT = 100;
 
-export default function Board({ state, playerSide, width, height, onAttack, canAttack }: BoardProps) {
+export default function Board({
+  state,
+  playerSide,
+  width,
+  height,
+  onAttack,
+  canAttack,
+  onCastSpell
+}: BoardProps) {
   const { app } = useApplication();
   const boardRef = useRef<Container | null>(null);
-  const [attackDrag, setAttackDrag] = useState<AttackDrag | null>(null);
-  const [currentTarget, setCurrentTarget] = useState<TargetDescriptor | null>(null);
+  const targeting = useUiStore((s) => s.targeting);
+  const setTargeting = useUiStore((s) => s.setTargeting);
+  const updateTargeting = useUiStore((s) => s.updateTargeting);
+  const currentTarget = useUiStore((s) => s.currentTarget ?? null);
+  const setCurrentTarget = useUiStore((s) => s.setCurrentTarget);
+  const setSelected = useUiStore((s) => s.setSelected);
   const targetRef = useRef<TargetDescriptor | null>(null);
 
   useEffect(() => {
@@ -49,29 +57,35 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
   }, []);
 
   useEffect(() => {
-    if (!attackDrag) {
+    if (!targeting) {
       return undefined;
     }
 
     const handlePointerMove = (event: FederatedPointerEvent) => {
-      if (event.pointerId !== attackDrag.pointerId) {
+      if (event.pointerId !== targeting.pointerId) {
         return;
       }
-      const next = toLocal(event.global as Point);
-      setAttackDrag((prev) => (prev ? { ...prev, current: next } : prev));
+      const next = event.global as Point;
+      updateTargeting({ x: next.x, y: next.y });
     };
 
     const finishDrag = (event: FederatedPointerEvent) => {
-      if (event.pointerId !== attackDrag.pointerId) {
+      if (event.pointerId !== targeting.pointerId) {
         return;
       }
-      setAttackDrag(null);
+      const action: TargetingState | undefined = targeting;
       const target = targetRef.current;
-      const attackerId = attackDrag.attackerId;
-      const shouldAttack = Boolean(target);
+      setTargeting(undefined);
       setCurrentTarget(null);
-      if (shouldAttack && target) {
-        onAttack(attackerId, target);
+      if (!target || !action) {
+        return;
+      }
+
+      if (action.source.kind === 'minion') {
+        onAttack(action.source.entityId, target);
+      } else if (action.source.kind === 'spell') {
+        setSelected(undefined);
+        onCastSpell(action.source.card, target);
       }
     };
 
@@ -86,11 +100,14 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
       app.stage.off('pointerupoutside', finishDrag);
       app.stage.off('pointercancel', finishDrag);
     };
-  }, [app, attackDrag, onAttack, toLocal]);
+  }, [app, onAttack, onCastSpell, setCurrentTarget, setSelected, setTargeting, targeting, updateTargeting]);
 
   const handleStartAttack = useCallback(
     (entity: MinionEntity, event: FederatedPointerEvent) => {
       if (!canAttack(entity)) {
+        return;
+      }
+      if (targeting) {
         return;
       }
       if (event.button !== 0 && event.pointerType !== 'touch') {
@@ -106,33 +123,35 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
         const bounds = display.getBounds();
         centerGlobal = new Point(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
       }
-      const origin = toLocal(centerGlobal);
-      const current = toLocal(event.global as Point);
-      setAttackDrag({
-        attackerId: entity.instanceId,
+      setTargeting({
+        source: { kind: 'minion', entityId: entity.instanceId },
         pointerId: event.pointerId,
-        origin,
-        current
+        origin: { x: centerGlobal.x, y: centerGlobal.y },
+        current: { x: event.global.x, y: event.global.y }
       });
       setCurrentTarget(null);
       event.stopPropagation();
     },
-    [canAttack, toLocal]
+    [canAttack, setCurrentTarget, setTargeting, targeting]
   );
 
   const handleTargetOver = useCallback(
     (target: TargetDescriptor) => {
-      if (!attackDrag) {
+      if (!targeting) {
+        return;
+      }
+      const source = targeting.source;
+      if (!isValidTarget(source, target, playerSide)) {
         return;
       }
       setCurrentTarget(target);
     },
-    [attackDrag]
+    [playerSide, setCurrentTarget, targeting]
   );
 
   const handleTargetOut = useCallback(
     (target: TargetDescriptor) => {
-      if (!attackDrag) {
+      if (!targeting) {
         return;
       }
       setCurrentTarget((prev) => {
@@ -142,18 +161,13 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
         if (prev.type === 'hero' && target.type === 'hero' && prev.side === target.side) {
           return null;
         }
-        if (
-          prev.type === 'minion' &&
-          target.type === 'minion' &&
-          prev.side === target.side &&
-          prev.entityId === target.entityId
-        ) {
+        if (prev.type === 'minion' && target.type === 'minion' && prev.side === target.side && prev.entityId === target.entityId) {
           return null;
         }
         return prev;
       });
     },
-    [attackDrag]
+    [setCurrentTarget, targeting]
   );
 
   const boardTopY = height * 0.2;
@@ -172,6 +186,9 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
         const x = laneX + index * (MINION_WIDTH + 20);
         const isFriendly = side === playerSide;
         const canAttackThisMinion = isFriendly && canAttack(entity);
+        const canBeSpellTarget = targeting
+          ? isValidTarget(targeting.source, targetDescriptor, playerSide)
+          : false;
         const isTargeted =
           currentTarget?.type === 'minion' &&
           currentTarget.side === side &&
@@ -196,11 +213,21 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
             key={entity.instanceId}
             x={x}
             y={y}
-            interactive={isFriendly || Boolean(attackDrag)}
-            cursor={isFriendly && canAttackThisMinion ? 'pointer' : undefined}
+            interactive={
+              isFriendly
+                ? canAttackThisMinion || Boolean(targeting && canBeSpellTarget)
+                : Boolean(targeting && canBeSpellTarget)
+            }
+            cursor={
+              isFriendly && canAttackThisMinion
+                ? 'pointer'
+                : targeting && canBeSpellTarget
+                  ? 'pointer'
+                  : undefined
+            }
             onPointerDown={handleDown}
-            onPointerOver={!isFriendly ? () => handleTargetOver(targetDescriptor) : undefined}
-            onPointerOut={!isFriendly ? () => handleTargetOut(targetDescriptor) : undefined}
+            onPointerOver={targeting && canBeSpellTarget ? () => handleTargetOver(targetDescriptor) : undefined}
+            onPointerOut={targeting && canBeSpellTarget ? () => handleTargetOut(targetDescriptor) : undefined}
           >
             <pixiGraphics
               draw={(g) => {
@@ -236,7 +263,6 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
       });
     },
     [
-      attackDrag,
       canAttack,
       currentTarget,
       handleStartAttack,
@@ -244,7 +270,8 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
       handleTargetOver,
       laneX,
       playerSide,
-      state.board
+      state.board,
+      targeting
     ]
   );
 
@@ -253,16 +280,23 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
     [currentTarget, opponentSide]
   );
 
-  const attackIndicator = attackDrag ? (
+  const friendlyTargeted = useMemo(
+    () => currentTarget?.type === 'hero' && currentTarget.side === playerSide,
+    [currentTarget, playerSide]
+  );
+
+  const attackIndicator = targeting ? (
     <pixiGraphics
       key="attack-indicator"
       draw={(g) => {
         g.clear();
         g.lineStyle(4, 0xffeaa7, 0.95);
-        g.moveTo(attackDrag.origin.x, attackDrag.origin.y);
-        g.lineTo(attackDrag.current.x, attackDrag.current.y);
+        const originLocal = toLocal(new Point(targeting.origin.x, targeting.origin.y));
+        const currentLocal = toLocal(new Point(targeting.current.x, targeting.current.y));
+        g.moveTo(originLocal.x, originLocal.y);
+        g.lineTo(currentLocal.x, currentLocal.y);
         g.beginFill(0xff7675, 0.9);
-        g.drawCircle(attackDrag.current.x, attackDrag.current.y, 8);
+        g.drawCircle(currentLocal.x, currentLocal.y, 8);
         g.endFill();
       }}
     />
@@ -281,8 +315,14 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
       <pixiContainer
         x={40}
         y={boardTopY - 80}
-        interactive={Boolean(attackDrag)}
-        cursor={attackDrag ? 'pointer' : undefined}
+        interactive={
+          Boolean(targeting && isValidTarget(targeting.source, { type: 'hero', side: opponentSide }, playerSide))
+        }
+        cursor={
+          targeting && isValidTarget(targeting.source, { type: 'hero', side: opponentSide }, playerSide)
+            ? 'pointer'
+            : undefined
+        }
         onPointerOver={() => handleTargetOver({ type: 'hero', side: opponentSide })}
         onPointerOut={() => handleTargetOut({ type: 'hero', side: opponentSide })}
       >
@@ -296,11 +336,24 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
         />
         <pixiText text={`HP ${opponentHero.hero.hp}`} x={-36} y={-12} style={{ fill: 0xffffff, fontSize: 18 }} />
       </pixiContainer>
-      <pixiContainer x={40} y={boardBottomY + MINION_HEIGHT - 20}>
+      <pixiContainer
+        x={40}
+        y={boardBottomY + MINION_HEIGHT - 20}
+        interactive={
+          Boolean(targeting && isValidTarget(targeting.source, { type: 'hero', side: playerSide }, playerSide))
+        }
+        cursor={
+          targeting && isValidTarget(targeting.source, { type: 'hero', side: playerSide }, playerSide)
+            ? 'pointer'
+            : undefined
+        }
+        onPointerOver={() => handleTargetOver({ type: 'hero', side: playerSide })}
+        onPointerOut={() => handleTargetOut({ type: 'hero', side: playerSide })}
+      >
         <pixiGraphics
           draw={(g) => {
             g.clear();
-            g.beginFill(0x0984e3, 0.8);
+            g.beginFill(friendlyTargeted ? 0x55efc4 : 0x0984e3, friendlyTargeted ? 1 : 0.8);
             g.drawCircle(0, 0, 48);
             g.endFill();
           }}
@@ -312,4 +365,23 @@ export default function Board({ state, playerSide, width, height, onAttack, canA
       {attackIndicator}
     </pixiContainer>
   );
+}
+
+function isValidTarget(source: TargetingState['source'], target: TargetDescriptor, playerSide: PlayerSide): boolean {
+  if (source.kind === 'minion') {
+    if (target.type === 'hero') {
+      return target.side !== playerSide;
+    }
+    return target.side !== playerSide;
+  }
+
+  const effect = source.card.card.effect;
+  switch (effect) {
+    case 'Firebolt':
+      return target.side !== playerSide;
+    case 'Heal':
+      return target.side === playerSide;
+    default:
+      return false;
+  }
 }

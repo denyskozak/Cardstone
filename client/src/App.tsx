@@ -116,17 +116,17 @@ export default function App() {
   );
 
   const handlePlayCard = useCallback(
-    (card: CardInHand) => {
+    (card: CardInHand, explicitTarget?: TargetDescriptor) => {
       if (!side || !canPlayCard(card)) {
         return;
       }
       const opponentSide: PlayerSide = side === 'A' ? 'B' : 'A';
-      let target: { type: 'hero'; side: PlayerSide } | undefined;
-      if (card.card.type === 'Spell') {
+      let target: TargetDescriptor | undefined = explicitTarget;
+      if (!target && card.card.type === 'Spell') {
         if (card.card.effect === 'Firebolt') {
-          target = { type: 'hero', side: opponentSide } as const;
+          target = { type: 'hero', side: opponentSide };
         } else if (card.card.effect === 'Heal') {
-          target = { type: 'hero', side } as const;
+          target = { type: 'hero', side };
         }
       }
       socket.sendWithAck('PlayCard', {
