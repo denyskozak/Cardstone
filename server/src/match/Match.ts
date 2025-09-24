@@ -3,8 +3,8 @@ import type { GameState, PlayerSide, TargetDescriptor } from '@cardstone/shared/
 import { CARD_IDS, DEFAULT_DECK, MATCH_CONFIG, STARTING_SEQ } from '@cardstone/shared/constants';
 import { getCardDefinition } from '@cardstone/shared/cards/demo';
 import { createRng, createSeed, shuffleInPlace, type RNG } from '../util/rng.js';
-import { applyPlayCard, drawCard, endTurn, startTurn } from './reducer.js';
-import { ValidationError, validateEndTurn, validatePlayCard } from './validate.js';
+import { applyAttack, applyPlayCard, drawCard, endTurn, startTurn } from './reducer.js';
+import { ValidationError, validateAttack, validateEndTurn, validatePlayCard } from './validate.js';
 
 interface MatchPlayerMeta {
   id: string;
@@ -159,6 +159,32 @@ export class Match {
       validateEndTurn(this.state, side);
       endTurn(this.state, side);
       startTurn(this.state, this.state.turn.current);
+      this.bumpSeq();
+      return { ok: true, stateChanged: true };
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return { ok: false, error: error.message, stateChanged: false };
+      }
+      throw error;
+    }
+  }
+
+  handleAttack(
+    playerId: string,
+    seq: number,
+    nonce: string,
+    attackerId: string,
+    target: TargetDescriptor
+  ): CommandResult {
+    const side = this.requireSide(playerId);
+    const meta = this.players[side];
+    try {
+      const { duplicate } = this.ensureSequence(meta, seq, nonce);
+      if (duplicate) {
+        return { ok: true, stateChanged: false, duplicate: true };
+      }
+      validateAttack(this.state, side, attackerId, target);
+      applyAttack(this.state, side, attackerId, target);
       this.bumpSeq();
       return { ok: true, stateChanged: true };
     } catch (error) {

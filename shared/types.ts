@@ -39,6 +39,7 @@ export interface MinionEntity {
   card: MinionCard;
   attack: number;
   health: number;
+  attacksRemaining: number;
 }
 
 export interface HeroState {
@@ -89,8 +90,8 @@ export type CommandBase<T extends string, P> = {
 
 export type Command =
   | CommandBase<'PlayCard', { cardId: EntityId; target?: TargetDescriptor }>
-  | CommandBase<'EndTurn', object>
-  | CommandBase<'Attack', { attackerId: EntityId; defenderId: EntityId }>
+  | CommandBase<'EndTurn', Record<string, never>>
+  | CommandBase<'Attack', { attackerId: EntityId; target: TargetDescriptor }>
   | CommandBase<'Ready', object>;
 
 export type TargetDescriptor =
@@ -126,8 +127,8 @@ export type ClientToServer =
   | ClientMessageBase<'JoinMatch', { matchId: 'auto' | string; playerId?: string }>
   | ClientMessageBase<'Ready', { playerId?: string }>
   | ClientMessageBase<'PlayCard', { cardId: EntityId; target?: TargetDescriptor }>
-  | ClientMessageBase<'EndTurn', object>
-  | ClientMessageBase<'Attack', { attackerId: EntityId; defenderId: EntityId }>
+  | ClientMessageBase<'EndTurn', Record<string, never>>
+  | ClientMessageBase<'Attack', { attackerId: EntityId; target: TargetDescriptor }>
   | ClientMessageBase<'Emote', { type: 'Hello' | 'WellPlayed' | 'Oops' }>;
 
 export interface ServerMessageBase<T extends string, P> {

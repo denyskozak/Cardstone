@@ -1,8 +1,11 @@
 import { z } from 'zod';
 import type {
+  ActionResultPayload,
   ClientToServer,
+  MatchJoinInfo,
   PlayerSide,
   ServerToClient,
+  StateSyncPayload,
   TargetDescriptor
 } from '@cardstone/shared/types.js';
 
@@ -23,7 +26,7 @@ const targetSchema: z.ZodType<TargetDescriptor> = z.discriminatedUnion('type', [
 const nonce = () => z.string().min(8).max(64);
 const seq = () => z.number().int().nonnegative();
 
-export const clientMessageSchema: z.ZodType<ClientToServer> = z.discriminatedUnion('t', [
+export const clientMessageSchema = z.discriminatedUnion('t', [
   z.object({
     t: z.literal('JoinMatch'),
     payload: z.object({ matchId: z.string(), playerId: z.string().optional() })
@@ -40,13 +43,13 @@ export const clientMessageSchema: z.ZodType<ClientToServer> = z.discriminatedUni
   }),
   z.object({
     t: z.literal('EndTurn'),
-    payload: z.object({}).optional(),
+    payload: z.object({}).default({}),
     seq: seq(),
     nonce: nonce()
   }),
   z.object({
     t: z.literal('Attack'),
-    payload: z.object({ attackerId: z.string(), defenderId: z.string() }),
+    payload: z.object({ attackerId: z.string(), target: targetSchema }),
     seq: seq(),
     nonce: nonce()
   }),
@@ -56,7 +59,7 @@ export const clientMessageSchema: z.ZodType<ClientToServer> = z.discriminatedUni
     seq: seq().optional(),
     nonce: nonce().optional()
   })
-]);
+]) as unknown as z.ZodType<ClientToServer>;
 
 const baseServerMessage = <T extends string, P>(t: T, payload: z.ZodType<P>) =>
   z.object({
@@ -65,18 +68,33 @@ const baseServerMessage = <T extends string, P>(t: T, payload: z.ZodType<P>) =>
     seq: seq().optional()
   });
 
-export const serverMessageSchema: z.ZodType<ServerToClient> = z.discriminatedUnion('t', [
-  baseServerMessage('MatchJoined',
-    z.object({ playerId: z.string(), matchId: z.string(), side: sideSchema as z.ZodType<PlayerSide> })
+export const serverMessageSchema = z.discriminatedUnion('t', [
+  baseServerMessage(
+    'MatchJoined',
+    z.object({
+      playerId: z.string(),
+      matchId: z.string(),
+      side: sideSchema as z.ZodType<PlayerSide>
+    }) as z.ZodType<MatchJoinInfo>
   ),
-  baseServerMessage('StateSync', z.object({ state: z.any() })),
-  baseServerMessage('ActionResult',
-    z.object({ ok: z.boolean(), error: z.string().optional(), patch: z.any().optional() })
+  baseServerMessage(
+    'StateSync',
+    z.object({ state: z.any() }) as z.ZodType<StateSyncPayload>
+  ),
+  baseServerMessage(
+    'ActionResult',
+    z.object({
+      ok: z.boolean(),
+      error: z.string().optional(),
+      patch: z.any().optional(),
+      stateChanged: z.boolean().optional(),
+      duplicate: z.boolean().optional()
+    }) as z.ZodType<ActionResultPayload>
   ),
   baseServerMessage('Toast', z.object({ message: z.string() })),
   baseServerMessage('OpponentLeft', z.object({ playerId: z.string() })),
   baseServerMessage('GameOver', z.object({ winner: sideSchema as z.ZodType<PlayerSide> }))
-]);
+]) as unknown as z.ZodType<ServerToClient>;
 
 export type ValidatedClientMessage = z.infer<typeof clientMessageSchema>;
 export type ValidatedServerMessage = z.infer<typeof serverMessageSchema>;

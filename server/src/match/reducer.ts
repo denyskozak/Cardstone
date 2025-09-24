@@ -34,6 +34,9 @@ export function startTurn(state: GameState, side: PlayerSide): void {
   for (let i = 0; i < DRAW_PER_TURN; i += 1) {
     drawCard(state, side);
   }
+  for (const minion of state.board[side]) {
+    minion.attacksRemaining = 1;
+  }
   state.turn.phase = 'Main';
 }
 
@@ -81,7 +84,8 @@ function summonMinion(state: GameState, side: PlayerSide, card: MinionCard): voi
     instanceId: randomUUID(),
     card,
     attack: card.attack,
-    health: card.health
+    health: card.health,
+    attacksRemaining: 1
   });
 }
 
@@ -108,7 +112,8 @@ function resolveSpell(
       applyCoin(state, side, card.amount ?? 1);
       break;
     default:
-      throw new Error(`Unhandled spell effect ${(card as any).effect}`);
+      const effect: never = card.effect;
+      throw new Error(`Unhandled spell effect ${effect}`);
   }
 }
 
@@ -165,4 +170,39 @@ function removeMinion(state: GameState, side: PlayerSide, entityId: string): voi
 
 export function isCoin(cardId: string): boolean {
   return cardId === CARD_IDS.coin;
+}
+
+export function applyAttack(
+  state: GameState,
+  side: PlayerSide,
+  attackerId: string,
+  target: TargetDescriptor
+): void {
+  const attackers = state.board[side];
+  const attacker = attackers.find((entity) => entity.instanceId === attackerId);
+  if (!attacker) {
+    throw new Error('Attacker not found');
+  }
+  if (attacker.attacksRemaining <= 0) {
+    throw new Error('Attacker has no attacks remaining');
+  }
+
+  attacker.attacksRemaining = Math.max(0, attacker.attacksRemaining - 1);
+
+  if (target.type === 'hero') {
+    applyDamage(state, target, attacker.attack, side);
+    return;
+  }
+
+  const defenders = state.board[target.side];
+  const defender = defenders.find((entity) => entity.instanceId === target.entityId);
+  if (!defender) {
+    throw new Error('Defender not found');
+  }
+
+  const retaliation = defender.attack;
+  applyDamage(state, target, attacker.attack, side);
+
+  const attackerTarget: TargetDescriptor = { type: 'minion', side, entityId: attackerId };
+  applyDamage(state, attackerTarget, retaliation, target.side);
 }

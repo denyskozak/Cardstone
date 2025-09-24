@@ -66,6 +66,40 @@ export function validateEndTurn(state: GameState, side: PlayerSide): void {
   }
 }
 
-export function validateAttack(): never {
-  throw new ValidationError('Attacks are not implemented in this demo');
+export function validateAttack(
+  state: GameState,
+  side: PlayerSide,
+  attackerId: string,
+  target: TargetDescriptor
+): void {
+  assertPlayersTurn(state, side);
+  if (state.turn.phase !== 'Main') {
+    throw new ValidationError('Cannot attack right now');
+  }
+
+  const attacker = state.board[side].find((entity) => entity.instanceId === attackerId);
+  if (!attacker) {
+    throw new ValidationError('Attacking minion not found');
+  }
+  if (attacker.attacksRemaining <= 0) {
+    throw new ValidationError('This minion has already attacked');
+  }
+
+  if (target.type === 'hero') {
+    if (target.side === side) {
+      throw new ValidationError('Cannot attack your own hero');
+    }
+    if (!state.players[target.side]) {
+      throw new ValidationError('Target hero not found');
+    }
+    return;
+  }
+
+  if (target.side === side) {
+    throw new ValidationError('Cannot attack your own minions');
+  }
+  const defender = state.board[target.side].find((entity) => entity.instanceId === target.entityId);
+  if (!defender) {
+    throw new ValidationError('Target minion not found');
+  }
 }

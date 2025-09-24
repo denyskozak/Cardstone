@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { CardInHand, GameState, PlayerSide, ServerToClient } from '@cardstone/shared/types';
+import type {
+  CardInHand,
+  GameState,
+  MinionEntity,
+  PlayerSide,
+  ServerToClient,
+  TargetDescriptor
+} from '@cardstone/shared/types';
 import StageRoot from './gamepixi/StageRoot';
 import { GameSocket } from './net/ws';
 import styles from './App.module.css';
@@ -130,6 +137,32 @@ export default function App() {
     [canPlayCard, side, socket]
   );
 
+  const canAttackMinion = useCallback(
+    (minion: MinionEntity) => {
+      if (!state || !side) {
+        return false;
+      }
+      if (state.turn.current !== side || state.turn.phase !== 'Main') {
+        return false;
+      }
+      return minion.attacksRemaining > 0;
+    },
+    [side, state]
+  );
+
+  const handleAttack = useCallback(
+    (attackerId: string, target: TargetDescriptor) => {
+      if (!side || !state) {
+        return;
+      }
+      if (state.turn.current !== side || state.turn.phase !== 'Main') {
+        return;
+      }
+      socket.sendWithAck('Attack', { attackerId, target });
+    },
+    [side, socket, state]
+  );
+
   const handleEndTurn = useCallback(() => {
     if (!state || !side) {
       return;
@@ -148,7 +181,14 @@ export default function App() {
     <div className={styles.container}>
       <div className={styles.stageWrapper}>
         <Application autoStart sharedTicker>
-          <StageRoot state={state} playerSide={side} onPlayCard={handlePlayCard} canPlayCard={canPlayCard} />
+          <StageRoot
+            state={state}
+            playerSide={side}
+            onPlayCard={handlePlayCard}
+            canPlayCard={canPlayCard}
+            onAttack={handleAttack}
+            canAttack={canAttackMinion}
+          />
         </Application>
       </div>
       <div className={styles.overlay}>

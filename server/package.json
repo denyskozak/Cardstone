@@ -4,6 +4,15 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./match/*": "./dist/match/*.js",
+    "./match/*.js": "./dist/match/*.js",
+    "./net/*": "./dist/net/*.js",
+    "./net/*.js": "./dist/net/*.js",
+    "./util/*": "./dist/util/*.js",
+    "./util/*.js": "./dist/util/*.js"
+  },
   "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
