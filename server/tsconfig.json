@@ -1,0 +1,19 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "types": ["node"],
+    "moduleResolution": "Node16",
+    "module": "NodeNext",
+    "target": "ES2022",
+    "paths": {
+      "@cardstone/shared": ["../shared/index.ts"],
+      "@cardstone/shared/*": ["../shared/*"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "references": [
+    { "path": "../shared" }
+  ]
+}

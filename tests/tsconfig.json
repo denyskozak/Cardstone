@@ -1,0 +1,18 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "moduleResolution": "Node16",
+    "module": "NodeNext",
+    "types": ["vitest/globals"],
+    "baseUrl": ".",
+    "paths": {
+      "@cardstone/shared/*": ["../shared/*"],
+      "@cardstone/server/*": ["../server/src/*"]
+    }
+  },
+  "include": ["**/*.test.ts"],
+  "references": [
+    { "path": "../shared" },
+    { "path": "../server" }
+  ]
+}

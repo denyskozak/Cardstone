@@ -1,34 +1,30 @@
 {
-  "name": "Cardhearth",
+  "name": "cardstone",
   "private": true,
+  "version": "0.1.0",
   "type": "module",
+  "workspaces": [
+    "client",
+    "server",
+    "shared",
+    "tests",
+    "packages/eslint-js"
+  ],
   "scripts": {
-    "build": "react-router build",
-    "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js",
-    "typecheck": "react-router typegen && tsc"
-  },
-  "dependencies": {
-    "@pixi/react": "^8.0.3",
-    "@react-router/node": "^7.7.1",
-    "@react-router/serve": "^7.7.1",
-    "install": "^0.13.0",
-    "isbot": "^5.1.27",
-    "npm": "^11.6.0",
-    "pixi.js": "^8.13.2",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-router": "^7.7.1"
+    "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w shared && npm run build -w server && npm run build -w client",
+    "lint": "npm run lint -w shared && npm run lint -w server && npm run lint -w client",
+    "test": "npm run test -w tests"
   },
   "devDependencies": {
-    "@react-router/dev": "^7.7.1",
-    "@tailwindcss/vite": "^4.1.4",
-    "@types/node": "^20",
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.2",
-    "tailwindcss": "^4.1.4",
-    "typescript": "^5.8.3",
-    "vite": "^6.3.3",
-    "vite-tsconfig-paths": "^5.1.4"
+    "@eslint/js": "^9.17.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "concurrently": "^9.1.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^10.0.1",
+    "globals": "^15.14.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
   }
 }

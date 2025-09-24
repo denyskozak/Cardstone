@@ -1,0 +1,6 @@
+{
+  "name": "@eslint/js",
+  "version": "8.57.0",
+  "type": "module",
+  "main": "index.js"
+}
