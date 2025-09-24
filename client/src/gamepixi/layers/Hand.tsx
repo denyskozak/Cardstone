@@ -93,11 +93,12 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
           return undefined;
         }
 
-        const { card, hasMoved } = current;
-        const dropY = event.global.y;
-        const withinDropZone = dropY >= dropZone.top && dropY <= dropZone.bottom;
+        const { card, hasMoved, y: cardY } = current;
+        const cardTop = cardY;
+        const cardBottom = cardY + CARD_SIZE.height;
+        const intersectsDropZone = cardBottom >= dropZone.top && cardTop <= dropZone.bottom;
 
-        if (hasMoved && withinDropZone && canPlay(card)) {
+        if (hasMoved && intersectsDropZone && canPlay(card)) {
           onPlay(card);
           setSelected(undefined);
           playedFromDragRef.current = card.instanceId;
@@ -208,6 +209,10 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
     );
   });
 
+  const isDraggingOverDropZone = dragging
+    ? dragging.y + CARD_SIZE.height >= dropZone.top && dragging.y <= dropZone.bottom
+    : false;
+
   const draggingCard = dragging ? (
     <Card
       key={`${dragging.card.instanceId}-dragging`}
@@ -218,6 +223,7 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
       selected={selected === dragging.card.instanceId}
       onHover={setHovered}
       onClick={handleCardClick}
+      scale={isDraggingOverDropZone ? 0.94 : 1}
     />
   ) : null;
 
