@@ -5,7 +5,6 @@ import type {
   PlayerSide,
   TargetDescriptor
 } from '@cardstone/shared/types';
-import { useApplication } from '@pixi/react';
 import type { FederatedPointerEvent } from 'pixi.js';
 import { Container, DisplayObject, Point } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -33,7 +32,6 @@ export default function Board({
   canAttack,
   onCastSpell
 }: BoardProps) {
-  const { app } = useApplication();
   const boardRef = useRef<Container | null>(null);
   const targeting = useUiStore((s) => s.targeting);
   const setTargeting = useUiStore((s) => s.setTargeting);
@@ -56,21 +54,19 @@ export default function Board({
     return { x: local.x, y: local.y };
   }, []);
 
-  useEffect(() => {
-    if (!targeting) {
-      return undefined;
-    }
-
-    const handlePointerMove = (event: FederatedPointerEvent) => {
-      if (event.pointerId !== targeting.pointerId) {
+  const handlePointerMove = useCallback(
+    (event: FederatedPointerEvent) => {
+      if (!targeting || event.pointerId !== targeting.pointerId) {
         return;
       }
-      const next = event.global as Point;
-      updateTargeting({ x: next.x, y: next.y });
-    };
+      updateTargeting({ x: event.global.x, y: event.global.y });
+    },
+    [targeting, updateTargeting]
+  );
 
-    const finishDrag = (event: FederatedPointerEvent) => {
-      if (event.pointerId !== targeting.pointerId) {
+  const handlePointerUp = useCallback(
+    (event: FederatedPointerEvent) => {
+      if (!targeting || event.pointerId !== targeting.pointerId) {
         return;
       }
       const action: TargetingState | undefined = targeting;
@@ -87,20 +83,9 @@ export default function Board({
         setSelected(undefined);
         onCastSpell(action.source.card, target);
       }
-    };
-
-    app.stage.on('globalpointermove', handlePointerMove);
-    app.stage.on('pointerup', finishDrag);
-    app.stage.on('pointerupoutside', finishDrag);
-    app.stage.on('pointercancel', finishDrag);
-
-    return () => {
-      app.stage.off('globalpointermove', handlePointerMove);
-      app.stage.off('pointerup', finishDrag);
-      app.stage.off('pointerupoutside', finishDrag);
-      app.stage.off('pointercancel', finishDrag);
-    };
-  }, [app, onAttack, onCastSpell, setCurrentTarget, setSelected, setTargeting, targeting, updateTargeting]);
+    },
+    [onAttack, onCastSpell, setCurrentTarget, setSelected, setTargeting, targeting]
+  );
 
   const handleStartAttack = useCallback(
     (entity: MinionEntity, event: FederatedPointerEvent) => {
@@ -186,6 +171,8 @@ export default function Board({
         const x = laneX + index * (MINION_WIDTH + 20);
         const isFriendly = side === playerSide;
         const canAttackThisMinion = isFriendly && canAttack(entity);
+        const targetDescriptor: TargetDescriptor = { type: 'minion', side, entityId: entity.instanceId };
+
         const canBeSpellTarget = targeting
           ? isValidTarget(targeting.source, targetDescriptor, playerSide)
           : false;
@@ -205,8 +192,6 @@ export default function Board({
         const handleDown = isFriendly
           ? (event: FederatedPointerEvent) => handleStartAttack(entity, event)
           : undefined;
-
-        const targetDescriptor: TargetDescriptor = { type: 'minion', side, entityId: entity.instanceId };
 
         return (
           <pixiContainer
@@ -303,7 +288,14 @@ export default function Board({
   ) : null;
 
   return (
-    <pixiContainer ref={boardRef}>
+    <pixiContainer
+      ref={boardRef}
+      eventMode="static"
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerUpOutside={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+    >
       <pixiGraphics
         draw={(g) => {
           g.clear();
