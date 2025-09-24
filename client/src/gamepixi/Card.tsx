@@ -2,14 +2,14 @@ import type { CardInHand } from '@cardstone/shared/types';
 import type { FederatedPointerEvent } from 'pixi.js';
 import { useMemo } from 'react';
 
+import cardTemplateUrl from './cart-template.webp';
+
 const CARD_WIDTH = 120;
 const CARD_HEIGHT = 160;
 
-const CARD_COLORS = {
-  base: 0x2f3542,
-  highlight: 0x57606f,
-  disabled: 0x3d3d3d
-};
+const CARD_BORDER_COLOR = 0xffffff;
+const CARD_HIGHLIGHT_COLOR = 0xfff200;
+const CARD_DISABLED_TINT = 0xb0b0b0;
 
 interface CardProps {
   card: CardInHand;
@@ -83,19 +83,53 @@ export function Card({
         }
       }}
     >
+      <pixiSprite
+        image={cardTemplateUrl}
+        width={CARD_WIDTH}
+        height={CARD_HEIGHT}
+        tint={disabled ? CARD_DISABLED_TINT : 0xffffff}
+        alpha={disabled ? 0.75 : 1}
+      />
       <pixiGraphics
         draw={(g) => {
           g.clear();
-          const color = disabled ? CARD_COLORS.disabled : selected ? 0xf1c40f : CARD_COLORS.base;
-          g.beginFill(color, disabled ? 0.6 : 1);
-          g.lineStyle(3, selected ? 0xfff200 : CARD_COLORS.highlight, disabled ? 0.5 : 1);
+          const borderColor = selected ? CARD_HIGHLIGHT_COLOR : CARD_BORDER_COLOR;
+          const borderAlpha = disabled ? 0.5 : selected ? 1 : 0.9;
+          g.lineStyle(selected ? 4 : 2, borderColor, borderAlpha);
           g.drawRoundedRect(0, 0, CARD_WIDTH, CARD_HEIGHT, 12);
-          g.endFill();
+
+          if (disabled) {
+            g.lineStyle(0);
+            g.beginFill(0x000000, 0.35);
+            g.drawRoundedRect(0, 0, CARD_WIDTH, CARD_HEIGHT, 12);
+            g.endFill();
+          }
         }}
       />
-      <pixiText text={card.card.name} x={8} y={16} style={{ fill: 0xffffff, fontSize: 14, wordWrap: true, wordWrapWidth: CARD_WIDTH - 16 }} />
-      <pixiText text={costLabel} x={8} y={CARD_HEIGHT - 32} style={{ fill: 0x74b9ff, fontSize: 20 }} />
-      <pixiText text={statsLabel} x={CARD_WIDTH - 60} y={CARD_HEIGHT - 32} style={{ fill: 0xff6b81, fontSize: 18 }} />
+      <pixiText
+        text={card.card.name}
+        x={8}
+        y={18}
+        style={{
+          fill: 0xffffff,
+          fontSize: 16,
+          fontWeight: 'bold',
+          wordWrap: true,
+          wordWrapWidth: CARD_WIDTH - 16
+        }}
+      />
+      <pixiText
+        text={costLabel}
+        x={12}
+        y={CARD_HEIGHT - 44}
+        style={{ fill: 0x74b9ff, fontSize: 22, fontWeight: 'bold' }}
+      />
+      <pixiText
+        text={statsLabel}
+        x={CARD_WIDTH - 64}
+        y={CARD_HEIGHT - 40}
+        style={{ fill: 0xff6b81, fontSize: 20, fontWeight: 'bold' }}
+      />
     </pixiContainer>
   );
 }
