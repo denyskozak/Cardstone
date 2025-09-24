@@ -30,18 +30,18 @@ export function Card({ card, x, y, onClick, onHover, disabled, selected }: CardP
       x={x}
       y={y}
       interactive={!disabled}
-      pointertap={() => {
-        console.log('2: ', 2);
+      onPointerTap={() => {
+        console.log('onPointerTap: ');
         if (!disabled) {
           onClick(card);
         }
       }}
-      pointerover={() => {
-        console.log('3: ', 3);
+      onPointerOver={() => {
+        console.log('onPointerOver: ');
         onHover(card.instanceId)
       }}
-      pointerout={() => {
-        console.log('4: ', 4);
+      onPointerOut={() => {
+        console.log('onPointerOut: ');
         onHover(undefined)
       }}
     >
