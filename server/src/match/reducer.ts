@@ -1,15 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import {
-  CARD_IDS,
-  MATCH_CONFIG,
   type GameState,
   type MinionCard,
   type PlayerSide,
   type SpellCard,
   type TargetDescriptor
-} from '@cardstone/shared/types.js';
-import { getCardDefinition } from '@cardstone/shared/cards/demo.js';
-import { DRAW_PER_TURN } from '@cardstone/shared/constants.js';
+} from '@cardstone/shared/types';
+import { getCardDefinition } from '@cardstone/shared/cards/demo';
+import { CARD_IDS, DRAW_PER_TURN, MATCH_CONFIG } from '@cardstone/shared/constants';
 
 export function gainMana(state: GameState, side: PlayerSide): void {
   const player = state.players[side];

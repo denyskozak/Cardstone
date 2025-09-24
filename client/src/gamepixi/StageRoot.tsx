@@ -1,9 +1,9 @@
-import { Stage, Container } from '@pixi/react';
-import type { CardInHand, GameState, PlayerSide } from '@cardstone/shared/types.js';
+import type { CardInHand, GameState, PlayerSide } from '@cardstone/shared/types';
 import Background from './layers/Background';
 import Board from './layers/Board';
 import HandLayer from './layers/Hand';
 import Effects from './layers/Effects';
+import { useApplication } from '@pixi/react';
 
 interface StageRootProps {
   state: GameState | null;
@@ -16,11 +16,15 @@ const WIDTH = 1024;
 const HEIGHT = 640;
 
 export default function StageRoot({ state, playerSide, onPlayCard, canPlayCard }: StageRootProps) {
+  const { app } = useApplication();
+  window.__PIXI_DEVTOOLS__ = {
+    app: app,
+  };
   if (!state || !playerSide) {
     return (
-      <Stage width={WIDTH} height={HEIGHT} options={{ backgroundAlpha: 0 }}>
+      <pixiContainer width={WIDTH} height={HEIGHT} options={{ backgroundAlpha: 0 }}>
         <Background width={WIDTH} height={HEIGHT} />
-      </Stage>
+      </pixiContainer>
     );
   }
   const player = state.players[playerSide];
@@ -28,9 +32,9 @@ export default function StageRoot({ state, playerSide, onPlayCard, canPlayCard }
   const opponent = state.players[opponentSide];
 
   return (
-    <Stage width={WIDTH} height={HEIGHT} options={{ backgroundAlpha: 0 }}>
+    <pixiContainer width={WIDTH} height={HEIGHT} options={{ backgroundAlpha: 0 }}>
       <Background width={WIDTH} height={HEIGHT} />
-      <Container>
+      <pixiContainer>
         <Board state={state} playerSide={playerSide} width={WIDTH} height={HEIGHT} />
         <HandLayer
           hand={player.hand}
@@ -45,7 +49,7 @@ export default function StageRoot({ state, playerSide, onPlayCard, canPlayCard }
           width={WIDTH}
           height={HEIGHT}
         />
-      </Container>
-    </Stage>
+      </pixiContainer>
+    </pixiContainer>
   );
 }

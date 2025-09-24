@@ -1,5 +1,4 @@
-import { Container, Graphics, Text } from '@pixi/react';
-import type { GameState, PlayerSide } from '@cardstone/shared/types.js';
+import type { GameState, PlayerSide } from '@cardstone/shared/types';
 
 interface BoardProps {
   state: GameState;
@@ -22,8 +21,8 @@ export default function Board({ state, playerSide, width, height }: BoardProps) 
     return minions.map((entity, index) => {
       const x = laneX + index * (MINION_WIDTH + 20);
       return (
-        <Container key={entity.instanceId} x={x} y={y}>
-          <Graphics
+        <pixiContainer key={entity.instanceId} x={x} y={y}>
+          <pixiGraphics
             draw={(g) => {
               g.clear();
               g.beginFill(side === playerSide ? 0x0984e3 : 0xd63031, 0.8);
@@ -31,20 +30,20 @@ export default function Board({ state, playerSide, width, height }: BoardProps) 
               g.endFill();
             }}
           />
-          <Text text={entity.card.name} x={8} y={12} style={{ fill: 0xffffff, fontSize: 14 }} />
-          <Text
+          <pixiText text={entity.card.name} x={8} y={12} style={{ fill: 0xffffff, fontSize: 14 }} />
+          <pixiText
             text={`${entity.attack}`}
             x={8}
             y={MINION_HEIGHT - 28}
             style={{ fill: 0xffd166, fontSize: 18 }}
           />
-          <Text
+          <pixiText
             text={`${entity.health}`}
             x={MINION_WIDTH - 36}
             y={MINION_HEIGHT - 28}
             style={{ fill: 0xff6b6b, fontSize: 18 }}
           />
-        </Container>
+        </pixiContainer>
       );
     });
   };
@@ -54,8 +53,8 @@ export default function Board({ state, playerSide, width, height }: BoardProps) 
   const playerHero = state.players[playerSide];
 
   return (
-    <Container>
-      <Graphics
+    <pixiContainer>
+      <pixiGraphics
         draw={(g) => {
           g.clear();
           g.lineStyle(2, 0xffffff, 0.2);
@@ -63,8 +62,8 @@ export default function Board({ state, playerSide, width, height }: BoardProps) 
           g.drawRoundedRect(laneX, boardBottomY - 20, laneWidth, MINION_HEIGHT + 40, 20);
         }}
       />
-      <Container x={40} y={boardTopY - 80}>
-        <Graphics
+      <pixiContainer x={40} y={boardTopY - 80}>
+        <pixiGraphics
           draw={(g) => {
             g.clear();
             g.beginFill(0xd63031, 0.8);
@@ -72,10 +71,10 @@ export default function Board({ state, playerSide, width, height }: BoardProps) 
             g.endFill();
           }}
         />
-        <Text text={`HP ${opponentHero.hero.hp}`} x={-36} y={-12} style={{ fill: 0xffffff, fontSize: 18 }} />
-      </Container>
-      <Container x={40} y={boardBottomY + MINION_HEIGHT - 20}>
-        <Graphics
+        <pixiText text={`HP ${opponentHero.hero.hp}`} x={-36} y={-12} style={{ fill: 0xffffff, fontSize: 18 }} />
+      </pixiContainer>
+      <pixiContainer x={40} y={boardBottomY + MINION_HEIGHT - 20}>
+        <pixiGraphics
           draw={(g) => {
             g.clear();
             g.beginFill(0x0984e3, 0.8);
@@ -83,10 +82,10 @@ export default function Board({ state, playerSide, width, height }: BoardProps) 
             g.endFill();
           }}
         />
-        <Text text={`HP ${playerHero.hero.hp}`} x={-36} y={-12} style={{ fill: 0xffffff, fontSize: 18 }} />
-      </Container>
+        <pixiText text={`HP ${playerHero.hero.hp}`} x={-36} y={-12} style={{ fill: 0xffffff, fontSize: 18 }} />
+      </pixiContainer>
       {renderRow(opponentSide, boardTopY)}
       {renderRow(playerSide, boardBottomY)}
-    </Container>
+    </pixiContainer>
   );
 }

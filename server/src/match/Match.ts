@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { GameState, PlayerSide, TargetDescriptor } from '@cardstone/shared/types.js';
-import { CARD_IDS, DEFAULT_DECK, MATCH_CONFIG, STARTING_SEQ } from '@cardstone/shared/constants.js';
-import { getCardDefinition } from '@cardstone/shared/cards/demo.js';
+import type { GameState, PlayerSide, TargetDescriptor } from '@cardstone/shared/types';
+import { CARD_IDS, DEFAULT_DECK, MATCH_CONFIG, STARTING_SEQ } from '@cardstone/shared/constants';
+import { getCardDefinition } from '@cardstone/shared/cards/demo';
 import { createRng, createSeed, shuffleInPlace, type RNG } from '../util/rng.js';
 import { applyPlayCard, drawCard, endTurn, startTurn } from './reducer.js';
 import { ValidationError, validateEndTurn, validatePlayCard } from './validate.js';

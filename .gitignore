@@ -5,3 +5,5 @@
 /.react-router/
 /build/
 /.idea
+
+/client/node_modules/

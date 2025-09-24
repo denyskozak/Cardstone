@@ -1,8 +1,27 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { CardInHand, GameState, PlayerSide, ServerToClient } from '@cardstone/shared/types.js';
+import type { CardInHand, GameState, PlayerSide, ServerToClient } from '@cardstone/shared/types';
 import StageRoot from './gamepixi/StageRoot';
 import { GameSocket } from './net/ws';
 import styles from './App.module.css';
+
+import {
+  Container,
+  Graphics,
+  Sprite,
+  Text,
+} from 'pixi.js';
+import {
+  Application,
+  extend,
+} from '@pixi/react';
+
+// extend tells @pixi/react what Pixi.js components are available
+extend({
+  Container,
+  Graphics,
+  Sprite,
+  Text,
+});
 
 const PLAYER_STORAGE_KEY = 'cardstone:playerId';
 
@@ -91,6 +110,7 @@ export default function App() {
 
   const handlePlayCard = useCallback(
     (card: CardInHand) => {
+      console.log('card: ', card);
       if (!side || !canPlayCard(card)) {
         return;
       }
@@ -128,7 +148,9 @@ export default function App() {
   return (
     <div className={styles.container}>
       <div className={styles.stageWrapper}>
-        <StageRoot state={state} playerSide={side} onPlayCard={handlePlayCard} canPlayCard={canPlayCard} />
+        <Application autoStart sharedTicker>
+          <StageRoot state={state} playerSide={side} onPlayCard={handlePlayCard} canPlayCard={canPlayCard} />
+        </Application>
       </div>
       <div className={styles.overlay}>
         <div className={styles.statBlock}>

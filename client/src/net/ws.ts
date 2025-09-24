@@ -1,4 +1,4 @@
-import type { ClientToServer, ServerToClient } from '@cardstone/shared/types.js';
+import type { ClientToServer, ServerToClient } from '@cardstone/shared/types';
 
 type MessageListener = (message: ServerToClient) => void;
 type OpenListener = () => void;

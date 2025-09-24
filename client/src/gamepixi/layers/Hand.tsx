@@ -1,5 +1,4 @@
-import { Container } from '@pixi/react';
-import type { CardInHand } from '@cardstone/shared/types.js';
+import type { CardInHand } from '@cardstone/shared/types';
 import { Card, CARD_SIZE } from '../Card';
 import { useUiStore } from '../../state/store';
 
@@ -21,7 +20,7 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
   const y = height - CARD_SIZE.height - 32;
 
   return (
-    <Container>
+    <pixiContainer>
       {hand.map((card, index) => {
         const x = startX + index * spacing;
         const disabled = !canPlay(card);
@@ -35,6 +34,7 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
             selected={selected === card.instanceId}
             onHover={setHovered}
             onClick={(clicked) => {
+              console.log('clicked: ', clicked);
               setSelected(clicked.instanceId);
               if (!disabled) {
                 onPlay(clicked);
@@ -44,6 +44,6 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
           />
         );
       })}
-    </Container>
+    </pixiContainer>
   );
 }

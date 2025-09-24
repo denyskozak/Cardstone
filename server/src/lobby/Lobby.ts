@@ -1,5 +1,5 @@
-import type { PlayerSide } from '@cardstone/shared/types.js';
-import { Match } from '../match/Match.js';
+import type { PlayerSide } from '@cardstone/shared/types';
+import { Match } from '../match/Match';
 
 interface WaitingPlayer {
   playerId: string;

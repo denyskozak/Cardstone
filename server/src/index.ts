@@ -82,6 +82,7 @@ wss.on('connection', (ws) => {
     alive: true
   };
 
+
   ws.on('message', (data) => {
     if (!context.rateLimiter.allow()) {
       sendToast(context, 'Slow down!');

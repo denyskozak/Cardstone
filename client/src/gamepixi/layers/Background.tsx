@@ -1,5 +1,3 @@
-import { Graphics } from '@pixi/react';
-
 interface BackgroundProps {
   width: number;
   height: number;
@@ -7,7 +5,7 @@ interface BackgroundProps {
 
 export default function Background({ width, height }: BackgroundProps) {
   return (
-    <Graphics
+    <pixiGraphics
       draw={(g) => {
         g.clear();
         g.beginFill(0x2d3436);

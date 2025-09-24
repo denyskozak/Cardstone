@@ -1,5 +1,4 @@
-import { Container, Graphics, Text } from '@pixi/react';
-import type { CardInHand } from '@cardstone/shared/types.js';
+import type { CardInHand } from '@cardstone/shared/types';
 import { useMemo } from 'react';
 
 const CARD_WIDTH = 120;
@@ -25,20 +24,28 @@ export function Card({ card, x, y, onClick, onHover, disabled, selected }: CardP
   const costLabel = useMemo(() => `${card.card.cost}`, [card.card.cost]);
   const statsLabel =
     card.card.type === 'Minion' ? `${card.card.attack}/${card.card.health}` : card.card.effect;
+  console.log('!disabled: ', !disabled);
   return (
-    <Container
+    <pixiContainer
       x={x}
       y={y}
       interactive={!disabled}
       pointertap={() => {
+        console.log('2: ', 2);
         if (!disabled) {
           onClick(card);
         }
       }}
-      pointerover={() => onHover(card.instanceId)}
-      pointerout={() => onHover(undefined)}
+      pointerover={() => {
+        console.log('3: ', 3);
+        onHover(card.instanceId)
+      }}
+      pointerout={() => {
+        console.log('4: ', 4);
+        onHover(undefined)
+      }}
     >
-      <Graphics
+      <pixiGraphics
         draw={(g) => {
           g.clear();
           const color = disabled ? CARD_COLORS.disabled : selected ? 0xf1c40f : CARD_COLORS.base;
@@ -48,10 +55,10 @@ export function Card({ card, x, y, onClick, onHover, disabled, selected }: CardP
           g.endFill();
         }}
       />
-      <Text text={card.card.name} x={8} y={16} style={{ fill: 0xffffff, fontSize: 14, wordWrap: true, wordWrapWidth: CARD_WIDTH - 16 }} />
-      <Text text={costLabel} x={8} y={CARD_HEIGHT - 32} style={{ fill: 0x74b9ff, fontSize: 20 }} />
-      <Text text={statsLabel} x={CARD_WIDTH - 60} y={CARD_HEIGHT - 32} style={{ fill: 0xff6b81, fontSize: 18 }} />
-    </Container>
+      <pixiText text={card.card.name} x={8} y={16} style={{ fill: 0xffffff, fontSize: 14, wordWrap: true, wordWrapWidth: CARD_WIDTH - 16 }} />
+      <pixiText text={costLabel} x={8} y={CARD_HEIGHT - 32} style={{ fill: 0x74b9ff, fontSize: 20 }} />
+      <pixiText text={statsLabel} x={CARD_WIDTH - 60} y={CARD_HEIGHT - 32} style={{ fill: 0xff6b81, fontSize: 18 }} />
+    </pixiContainer>
   );
 }
 
