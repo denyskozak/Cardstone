@@ -7,8 +7,8 @@ import type {
 } from '@cardstone/shared/types';
 import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import type { FederatedPointerEvent } from 'pixi.js';
-import { Container, DisplayObject, Point, Rectangle } from 'pixi.js';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture } from 'pixi.js';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUiStore, type TargetingState } from '../../state/store';
 
 interface BoardProps {
@@ -23,6 +23,67 @@ interface BoardProps {
 
 const MINION_WIDTH = 100;
 const MINION_HEIGHT = 100;
+const MINION_ART_INSET_X = 14;
+const MINION_ART_INSET_Y = 10;
+
+function MinionCardArt({ cardId }: { cardId: string }) {
+  const [texture, setTexture] = useState<Texture>(Texture.EMPTY)
+  const [mask, setMask] = useState<Graphics | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setTexture(Texture.EMPTY)
+    Assets
+      .load(`/assets/cards/${cardId}.jpg`)
+      .then((result) => {
+        if (!cancelled) {
+          setTexture(result)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [cardId])
+
+  const handleMaskRef = useCallback((instance: Graphics | null) => {
+    setMask(instance)
+  }, [])
+
+  const artWidth = MINION_WIDTH - MINION_ART_INSET_X * 2
+  const artHeight = MINION_HEIGHT - MINION_ART_INSET_Y * 2
+  const artX = MINION_ART_INSET_X
+  const artY = MINION_ART_INSET_Y - 4
+
+  return (
+    <>
+      <pixiSprite
+        texture={texture}
+        width={artWidth}
+        height={artHeight + 8}
+        x={artX}
+        y={artY}
+        mask={mask ?? undefined}
+        alpha={texture === Texture.EMPTY ? 0 : 1}
+      />
+      <pixiGraphics
+        ref={handleMaskRef}
+        renderable={false}
+        draw={(g) => {
+          g.clear()
+          g.beginFill(0xffffff, 1)
+          g.drawEllipse(
+            MINION_WIDTH / 2,
+            MINION_HEIGHT / 2,
+            artWidth / 2,
+            (artHeight + 8) / 2
+          )
+          g.endFill()
+        }}
+      />
+    </>
+  )
+}
 
 export default function Board({
   state,
@@ -237,7 +298,27 @@ export default function Board({
               draw={(g) => {
                 g.clear();
                 g.beginFill(fillColor, isFriendly && !canAttackThisMinion ? 0.6 : 0.85);
-                g.drawRoundedRect(0, 0, MINION_WIDTH, MINION_HEIGHT, 12);
+                g.drawEllipse(
+                  MINION_WIDTH / 2,
+                  MINION_HEIGHT / 2,
+                  MINION_WIDTH / 2,
+                  MINION_HEIGHT / 2
+                );
+                g.endFill();
+              }}
+            />
+            <MinionCardArt cardId={entity.card.id} />
+            <pixiGraphics
+              draw={(g) => {
+                g.clear();
+                g.beginFill(0x000000, 0.35);
+                g.drawRoundedRect(
+                  MINION_WIDTH * 0.12,
+                  MINION_HEIGHT * 0.62,
+                  MINION_WIDTH * 0.76,
+                  MINION_HEIGHT * 0.22,
+                  12
+                );
                 g.endFill();
               }}
             />
