@@ -29,6 +29,7 @@ export default function StageRoot({
   const { app } = useApplication();
   useEffect(() => {
     const { stage, renderer } = app;
+    if (!stage || !renderer) return;
     const previousEventMode = stage.eventMode;
     const previousHitArea = stage.hitArea;
     stage.eventMode = 'static';

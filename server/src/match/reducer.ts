@@ -8,7 +8,7 @@ import {
 } from '@cardstone/shared/types';
 import { getCardDefinition } from '@cardstone/shared/cards/demo';
 import { CARD_IDS, DRAW_PER_TURN, MATCH_CONFIG } from '@cardstone/shared/constants';
-import { getTargetingPredicate } from '@cardstone/shared/targeting.js';
+import { getTargetingPredicate } from '@cardstone/shared/targeting';
 
 export function gainMana(state: GameState, side: PlayerSide): void {
   const player = state.players[side];

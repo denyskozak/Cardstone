@@ -60,6 +60,7 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
 
   const handleDragMove = useCallback(
     (card: CardInHand, event: FederatedPointerEvent) => {
+      console.log('handleDragMove event:  ', event.global);
       setDragging((prev) => {
         if (!prev || prev.card.instanceId !== card.instanceId || prev.pointerId !== event.pointerId) {
           return prev;
@@ -131,11 +132,14 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
       event: FederatedPointerEvent,
       startPosition: { x: number; y: number }
     ) => {
+      console.log('dragging: ', dragging);
       if (dragging) {
         return;
       }
       playedFromDragRef.current = undefined;
+      console.log('isTargetedSpell(card): ', isTargetedSpell(card));
       if (isTargetedSpell(card)) {
+        console.log('targeting: ', targeting);
         if (targeting) {
           return;
         }
@@ -149,6 +153,7 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
         }
         setSelected(card.instanceId);
         setCurrentTarget(null);
+        console.log('event.global: ', { x: event.global.x, y: event.global.y });
         setTargeting({
           source: { kind: 'spell', card },
           pointerId: event.pointerId,

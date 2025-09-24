@@ -1,5 +1,5 @@
 import type { GameState, PlayerSide, SpellCard, TargetDescriptor } from '@cardstone/shared/types.js';
-import { getTargetingPredicate } from '@cardstone/shared/targeting.js';
+import { getTargetingPredicate } from '@cardstone/shared/targeting';
 
 export class ValidationError extends Error {
   constructor(message: string) {
