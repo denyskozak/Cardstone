@@ -1,0 +1,22 @@
+{
+  "name": "@cardstone/shared",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./types": "./dist/types.js",
+    "./constants": "./dist/constants.js",
+    "./cards/*": "./dist/cards/*.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint \"**/*.ts\" --max-warnings=0",
+    "test": "vitest --run"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
+}
