@@ -1,6 +1,6 @@
 import type { CardInHand } from '@cardstone/shared/types';
 import { Assets, Texture, type FederatedPointerEvent } from 'pixi.js';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 
 const CARD_WIDTH = 120;
@@ -36,9 +36,11 @@ export function Card({
   scale = 1,
   zIndex = 0
 }: CardProps) {
-  console.log('card: ', card);
   const [texture, setTexture] = useState(Texture.EMPTY)
   const [innerTexture, setInnerTexture] = useState(Texture.EMPTY)
+  const [isHovered, setIsHovered] = useState(false)
+  const [animatedScale, setAnimatedScale] = useState(1)
+  const animationFrameRef = useRef<number | null>(null)
   // Preload the sprite if it hasn't been loaded yet
   useEffect(() => {
     if (texture === Texture.EMPTY) {
@@ -48,20 +50,53 @@ export function Card({
           setTexture(result)
         });
     }
-    if (innerTexture === Texture.EMPTY) {
-      Assets
-        .load(`/assets/cards/${card.card.id}.jpg`)
-        .then((result) => {
-          setInnerTexture(result)
-        });
-    }
   }, [texture]);
+
+  useEffect(() => {
+    let cancelled = false
+    setInnerTexture(Texture.EMPTY)
+    Assets
+      .load(`/assets/cards/${card.card.id}.jpg`)
+      .then((result) => {
+        if (!cancelled) {
+          setInnerTexture(result)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [card.card.id]);
+
+  useEffect(() => {
+    const targetScale = isHovered ? 1.5 : 1
+
+    const animate = () => {
+      setAnimatedScale((current) => {
+        const diff = targetScale - current
+        if (Math.abs(diff) <= 0.01) {
+          animationFrameRef.current = null
+          return targetScale
+        }
+        animationFrameRef.current = requestAnimationFrame(animate)
+        return current + diff * 0.2
+      })
+    }
+
+    animationFrameRef.current = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
+      }
+    }
+  }, [isHovered])
 
   return (
     <pixiContainer
       x={x}
       y={y}
-      scale={scale}
+      scale={scale * (selected ? 1.05 : 1) * animatedScale}
       eventMode={disabled ? 'none' : 'static'}
       interactive={!disabled}
       zIndex={zIndex}
@@ -71,9 +106,11 @@ export function Card({
         }
       }}
       onPointerOver={() => {
+        setIsHovered(true);
         onHover(card.instanceId);
       }}
       onPointerOut={() => {
+        setIsHovered(false);
         onHover(undefined);
       }}
       onPointerDown={(event) => {
