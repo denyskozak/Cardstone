@@ -1,8 +1,7 @@
 import type { CardInHand } from '@cardstone/shared/types';
-import { useApplication } from '@pixi/react';
 import type { FederatedPointerEvent } from 'pixi.js';
 import { DisplayObject } from 'pixi.js';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Card, CARD_SIZE } from '../Card';
 import { useUiStore } from '../../state/store';
 
@@ -25,7 +24,6 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
   const setTargeting = useUiStore((s) => s.setTargeting);
   const setCurrentTarget = useUiStore((s) => s.setCurrentTarget);
   const targeting = useUiStore((s) => s.targeting);
-  const { app } = useApplication();
   const playedFromDragRef = useRef<string | undefined>(undefined);
 
   interface DragState {
@@ -58,42 +56,43 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
     };
   }, [height]);
 
-  useEffect(() => {
-    if (!dragging) {
-      return undefined;
-    }
+  const updateTargeting = useUiStore((s) => s.updateTargeting);
 
-    const handlePointerMove = (event: FederatedPointerEvent) => {
-      if (event.pointerId !== dragging.pointerId) {
-        return;
+  const handleDragMove = useCallback(
+    (card: CardInHand, event: FederatedPointerEvent) => {
+      setDragging((prev) => {
+        if (!prev || prev.card.instanceId !== card.instanceId || prev.pointerId !== event.pointerId) {
+          return prev;
+        }
+        const nextX = event.global.x - prev.offsetX;
+        const nextY = event.global.y - prev.offsetY;
+        return {
+          ...prev,
+          x: nextX,
+          y: nextY,
+          hasMoved: prev.hasMoved || Math.hypot(nextX - prev.startX, nextY - prev.startY) > 4
+        };
+      });
+
+      if (targeting?.pointerId === event.pointerId) {
+        updateTargeting({ x: event.global.x, y: event.global.y });
       }
-      const { offsetX, offsetY } = dragging;
-      const nextX = event.global.x - offsetX;
-      const nextY = event.global.y - offsetY;
+    },
+    [targeting?.pointerId, updateTargeting]
+  );
 
-      setDragging((prev) =>
-        prev
-          ? {
-              ...prev,
-              x: nextX,
-              y: nextY,
-              hasMoved: prev.hasMoved || Math.hypot(nextX - prev.startX, nextY - prev.startY) > 4
-            }
-          : prev
-      );
-    };
-
-    const finishDrag = (event: FederatedPointerEvent) => {
-      if (event.pointerId !== dragging.pointerId) {
-        return;
+  const handleDragEnd = useCallback(
+    (card: CardInHand, event: FederatedPointerEvent) => {
+      if (targeting?.pointerId === event.pointerId) {
+        updateTargeting({ x: event.global.x, y: event.global.y });
       }
 
       setDragging((current) => {
-        if (!current) {
-          return undefined;
+        if (!current || current.card.instanceId !== card.instanceId || current.pointerId !== event.pointerId) {
+          return current;
         }
 
-        const { card, hasMoved, y: cardY } = current;
+        const { hasMoved, y: cardY } = current;
         const cardTop = cardY;
         const cardBottom = cardY + CARD_SIZE.height;
         const intersectsDropZone = cardBottom >= dropZone.top && cardTop <= dropZone.bottom;
@@ -108,20 +107,9 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
 
         return undefined;
       });
-    };
-
-    app.stage.on('globalpointermove', handlePointerMove);
-    app.stage.on('pointerup', finishDrag);
-    app.stage.on('pointerupoutside', finishDrag);
-    app.stage.on('pointercancel', finishDrag);
-
-    return () => {
-      app.stage.off('globalpointermove', handlePointerMove);
-      app.stage.off('pointerup', finishDrag);
-      app.stage.off('pointerupoutside', finishDrag);
-      app.stage.off('pointercancel', finishDrag);
-    };
-  }, [app, canPlay, dropZone, dragging, onPlay, setSelected]);
+    },
+    [canPlay, dropZone.bottom, dropZone.top, onPlay, setSelected, targeting?.pointerId, updateTargeting]
+  );
 
   const handleCardClick = useCallback(
     (card: CardInHand) => {
@@ -190,47 +178,32 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
   const cardsInHand = hand.map((card, index) => {
     const x = startX + index * spacing;
     const disabled = !canPlay(card);
-    if (dragging && dragging.card.instanceId === card.instanceId) {
-      return null;
-    }
+    const isDraggingThisCard = dragging?.card.instanceId === card.instanceId;
+    const dragPositionX = isDraggingThisCard ? dragging.x : x;
+    const dragPositionY = isDraggingThisCard ? dragging.y : y;
+    const isDraggingOverDropZone =
+      isDraggingThisCard && dragging
+        ? dragging.y + CARD_SIZE.height >= dropZone.top && dragging.y <= dropZone.bottom
+        : false;
 
     return (
       <Card
         key={card.instanceId}
         card={card}
-        x={x}
-        y={y}
+        x={dragPositionX}
+        y={dragPositionY}
         disabled={disabled}
         selected={selected === card.instanceId}
         onHover={setHovered}
         onClick={handleCardClick}
         onDragStart={(c, e) => handleDragStart(c, e, { x, y })}
+        onDragMove={handleDragMove}
+        onDragEnd={handleDragEnd}
+        scale={isDraggingThisCard ? (isDraggingOverDropZone ? 0.94 : 1) : 1}
+        zIndex={isDraggingThisCard ? 100 : index}
       />
     );
   });
 
-  const isDraggingOverDropZone = dragging
-    ? dragging.y + CARD_SIZE.height >= dropZone.top && dragging.y <= dropZone.bottom
-    : false;
-
-  const draggingCard = dragging ? (
-    <Card
-      key={`${dragging.card.instanceId}-dragging`}
-      card={dragging.card}
-      x={dragging.x}
-      y={dragging.y}
-      disabled={!canPlay(dragging.card)}
-      selected={selected === dragging.card.instanceId}
-      onHover={setHovered}
-      onClick={handleCardClick}
-      scale={isDraggingOverDropZone ? 0.94 : 1}
-    />
-  ) : null;
-
-  return (
-    <pixiContainer>
-      {cardsInHand}
-      {draggingCard}
-    </pixiContainer>
-  );
+  return <pixiContainer sortableChildren>{cardsInHand}</pixiContainer>;
 }

@@ -21,7 +21,9 @@ interface CardProps {
   selected?: boolean;
   onDragStart?: (card: CardInHand, event: FederatedPointerEvent) => void;
   onDragEnd?: (card: CardInHand, event: FederatedPointerEvent) => void;
+  onDragMove?: (card: CardInHand, event: FederatedPointerEvent) => void;
   scale?: number;
+  zIndex?: number;
 }
 
 export function Card({
@@ -34,7 +36,9 @@ export function Card({
   selected,
   onDragStart,
   onDragEnd,
-  scale = 1
+  onDragMove,
+  scale = 1,
+  zIndex = 0
 }: CardProps) {
   const costLabel = useMemo(() => `${card.card.cost}`, [card.card.cost]);
   const statsLabel =
@@ -44,7 +48,9 @@ export function Card({
       x={x}
       y={y}
       scale={scale}
+      eventMode={disabled ? 'none' : 'static'}
       interactive={!disabled}
+      zIndex={zIndex}
       onPointerTap={() => {
         if (!disabled) {
           onClick(card);
@@ -59,6 +65,11 @@ export function Card({
       onPointerDown={(event) => {
         if (!disabled) {
           onDragStart?.(card, event);
+        }
+      }}
+      onPointerMove={(event) => {
+        if (!disabled) {
+          onDragMove?.(card, event);
         }
       }}
       onPointerUp={(event) => {
