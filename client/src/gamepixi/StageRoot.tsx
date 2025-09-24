@@ -9,7 +9,7 @@ import { useEffect } from 'react';
 interface StageRootProps {
   state: GameState | null;
   playerSide: PlayerSide | null;
-  onPlayCard: (card: CardInHand) => void;
+  onPlayCard: (card: CardInHand, target?: TargetDescriptor) => void;
   canPlayCard: (card: CardInHand) => boolean;
   onAttack: (attackerId: string, target: TargetDescriptor) => void;
   canAttack: (minion: MinionEntity) => boolean;
@@ -63,11 +63,12 @@ export default function StageRoot({
           height={HEIGHT}
           onAttack={onAttack}
           canAttack={canAttack}
+          onCastSpell={(card, target) => onPlayCard(card, target)}
         />
         <HandLayer
           hand={player.hand}
           canPlay={canPlayCard}
-          onPlay={onPlayCard}
+          onPlay={(card) => onPlayCard(card)}
           width={WIDTH}
           height={HEIGHT}
         />

@@ -1,9 +1,14 @@
 import type { CardInHand } from '@cardstone/shared/types';
 import { useApplication } from '@pixi/react';
 import type { FederatedPointerEvent } from 'pixi.js';
+import { DisplayObject } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CARD_SIZE } from '../Card';
 import { useUiStore } from '../../state/store';
+
+function isTargetedSpell(card: CardInHand): boolean {
+  return card.card.type === 'Spell' && (card.card.effect === 'Firebolt' || card.card.effect === 'Heal');
+}
 
 interface HandProps {
   hand: CardInHand[];
@@ -17,6 +22,9 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
   const setHovered = useUiStore((s) => s.setHovered);
   const selected = useUiStore((s) => s.selectedCard);
   const setSelected = useUiStore((s) => s.setSelected);
+  const setTargeting = useUiStore((s) => s.setTargeting);
+  const setCurrentTarget = useUiStore((s) => s.setCurrentTarget);
+  const targeting = useUiStore((s) => s.targeting);
   const { app } = useApplication();
   const playedFromDragRef = useRef<string | undefined>(undefined);
 
@@ -138,6 +146,30 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
         return;
       }
       playedFromDragRef.current = undefined;
+      if (isTargetedSpell(card)) {
+        if (targeting) {
+          return;
+        }
+        const display = event.currentTarget as DisplayObject | null;
+        let originX = event.global.x;
+        let originY = event.global.y;
+        if (display) {
+          const bounds = display.getBounds();
+          originX = bounds.x + bounds.width / 2;
+          originY = bounds.y + bounds.height / 2;
+        }
+        setSelected(card.instanceId);
+        setCurrentTarget(null);
+        setTargeting({
+          source: { kind: 'spell', card },
+          pointerId: event.pointerId,
+          origin: { x: originX, y: originY },
+          current: { x: event.global.x, y: event.global.y }
+        });
+        event.stopPropagation();
+        return;
+      }
+
       setSelected(card.instanceId);
       setDragging({
         card,
@@ -151,7 +183,7 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
         hasMoved: false
       });
     },
-    [dragging, setSelected]
+    [dragging, setCurrentTarget, setSelected, setTargeting, targeting]
   );
 
   const cardsInHand = hand.map((card, index) => {
