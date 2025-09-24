@@ -4,6 +4,7 @@ import Board from './layers/Board';
 import HandLayer from './layers/Hand';
 import Effects from './layers/Effects';
 import { useApplication } from '@pixi/react';
+import { useEffect } from 'react';
 
 interface StageRootProps {
   state: GameState | null;
@@ -26,6 +27,17 @@ export default function StageRoot({
   canAttack
 }: StageRootProps) {
   const { app } = useApplication();
+  useEffect(() => {
+    const { stage, renderer } = app;
+    const previousEventMode = stage.eventMode;
+    const previousHitArea = stage.hitArea;
+    stage.eventMode = 'static';
+    stage.hitArea = renderer.screen;
+    return () => {
+      stage.eventMode = previousEventMode;
+      stage.hitArea = previousHitArea;
+    };
+  }, [app]);
   window.__PIXI_DEVTOOLS__ = {
     app: app,
   };
