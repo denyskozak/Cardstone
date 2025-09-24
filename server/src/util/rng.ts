@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import seedrandom from 'seedrandom';
 
-export type RNG = seedrandom.prng;
+export type RNG = ReturnType<typeof seedrandom>;
 
 export function createSeed(): string {
   return randomBytes(16).toString('hex');

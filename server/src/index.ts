@@ -28,7 +28,6 @@ const matchConnections = new Map<string, Set<ConnectionContext>>();
 function attachToMatch(context: ConnectionContext, match: Match, side: PlayerSide): void {
   context.match = match;
   context.side = side;
-  const state = match.getState();
   if (!matchConnections.has(match.id)) {
     matchConnections.set(match.id, new Set());
   }
@@ -225,7 +224,24 @@ async function handleClientMessage(
       break;
     }
     case 'Attack': {
-      sendToast(context, 'Attacks are not implemented in this demo');
+      if (!context.match || !context.playerId || !context.side) {
+        sendToast(context, 'Join a match first');
+        return;
+      }
+      const result = context.match.handleAttack(
+        context.playerId,
+        message.seq!,
+        message.nonce!,
+        message.payload.attackerId,
+        message.payload.target
+      );
+      sendMessage(context, { t: 'ActionResult', seq: message.seq, payload: result });
+      if (result.stateChanged) {
+        sendStateSync(context.match);
+      }
+      if (!result.ok && result.error) {
+        sendToast(context, result.error);
+      }
       break;
     }
     case 'Emote': {

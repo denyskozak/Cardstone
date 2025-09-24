@@ -7,8 +7,11 @@
   "exports": {
     ".": "./dist/index.js",
     "./types": "./dist/types.js",
+    "./types.js": "./dist/types.js",
     "./constants": "./dist/constants.js",
-    "./cards/*": "./dist/cards/*.js"
+    "./constants.js": "./dist/constants.js",
+    "./cards/*": "./dist/cards/*.js",
+    "./cards/*.js": "./dist/cards/*.js"
   },
   "files": ["dist"],
   "scripts": {
