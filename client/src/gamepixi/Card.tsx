@@ -1,6 +1,6 @@
 import type { CardInHand } from '@cardstone/shared/types';
 import { Assets, Texture, type FederatedPointerEvent } from 'pixi.js';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 
 const CARD_WIDTH = 140;
@@ -11,6 +11,7 @@ interface CardProps {
   card: CardInHand;
   x: number;
   y: number;
+  rotation?: number;
   onClick: (card: CardInHand) => void;
   onHover: (id?: string) => void;
   disabled?: boolean;
@@ -26,6 +27,7 @@ export function Card({
   card,
   x,
   y,
+  rotation = 0,
   onClick,
   onHover,
   disabled,
@@ -38,11 +40,7 @@ export function Card({
 }: CardProps) {
   const [texture, setTexture] = useState(Texture.EMPTY)
   const [innerTexture, setInnerTexture] = useState(Texture.EMPTY)
-  const [isHovered, setIsHovered] = useState(false)
-  const [animatedScale, setAnimatedScale] = useState(1)
-  const [animatedYOffset, setAnimatedYOffset] = useState(0)
-  const animationFrameRef = useRef<number | null>(null)
-  const baseScale = scale * (selected ? 1.05 : 1)
+  const combinedScale = scale * (selected ? 1.05 : 1)
   // Preload the sprite if it hasn't been loaded yet
   useEffect(() => {
     if (texture === Texture.EMPTY) {
@@ -69,60 +67,15 @@ export function Card({
     }
   }, [card.card.id]);
 
-  useEffect(() => {
-    const targetScale = isHovered ? 2 : 1
-    const targetYOffset = isHovered ? -CARD_HEIGHT * baseScale * 0.1 : 0
-
-    const animate = () => {
-      let shouldContinue = false
-
-      setAnimatedScale((current) => {
-        const diff = targetScale - current
-        if (Math.abs(diff) <= 0.01) {
-          return targetScale
-        }
-        shouldContinue = true
-        return current + diff * 0.1
-      })
-
-      setAnimatedYOffset((current) => {
-        const diff = targetYOffset - current
-        if (Math.abs(diff) <= 0.5) {
-          return targetYOffset
-        }
-        shouldContinue = true
-        return current + diff * 0.1
-      })
-
-      if (shouldContinue) {
-        animationFrameRef.current = requestAnimationFrame(animate)
-      } else {
-        animationFrameRef.current = null
-      }
-    }
-
-    animationFrameRef.current = requestAnimationFrame(animate)
-
-    return () => {
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current)
-        animationFrameRef.current = null
-      }
-    }
-  }, [isHovered, baseScale])
-
-  const hoverScale = animatedScale
-  const totalScale = baseScale * hoverScale
-  const hoverOffsetX = CARD_WIDTH * baseScale * (hoverScale - 1) * 0.5
-  const hoverOffsetY = CARD_HEIGHT * baseScale * (hoverScale - 1) * 0.5
-
   return (
     <pixiContainer
-      x={x - hoverOffsetX}
-      y={y - hoverOffsetY + animatedYOffset}
-      scale={totalScale}
+      x={x}
+      y={y}
+      scale={combinedScale}
+      rotation={rotation}
+      pivot={{ x: CARD_WIDTH / 2, y: CARD_HEIGHT }}
       eventMode="static"
-      interactive
+      cursor={disabled ? 'not-allowed' : 'pointer'}
       zIndex={zIndex}
       onPointerTap={() => {
         if (!disabled) {
@@ -130,11 +83,9 @@ export function Card({
         }
       }}
       onPointerOver={() => {
-        setIsHovered(true);
         onHover(card.instanceId);
       }}
       onPointerOut={() => {
-        setIsHovered(false);
         onHover(undefined);
       }}
       onPointerDown={(event) => {
