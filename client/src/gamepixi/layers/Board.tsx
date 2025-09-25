@@ -68,7 +68,6 @@ function MinionCardArt({ cardId }: { cardId: string }) {
       />
       <pixiGraphics
         ref={handleMaskRef}
-        renderable={false}
         draw={(g) => {
           g.clear()
           g.beginFill(0xffffff, 1)
