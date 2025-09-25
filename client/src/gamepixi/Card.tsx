@@ -121,8 +121,8 @@ export function Card({
       x={x - hoverOffsetX}
       y={y - hoverOffsetY + animatedYOffset}
       scale={totalScale}
-      eventMode={disabled ? 'none' : 'static'}
-      interactive={!disabled}
+      eventMode="static"
+      interactive
       zIndex={zIndex}
       onPointerTap={() => {
         if (!disabled) {
