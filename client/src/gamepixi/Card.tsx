@@ -3,8 +3,8 @@ import { Assets, Texture, type FederatedPointerEvent } from 'pixi.js';
 import { useEffect, useRef, useState } from 'react';
 
 
-const CARD_WIDTH = 120;
-const CARD_HEIGHT = 160;
+const CARD_WIDTH = 140;
+const CARD_HEIGHT = 200;
 
 
 interface CardProps {
@@ -58,7 +58,7 @@ export function Card({
     let cancelled = false
     setInnerTexture(Texture.EMPTY)
     Assets
-      .load(`/assets/cards/${card.card.id}.jpg`)
+      .load(`/assets/cards/${card.card.id}.png`)
       .then((result) => {
         if (!cancelled) {
           setInnerTexture(result)
@@ -70,7 +70,7 @@ export function Card({
   }, [card.card.id]);
 
   useEffect(() => {
-    const targetScale = isHovered ? 1.5 : 1
+    const targetScale = isHovered ? 2 : 1
     const targetYOffset = isHovered ? -CARD_HEIGHT * baseScale * 0.1 : 0
 
     const animate = () => {
@@ -82,7 +82,7 @@ export function Card({
           return targetScale
         }
         shouldContinue = true
-        return current + diff * 0.2
+        return current + diff * 0.1
       })
 
       setAnimatedYOffset((current) => {
@@ -91,7 +91,7 @@ export function Card({
           return targetYOffset
         }
         shouldContinue = true
-        return current + diff * 0.2
+        return current + diff * 0.1
       })
 
       if (shouldContinue) {
