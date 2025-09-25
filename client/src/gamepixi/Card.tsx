@@ -40,7 +40,9 @@ export function Card({
   const [innerTexture, setInnerTexture] = useState(Texture.EMPTY)
   const [isHovered, setIsHovered] = useState(false)
   const [animatedScale, setAnimatedScale] = useState(1)
+  const [animatedYOffset, setAnimatedYOffset] = useState(0)
   const animationFrameRef = useRef<number | null>(null)
+  const baseScale = scale * (selected ? 1.05 : 1)
   // Preload the sprite if it hasn't been loaded yet
   useEffect(() => {
     if (texture === Texture.EMPTY) {
@@ -69,17 +71,34 @@ export function Card({
 
   useEffect(() => {
     const targetScale = isHovered ? 1.5 : 1
+    const targetYOffset = isHovered ? -CARD_HEIGHT * baseScale * 0.1 : 0
 
     const animate = () => {
+      let shouldContinue = false
+
       setAnimatedScale((current) => {
         const diff = targetScale - current
         if (Math.abs(diff) <= 0.01) {
-          animationFrameRef.current = null
           return targetScale
         }
-        animationFrameRef.current = requestAnimationFrame(animate)
+        shouldContinue = true
         return current + diff * 0.2
       })
+
+      setAnimatedYOffset((current) => {
+        const diff = targetYOffset - current
+        if (Math.abs(diff) <= 0.5) {
+          return targetYOffset
+        }
+        shouldContinue = true
+        return current + diff * 0.2
+      })
+
+      if (shouldContinue) {
+        animationFrameRef.current = requestAnimationFrame(animate)
+      } else {
+        animationFrameRef.current = null
+      }
     }
 
     animationFrameRef.current = requestAnimationFrame(animate)
@@ -90,13 +109,18 @@ export function Card({
         animationFrameRef.current = null
       }
     }
-  }, [isHovered])
+  }, [isHovered, baseScale])
+
+  const hoverScale = animatedScale
+  const totalScale = baseScale * hoverScale
+  const hoverOffsetX = CARD_WIDTH * baseScale * (hoverScale - 1) * 0.5
+  const hoverOffsetY = CARD_HEIGHT * baseScale * (hoverScale - 1) * 0.5
 
   return (
     <pixiContainer
-      x={x}
-      y={y}
-      scale={scale * (selected ? 1.05 : 1) * animatedScale}
+      x={x - hoverOffsetX}
+      y={y - hoverOffsetY + animatedYOffset}
+      scale={totalScale}
       eventMode={disabled ? 'none' : 'static'}
       interactive={!disabled}
       zIndex={zIndex}
