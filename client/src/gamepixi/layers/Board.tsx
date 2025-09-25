@@ -22,7 +22,7 @@ interface BoardProps {
 }
 
 const MINION_WIDTH = 100;
-const MINION_HEIGHT = 100;
+const MINION_HEIGHT = 120;
 const MINION_ART_INSET_X = 14;
 const MINION_ART_INSET_Y = 10;
 
@@ -34,7 +34,7 @@ function MinionCardArt({ cardId }: { cardId: string }) {
     let cancelled = false
     setTexture(Texture.EMPTY)
     Assets
-      .load(`/assets/cards/${cardId}.jpg`)
+      .load(`/assets/cards/${cardId}.png`)
       .then((result) => {
         if (!cancelled) {
           setTexture(result)
