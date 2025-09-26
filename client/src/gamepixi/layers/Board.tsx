@@ -239,9 +239,9 @@ export default function Board({
     [setCurrentTarget, targetingPredicate]
   );
 
-  const boardTopY = height * 0.2;
-  const boardBottomY = height * 0.55;
-  const laneWidth = width - 200;
+  const boardTopY = height * 0.26;
+  const boardBottomY = height * 0.50;
+  const laneWidth = width - 500;
   const laneX = (width - laneWidth) / 2;
 
   const opponentSide: PlayerSide = playerSide === 'A' ? 'B' : 'A';
@@ -323,20 +323,20 @@ export default function Board({
               }}
             />
             <MinionCardArt cardId={entity.card.id} />
-            <pixiGraphics
-              draw={(g) => {
-                g.clear();
-                g.beginFill(0x000000, 0.35);
-                g.drawRoundedRect(
-                  MINION_WIDTH * 0.12,
-                  MINION_HEIGHT * 0.62,
-                  MINION_WIDTH * 0.76,
-                  MINION_HEIGHT * 0.22,
-                  12
-                );
-                g.endFill();
-              }}
-            />
+            {/*<pixiGraphics*/}
+            {/*  draw={(g) => {*/}
+            {/*    g.clear();*/}
+            {/*    g.beginFill(0x000000, 0.35);*/}
+            {/*    g.drawRoundedRect(*/}
+            {/*      MINION_WIDTH * 0.12,*/}
+            {/*      MINION_HEIGHT * 0.62,*/}
+            {/*      MINION_WIDTH * 0.76,*/}
+            {/*      MINION_HEIGHT * 0.22,*/}
+            {/*      12*/}
+            {/*    );*/}
+            {/*    g.endFill();*/}
+            {/*  }}*/}
+            {/*/>*/}
             {/*<pixiText*/}
             {/*  text={entity.card.name}*/}
             {/*  x={8}*/}
@@ -351,18 +351,10 @@ export default function Board({
             />
             <pixiText
               text={`${entity.health}`}
-              x={MINION_WIDTH - 36}
-              y={MINION_HEIGHT - 28}
-              style={{ fill: 0xff6b6b, fontSize: 18 }}
+              x={MINION_WIDTH * 0.8}
+              y={MINION_HEIGHT * 0.7}
+              style={{ fill: 0xFFFFFF, fontSize: 24, fontWeight: 'bold' }}
             />
-            {isFriendly ? (
-              <pixiText
-                text={`⚔ ${entity.attacksRemaining}`}
-                x={MINION_WIDTH / 2 - 18}
-                y={MINION_HEIGHT - 52}
-                style={{ fill: 0xffffff, fontSize: 14 }}
-              />
-            ) : null}
           </pixiContainer>
         );
       });

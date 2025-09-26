@@ -5,16 +5,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CARD_SIZE } from '../Card';
 import { useUiStore } from '../../state/store';
 
-const MAX_FAN_DEG = 70;
+const MAX_FAN_DEG = 50;
 const FAN_MIX_WEIGHT = 0.72;
 const CARD_OVERLAP = 0.32;
 const MIN_RADIUS = CARD_SIZE.height * 2.6;
-const HAND_MARGIN_BOTTOM = 32;
+const HAND_MARGIN_BOTTOM = 20;
 const HOVER_LIFT = 42;
 const HOVER_SCALE = 1.1;
 const HOVER_Z_INDEX = 9999;
 const DRAG_Z_INDEX = HOVER_Z_INDEX + 1;
-const HOVER_SPEED = 0.24;
+const HOVER_SPEED = 0.5;
 const RETURN_SPEED = 0.18;
 const EPSILON = 0.0001;
 
