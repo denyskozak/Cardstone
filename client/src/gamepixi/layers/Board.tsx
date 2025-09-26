@@ -106,15 +106,6 @@ export default function Board({
     targetRef.current = currentTarget;
   }, [currentTarget]);
 
-  const toLocal = useCallback((point: Point) => {
-    const container = boardRef.current;
-    if (!container) {
-      return { x: point.x, y: point.y };
-    }
-    const local = container.toLocal(point);
-    return { x: local.x, y: local.y };
-  }, []);
-
   const handlePointerMove = useCallback(
     (event: FederatedPointerEvent) => {
       if (!targeting || event.pointerId !== targeting.pointerId) {
@@ -369,24 +360,6 @@ export default function Board({
     [currentTarget, playerSide]
   );
 
-  const attackIndicator = targeting ? (
-    <pixiGraphics
-      key="attack-indicator"
-      eventMode="none"
-      draw={(g) => {
-        g.clear();
-        g.lineStyle(4, 0xffeaa7, 0.95);
-        const originLocal = toLocal(new Point(targeting.origin.x, targeting.origin.y));
-        const currentLocal = toLocal(new Point(targeting.current.x, targeting.current.y));
-        g.moveTo(originLocal.x, originLocal.y);
-        g.lineTo(currentLocal.x, currentLocal.y);
-        g.beginFill(0xff7675, 0.9);
-        g.drawCircle(currentLocal.x, currentLocal.y, 8);
-        g.endFill();
-      }}
-    />
-  ) : null;
-
   return (
     <pixiContainer
       ref={boardRef}
@@ -459,7 +432,6 @@ export default function Board({
       </pixiContainer>
       {renderRow(opponentSide, boardTopY)}
       {renderRow(playerSide, boardBottomY)}
-      {attackIndicator}
     </pixiContainer>
   );
 }
