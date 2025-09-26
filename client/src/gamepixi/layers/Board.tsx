@@ -21,44 +21,51 @@ interface BoardProps {
   onCastSpell: (card: CardInHand, target: TargetDescriptor) => void;
 }
 
-const MINION_WIDTH = 100;
-const MINION_HEIGHT = 120;
-const MINION_ART_INSET_X = 14;
-const MINION_ART_INSET_Y = 10;
+const MINION_WIDTH = 120;
+const MINION_HEIGHT = 140;
+const MINION_ART_INSET_X = 2;
+const MINION_ART_INSET_Y = 6;
 
 function MinionCardArt({ cardId }: { cardId: string }) {
-  const [texture, setTexture] = useState<Texture>(Texture.EMPTY)
-  const [mask, setMask] = useState<Graphics | null>(null)
+  const [innerTexture, setInnerTexture] = useState<Texture>(Texture.EMPTY);
+  const [texture, setTexture] = useState(Texture.EMPTY);
+
+  const [mask, setMask] = useState<Graphics | null>(null);
 
   useEffect(() => {
-    let cancelled = false
-    setTexture(Texture.EMPTY)
-    Assets
-      .load(`/assets/cards/${cardId}.png`)
-      .then((result) => {
+    let cancelled = false;
+    if (innerTexture === Texture.EMPTY) {
+      Assets.load(`/assets/cards/${cardId}.png`).then((result) => {
         if (!cancelled) {
-          setTexture(result)
+          setInnerTexture(result);
         }
-      })
+      });
+    }
+
+    if (texture === Texture.EMPTY) {
+      Assets.load('/assets/board_minion_template.webp').then((result) => {
+        setTexture(result);
+      });
+    }
 
     return () => {
-      cancelled = true
-    }
-  }, [cardId])
+      cancelled = true;
+    };
+  }, [cardId]);
 
   const handleMaskRef = useCallback((instance: Graphics | null) => {
-    setMask(instance)
-  }, [])
+    setMask(instance);
+  }, []);
 
-  const artWidth = MINION_WIDTH - MINION_ART_INSET_X * 2
-  const artHeight = MINION_HEIGHT - MINION_ART_INSET_Y * 2
-  const artX = MINION_ART_INSET_X
-  const artY = MINION_ART_INSET_Y - 4
+  const artWidth = MINION_WIDTH - MINION_ART_INSET_X * 2;
+  const artHeight = MINION_HEIGHT - MINION_ART_INSET_Y * 2;
+  const artX = MINION_ART_INSET_X;
+  const artY = MINION_ART_INSET_Y - 4;
 
   return (
     <>
       <pixiSprite
-        texture={texture}
+        texture={innerTexture}
         width={artWidth}
         height={artHeight + 8}
         x={artX}
@@ -66,22 +73,19 @@ function MinionCardArt({ cardId }: { cardId: string }) {
         mask={mask ?? undefined}
         alpha={texture === Texture.EMPTY ? 0 : 1}
       />
+      <pixiSprite x={-(MINION_ART_INSET_X * 4)}
+                  y={0} texture={texture} width={MINION_WIDTH + (MINION_ART_INSET_X * 5)} height={MINION_HEIGHT} />
       <pixiGraphics
         ref={handleMaskRef}
         draw={(g) => {
-          g.clear()
-          g.beginFill(0xffffff, 1)
-          g.drawEllipse(
-            MINION_WIDTH / 2,
-            MINION_HEIGHT / 2,
-            artWidth / 2,
-            (artHeight + 8) / 2
-          )
-          g.endFill()
+          g.clear();
+          g.beginFill(0xffffff, 1);
+          g.drawEllipse(MINION_WIDTH / 2, MINION_HEIGHT / 2, artWidth / 2, (artHeight + 8) / 2);
+          g.endFill();
         }}
       />
     </>
-  )
+  );
 }
 
 export default function Board({
@@ -207,7 +211,12 @@ export default function Board({
         if (prev.type === 'hero' && target.type === 'hero' && prev.side === target.side) {
           return null;
         }
-        if (prev.type === 'minion' && target.type === 'minion' && prev.side === target.side && prev.entityId === target.entityId) {
+        if (
+          prev.type === 'minion' &&
+          target.type === 'minion' &&
+          prev.side === target.side &&
+          prev.entityId === target.entityId
+        ) {
           return null;
         }
         return prev;
@@ -233,11 +242,13 @@ export default function Board({
         const x = laneX + index * (MINION_WIDTH + 20);
         const isFriendly = side === playerSide;
         const canAttackThisMinion = isFriendly && canAttack(entity);
-        const targetDescriptor: TargetDescriptor = { type: 'minion', side, entityId: entity.instanceId };
+        const targetDescriptor: TargetDescriptor = {
+          type: 'minion',
+          side,
+          entityId: entity.instanceId
+        };
 
-        const canBeSpellTarget = targetingPredicate
-          ? targetingPredicate(targetDescriptor)
-          : false;
+        const canBeSpellTarget = targetingPredicate ? targetingPredicate(targetDescriptor) : false;
         const isTargeted =
           currentTarget?.type === 'minion' &&
           currentTarget.side === side &&
@@ -312,12 +323,17 @@ export default function Board({
                 g.endFill();
               }}
             />
-            <pixiText text={entity.card.name} x={8} y={12} style={{ fill: 0xffffff, fontSize: 14 }} />
+            {/*<pixiText*/}
+            {/*  text={entity.card.name}*/}
+            {/*  x={8}*/}
+            {/*  y={12}*/}
+            {/*  style={{ fill: 0xffffff, fontSize: 14 }}*/}
+            {/*/>*/}
             <pixiText
               text={`${entity.attack}`}
-              x={8}
-              y={MINION_HEIGHT - 28}
-              style={{ fill: 0xffd166, fontSize: 18 }}
+              x={MINION_WIDTH * 0.12}
+              y={MINION_HEIGHT * 0.7}
+              style={{ fill: 0xFFFFFF, fontSize: 24, fontWeight: 'bold' }}
             />
             <pixiText
               text={`${entity.health}`}
@@ -381,11 +397,9 @@ export default function Board({
       <pixiContainer
         x={40}
         y={boardTopY - 80}
-        interactive={
-          Boolean(
-            targetingPredicate && targetingPredicate({ type: 'hero', side: opponentSide })
-          )
-        }
+        interactive={Boolean(
+          targetingPredicate && targetingPredicate({ type: 'hero', side: opponentSide })
+        )}
         cursor={
           targetingPredicate && targetingPredicate({ type: 'hero', side: opponentSide })
             ? 'pointer'
@@ -402,16 +416,19 @@ export default function Board({
             g.endFill();
           }}
         />
-        <pixiText text={`HP ${opponentHero.hero.hp}`} x={-36} y={-12} style={{ fill: 0xffffff, fontSize: 18 }} />
+        <pixiText
+          text={`HP ${opponentHero.hero.hp}`}
+          x={-36}
+          y={-12}
+          style={{ fill: 0xffffff, fontSize: 18 }}
+        />
       </pixiContainer>
       <pixiContainer
         x={40}
         y={boardBottomY + MINION_HEIGHT - 20}
-        interactive={
-          Boolean(
-            targetingPredicate && targetingPredicate({ type: 'hero', side: playerSide })
-          )
-        }
+        interactive={Boolean(
+          targetingPredicate && targetingPredicate({ type: 'hero', side: playerSide })
+        )}
         cursor={
           targetingPredicate && targetingPredicate({ type: 'hero', side: playerSide })
             ? 'pointer'
@@ -428,7 +445,12 @@ export default function Board({
             g.endFill();
           }}
         />
-        <pixiText text={`HP ${playerHero.hero.hp}`} x={-36} y={-12} style={{ fill: 0xffffff, fontSize: 18 }} />
+        <pixiText
+          text={`HP ${playerHero.hero.hp}`}
+          x={-36}
+          y={-12}
+          style={{ fill: 0xffffff, fontSize: 18 }}
+        />
       </pixiContainer>
       {renderRow(opponentSide, boardTopY)}
       {renderRow(playerSide, boardBottomY)}

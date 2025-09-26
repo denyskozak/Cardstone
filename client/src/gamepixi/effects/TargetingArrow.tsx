@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUiStore } from '../../state/store';
-import { useApp } from '@pixi/react';
+import { useApplication } from '@pixi/react';
 import type { Graphics } from 'pixi.js';
 
 // Hearthstone's targeting line looks "hand drawn" because it is smooth yet chunky;
@@ -124,7 +124,7 @@ function computeCurve(
 }
 
 function useMiniTicker(callback: (deltaMS: number) => void, enabled = true) {
-  const app = useApp();
+  const { app } = useApplication();
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
 

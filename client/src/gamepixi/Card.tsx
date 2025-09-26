@@ -138,24 +138,24 @@ export function Card({
         y={CARD_HEIGHT * 0.03}
         style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
       />
-      {card.card.effect && (<pixiText
+      {card.card.effect ? (<pixiText
         text={card.card.effect}
         x={CARD_WIDTH * 0.25}
         y={CARD_HEIGHT * 0.7}
         style={{ fill: 0x000000, fontSize: CARD_WIDTH * 0.1, fontWeight: 'bold' }}
-      />)}
-      {card.card.attack && (<pixiText
+      />) : null}
+      {card.card.attack ? (<pixiText
         text={card.card.attack}
         x={12}
         y={CARD_HEIGHT * 0.85}
         style={{ fill: 0xffffff, fontSize: 20, fontWeight: 'bold' }}
-      />)}
-      {card.card?.health && (<pixiText
+      />) : null}
+      {card.card?.health ? (<pixiText
         text={card.card?.health}
         x={CARD_WIDTH * 0.85}
         y={CARD_HEIGHT * 0.85}
         style={{ fill: 0xffffff, fontSize: 20, fontWeight: 'bold' }}
-      />)}
+      />) : null}
     </pixiContainer>
   );
 }
