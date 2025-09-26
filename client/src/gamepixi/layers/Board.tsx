@@ -98,6 +98,7 @@ export default function Board({
   onCastSpell
 }: BoardProps) {
   const boardRef = useRef<Container | null>(null);
+  const [boardTexture, setBoardTexture] = useState<Texture>(Texture.EMPTY);
   const targeting = useUiStore((s) => s.targeting);
   const setTargeting = useUiStore((s) => s.setTargeting);
   const updateTargeting = useUiStore((s) => s.updateTargeting);
@@ -105,6 +106,19 @@ export default function Board({
   const setCurrentTarget = useUiStore((s) => s.setCurrentTarget);
   const setSelected = useUiStore((s) => s.setSelected);
   const targetRef = useRef<TargetDescriptor | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    Assets.load('/assets/board_template.webp').then((result) => {
+      if (!cancelled) {
+        setBoardTexture(result);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     targetRef.current = currentTarget;
@@ -386,6 +400,7 @@ export default function Board({
       onPointerUpOutside={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
+      <pixiSprite texture={boardTexture} width={width} height={height} />
       <pixiGraphics
         draw={(g) => {
           g.clear();
