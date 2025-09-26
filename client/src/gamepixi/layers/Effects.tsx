@@ -1,5 +1,4 @@
 import type { PlayerState } from '@cardstone/shared/types';
-import TargetingOverlay from '../effects/TargetingOverlay';
 
 interface EffectsProps {
   player: PlayerState;
@@ -11,7 +10,6 @@ interface EffectsProps {
 export default function Effects({ player, opponent, width, height }: EffectsProps) {
   return (
     <pixiContainer>
-      <TargetingOverlay width={width} height={height} />
       <pixiText
         text={`Mana ${player.mana.current}/${player.mana.max}`}
         x={width - 220}
