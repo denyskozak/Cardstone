@@ -200,19 +200,21 @@ function usePulse(frequency = 2.4, enabled = true) {
   return value;
 }
 
-function useParticles(initialDirection: Vec2) {
+function useParticles(initialDirection: Vec2, enabled = true) {
   const graphicsRef = useRef<Graphics | null>(null);
-  const particlesRef = useRef<Particle[]>(() => {
-    return new Array(PARTICLE_COUNT).fill(null).map(() => ({
+  const particlesRef = useRef<Particle[] | null>(null);
+  const positionRef = useRef<Vec2>({ x: 0, y: 0 });
+  const directionRef = useRef<Vec2>(normalize(initialDirection));
+
+  if (!particlesRef.current) {
+    particlesRef.current = new Array(PARTICLE_COUNT).fill(null).map(() => ({
       position: { x: 0, y: 0 },
       velocity: { x: 0, y: 0 },
       life: 1,
       ttl: 0,
       size: 2
     }));
-  });
-  const positionRef = useRef<Vec2>({ x: 0, y: 0 });
-  const directionRef = useRef<Vec2>(normalize(initialDirection));
+  }
 
   const respawnParticle = (particle: Particle) => {
     const tip = positionRef.current;
@@ -237,6 +239,9 @@ function useParticles(initialDirection: Vec2) {
       return;
     }
     const particles = particlesRef.current;
+    if (!particles) {
+      return;
+    }
     const dt = Math.min(deltaMS / 1000, 0.05);
     graphics.clear();
     particles.forEach((particle) => {
@@ -253,7 +258,7 @@ function useParticles(initialDirection: Vec2) {
       graphics.drawCircle(particle.position.x, particle.position.y, radius);
       graphics.endFill();
     });
-  });
+  }, enabled);
 
   const setEmitterPosition = useCallback((position: Vec2) => {
     positionRef.current = position;
@@ -276,26 +281,34 @@ export default function TargetingArrow() {
   // Small sinusoidal modulation keeps the curve alive even when the cursor rests.
   const bendPulse = usePulse(1.8, Boolean(targeting));
   const cacheRef = useRef<CurveCache>();
+  const lastCurveRef = useRef<CurveGeometry | null>(null);
+  const hasTarget = Boolean(targeting && smoothedCurrent);
+  const origin = targeting?.origin ?? null;
 
-  if (!targeting || !smoothedCurrent) {
-    return null;
-  }
+  const { positions, tangents, tipPosition, tipDirection } = useMemo(() => {
+    if (!cacheRef.current) {
+      cacheRef.current = {
+        positions: new Float32Array(SAMPLE_COUNT * 2),
+        tangents: new Float32Array(SAMPLE_COUNT * 2)
+      };
+    }
+    const cache = cacheRef.current;
+    if (hasTarget && origin && smoothedCurrent) {
+      const curve = computeCurve(cache, origin, smoothedCurrent, bendPulse * 0.12);
+      lastCurveRef.current = curve;
+      return curve;
+    }
+    return (
+      lastCurveRef.current ?? {
+        positions: cache.positions,
+        tangents: cache.tangents,
+        tipPosition: { x: 0, y: 0 },
+        tipDirection: { x: 1, y: 0 }
+      }
+    );
+  }, [bendPulse, hasTarget, origin?.x, origin?.y, smoothedCurrent?.x, smoothedCurrent?.y]);
 
-  if (!cacheRef.current) {
-    cacheRef.current = {
-      positions: new Float32Array(SAMPLE_COUNT * 2),
-      tangents: new Float32Array(SAMPLE_COUNT * 2)
-    };
-  }
-
-  const origin = targeting.origin;
-  const current = smoothedCurrent;
-  const { positions, tangents, tipPosition, tipDirection } = useMemo(
-    () => computeCurve(cacheRef.current!, origin, current, bendPulse * 0.12),
-    [origin.x, origin.y, current.x, current.y, bendPulse]
-  );
-
-  const { graphicsRef, setEmitterDirection, setEmitterPosition } = useParticles(tipDirection);
+  const { graphicsRef, setEmitterDirection, setEmitterPosition } = useParticles(tipDirection, hasTarget);
 
   const tipX = tipPosition.x;
   const tipY = tipPosition.y;
@@ -303,12 +316,18 @@ export default function TargetingArrow() {
   const tipDirY = tipDirection.y;
 
   useEffect(() => {
+    if (!hasTarget) {
+      return;
+    }
     setEmitterPosition({ x: tipX, y: tipY });
-  }, [setEmitterPosition, tipX, tipY]);
+  }, [hasTarget, setEmitterPosition, tipX, tipY]);
 
   useEffect(() => {
+    if (!hasTarget) {
+      return;
+    }
     setEmitterDirection({ x: tipDirX, y: tipDirY });
-  }, [setEmitterDirection, tipDirX, tipDirY]);
+  }, [hasTarget, setEmitterDirection, tipDirX, tipDirY]);
 
   const tipRotation = Math.atan2(tipDirection.y, tipDirection.x);
 
@@ -364,6 +383,10 @@ export default function TargetingArrow() {
     graphics.closePath();
     graphics.endFill();
   };
+
+  if (!hasTarget) {
+    return null;
+  }
 
   return (
     <pixiContainer eventMode="none">
