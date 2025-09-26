@@ -10,6 +10,7 @@ const FAN_MIX_WEIGHT = 0.72;
 const CARD_OVERLAP = 0.32;
 const MIN_RADIUS = CARD_SIZE.height * 2.6;
 const HAND_MARGIN_BOTTOM = 20;
+const HAND_MARGIN_LEFT = 20;
 const HOVER_LIFT = 42;
 const HOVER_SCALE = 1.1;
 const HOVER_Z_INDEX = 9999;
@@ -70,7 +71,7 @@ function computeHandLayout(count: number, width: number, height: number): Transf
     return [];
   }
 
-  const centerX = width / 2;
+  const centerX = width / 2 -  HAND_MARGIN_LEFT;
   const handBaseY = height - HAND_MARGIN_BOTTOM;
   const maxFan = count > 1 ? MAX_FAN_DEG : 0;
   const stepDeg = count > 1 ? maxFan / (count - 1) : 0;
@@ -429,7 +430,7 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
   );
   const cardsInHand = hand.map((card, index) => {
     const base = handLayout[index] ?? {
-      x: width / 2,
+      x: width / 2 - HAND_MARGIN_LEFT,
       y: height - HAND_MARGIN_BOTTOM,
       rotation: 0,
       scale: 1,
