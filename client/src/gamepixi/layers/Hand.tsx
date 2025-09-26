@@ -5,16 +5,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CARD_SIZE } from '../Card';
 import { useUiStore } from '../../state/store';
 
-const MAX_FAN_DEG = 70;
+const MAX_FAN_DEG = 50;
 const FAN_MIX_WEIGHT = 0.72;
 const CARD_OVERLAP = 0.32;
 const MIN_RADIUS = CARD_SIZE.height * 2.6;
-const HAND_MARGIN_BOTTOM = 32;
+const HAND_MARGIN_BOTTOM = 20;
+const HAND_MARGIN_LEFT = 20;
 const HOVER_LIFT = 42;
 const HOVER_SCALE = 1.1;
 const HOVER_Z_INDEX = 9999;
 const DRAG_Z_INDEX = HOVER_Z_INDEX + 1;
-const HOVER_SPEED = 0.24;
+const HOVER_SPEED = 0.5;
 const RETURN_SPEED = 0.18;
 const EPSILON = 0.0001;
 
@@ -70,7 +71,7 @@ function computeHandLayout(count: number, width: number, height: number): Transf
     return [];
   }
 
-  const centerX = width / 2;
+  const centerX = width / 2 -  HAND_MARGIN_LEFT;
   const handBaseY = height - HAND_MARGIN_BOTTOM;
   const maxFan = count > 1 ? MAX_FAN_DEG : 0;
   const stepDeg = count > 1 ? maxFan / (count - 1) : 0;
@@ -291,19 +292,30 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
 
   const updateTargeting = useUiStore((s) => s.updateTargeting);
 
-  const handleDragMove = useCallback(
-    (card: CardInHand, event: FederatedPointerEvent) => {
+  const updateDraggingPosition = useCallback(
+    (event: FederatedPointerEvent, expectedCardId?: string) => {
       setDragging((prev) => {
-        if (!prev || prev.card.instanceId !== card.instanceId || prev.pointerId !== event.pointerId) {
+        if (!prev || prev.pointerId !== event.pointerId) {
           return prev;
         }
+        if (expectedCardId && prev.card.instanceId !== expectedCardId) {
+          return prev;
+        }
+
         const nextX = event.global.x - prev.offsetX;
         const nextY = event.global.y - prev.offsetY;
+
+        if (prev.x === nextX && prev.y === nextY && prev.hasMoved) {
+          return prev;
+        }
+
+        const hasMoved = prev.hasMoved || Math.hypot(nextX - prev.startX, nextY - prev.startY) > 4;
+
         return {
           ...prev,
           x: nextX,
           y: nextY,
-          hasMoved: prev.hasMoved || Math.hypot(nextX - prev.startX, nextY - prev.startY) > 4
+          hasMoved
         };
       });
 
@@ -312,6 +324,13 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
       }
     },
     [targeting?.pointerId, updateTargeting]
+  );
+
+  const handleDragMove = useCallback(
+    (card: CardInHand, event: FederatedPointerEvent) => {
+      updateDraggingPosition(event, card.instanceId);
+    },
+    [updateDraggingPosition]
   );
 
   const handleDragEnd = useCallback(
@@ -411,7 +430,7 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
   );
   const cardsInHand = hand.map((card, index) => {
     const base = handLayout[index] ?? {
-      x: width / 2,
+      x: width / 2 - HAND_MARGIN_LEFT,
       y: height - HAND_MARGIN_BOTTOM,
       rotation: 0,
       scale: 1,
@@ -459,7 +478,12 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
   });
 
   return (
-    <pixiContainer sortableChildren eventMode="static" onPointerLeave={handlePointerLeave}>
+    <pixiContainer
+      sortableChildren
+      eventMode="static"
+      onPointerLeave={handlePointerLeave}
+      onGlobalPointerMove={updateDraggingPosition}
+    >
       {cardsInHand}
     </pixiContainer>
   );
