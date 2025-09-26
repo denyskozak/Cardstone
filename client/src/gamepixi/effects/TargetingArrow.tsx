@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUiStore } from '../../state/store';
-import { useApplication } from '@pixi/react';
+import useMiniTicker from '../hooks/useMiniTicker';
 import type { Graphics } from 'pixi.js';
 
 // Hearthstone's targeting line looks "hand drawn" because it is smooth yet chunky;
@@ -121,29 +121,6 @@ function computeCurve(
   });
 
   return { positions, tangents, tipPosition, tipDirection };
-}
-
-function useMiniTicker(callback: (deltaMS: number) => void, enabled = true) {
-  const { app } = useApplication();
-  const callbackRef = useRef(callback);
-  callbackRef.current = callback;
-
-  useEffect(() => {
-    if (!enabled) {
-      return undefined;
-    }
-    const ticker = app.ticker;
-    if (!ticker) {
-      return undefined;
-    }
-    const tick = () => {
-      callbackRef.current(ticker.deltaMS);
-    };
-    ticker.add(tick);
-    return () => {
-      ticker.remove(tick);
-    };
-  }, [app, enabled]);
 }
 
 function useSmoothedPoint(target: Vec2 | null, stiffness = 18) {

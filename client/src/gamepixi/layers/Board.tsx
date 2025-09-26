@@ -9,7 +9,15 @@ import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import type { FederatedPointerEvent } from 'pixi.js';
 import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useUiStore, type TargetingState } from '../../state/store';
+import { useUiStore, type MinionAnimationTransform, type TargetingState } from '../../state/store';
+import {
+  MINION_ART_INSET_X,
+  MINION_ART_INSET_Y,
+  MINION_HEIGHT,
+  MINION_WIDTH,
+  getBoardLaneGeometry,
+  MINION_HORIZONTAL_GAP
+} from '../layout';
 
 interface BoardProps {
   state: GameState;
@@ -20,11 +28,6 @@ interface BoardProps {
   canAttack: (minion: MinionEntity) => boolean;
   onCastSpell: (card: CardInHand, target: TargetDescriptor) => void;
 }
-
-const MINION_WIDTH = 120;
-const MINION_HEIGHT = 140;
-const MINION_ART_INSET_X = 2;
-const MINION_ART_INSET_Y = 6;
 
 function MinionCardArt({ cardId }: { cardId: string }) {
   const [innerTexture, setInnerTexture] = useState<Texture>(Texture.EMPTY);
@@ -105,6 +108,7 @@ export default function Board({
   const currentTarget = useUiStore((s) => s.currentTarget ?? null);
   const setCurrentTarget = useUiStore((s) => s.setCurrentTarget);
   const setSelected = useUiStore((s) => s.setSelected);
+  const minionAnimations = useUiStore((s) => s.minionAnimations);
   const targetRef = useRef<TargetDescriptor | null>(null);
 
   useEffect(() => {
@@ -239,10 +243,10 @@ export default function Board({
     [setCurrentTarget, targetingPredicate]
   );
 
-  const boardTopY = height * 0.2;
-  const boardBottomY = height * 0.55;
-  const laneWidth = width - 200;
-  const laneX = (width - laneWidth) / 2;
+  const { boardTopY, boardBottomY, laneWidth, laneX } = useMemo(
+    () => getBoardLaneGeometry(width, height),
+    [width, height]
+  );
 
   const opponentSide: PlayerSide = playerSide === 'A' ? 'B' : 'A';
   const opponentHero = state.players[opponentSide];
@@ -253,7 +257,7 @@ export default function Board({
     (side: PlayerSide, y: number) => {
       const minions = state.board[side];
       return minions.map((entity, index) => {
-        const x = laneX + index * (MINION_WIDTH + 20);
+        const x = laneX + index * (MINION_WIDTH + MINION_HORIZONTAL_GAP);
         const isFriendly = side === playerSide;
         const canAttackThisMinion = isFriendly && canAttack(entity);
         const targetDescriptor: TargetDescriptor = {
@@ -280,11 +284,21 @@ export default function Board({
           ? (event: FederatedPointerEvent) => handleStartAttack(entity, event)
           : undefined;
 
+        const animation: MinionAnimationTransform | undefined = minionAnimations[entity.instanceId];
+        const offsetX = animation?.offsetX ?? 0;
+        const offsetY = animation?.offsetY ?? 0;
+        const scale = animation?.scale ?? 1;
+        const rotation = animation?.rotation ?? 0;
+        const zIndex = animation?.zIndex ?? index;
+
         return (
           <pixiContainer
             key={entity.instanceId}
-            x={x}
-            y={y}
+            x={x + offsetX}
+            y={y + offsetY}
+            scale={scale}
+            rotation={rotation}
+            zIndex={zIndex}
             interactive={
               isFriendly
                 ? canAttackThisMinion || Boolean(targetingPredicate && canBeSpellTarget)
@@ -374,6 +388,7 @@ export default function Board({
       handleTargetOut,
       handleTargetOver,
       laneX,
+      minionAnimations,
       playerSide,
       state.board,
       targetingPredicate
@@ -394,6 +409,7 @@ export default function Board({
     <pixiContainer
       ref={boardRef}
       eventMode="static"
+      sortableChildren
       hitArea={boardHitArea}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

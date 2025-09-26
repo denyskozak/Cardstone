@@ -81,8 +81,6 @@ export default function StageRoot({
     );
   }
   const player = state.players[playerSide];
-  const opponentSide: PlayerSide = playerSide === 'A' ? 'B' : 'A';
-  const opponent = state.players[opponentSide];
 
   return (
     <pixiContainer width={targetWidth} height={targetHeight} options={{ backgroundAlpha: 0 }}>
@@ -105,8 +103,8 @@ export default function StageRoot({
           height={targetHeight}
         />
         <Effects
-          player={player}
-          opponent={opponent}
+          state={state}
+          playerSide={playerSide}
           width={targetWidth}
           height={targetHeight}
         />
