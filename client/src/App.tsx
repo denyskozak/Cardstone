@@ -45,15 +45,20 @@ export default function App() {
   const [state, setState] = useState<GameState | null>(null);
   const [log, setLog] = useState<string[]>([]);
   const [stageBounds, setStageBounds] = useState({ width: 0, height: 0 });
+  const playerIdRef = useRef<string | undefined>(playerId);
 
   const appendLog = useCallback((entry: string) => {
     setLog((prev) => [entry, ...prev].slice(0, 10));
   }, []);
 
   useEffect(() => {
+    playerIdRef.current = playerId;
+  }, [playerId]);
+
+  useEffect(() => {
     socket.connect();
     const unsubOpen = socket.onOpen(() => {
-      socket.send('JoinMatch', { matchId: 'auto', playerId });
+      socket.send('JoinMatch', { matchId: 'auto', playerId: playerIdRef.current });
     });
     const unsubMessage = socket.onMessage((message: ServerToClient) => {
       switch (message.t) {
@@ -95,7 +100,7 @@ export default function App() {
       unsubMessage();
       socket.close();
     };
-  }, [appendLog, playerId, socket]);
+  }, [appendLog, socket]);
 
   useEffect(() => {
     if (playerId) {
