@@ -17,6 +17,7 @@ interface UiState {
   selectedCard?: string;
   targeting?: TargetingState;
   currentTarget?: TargetDescriptor | null;
+  currentTargetPoint?: { x: number; y: number } | null;
   setHovered: (id?: string) => void;
   setSelected: (id?: string) => void;
   setTargeting: (targeting?: TargetingState) => void;
@@ -27,6 +28,8 @@ interface UiState {
       | null
       | ((prev: TargetDescriptor | null) => TargetDescriptor | null)
   ) => void;
+  setCurrentTargetPoint: (point: { x: number; y: number } | null) => void;
+  cancelTargeting: () => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -34,9 +37,15 @@ export const useUiStore = create<UiState>((set) => ({
   selectedCard: undefined,
   targeting: undefined,
   currentTarget: null,
+  currentTargetPoint: null,
   setHovered: (id) => set({ hoveredCard: id }),
   setSelected: (id) => set({ selectedCard: id }),
-  setTargeting: (targeting) => set({ targeting }),
+  setTargeting: (targeting) =>
+    set((state) => ({
+      targeting,
+      currentTarget: targeting ? state.currentTarget ?? null : null,
+      currentTargetPoint: targeting ? state.currentTargetPoint ?? null : null
+    })),
   updateTargeting: (point) =>
     set((state) =>
       state.targeting
@@ -51,5 +60,8 @@ export const useUiStore = create<UiState>((set) => ({
   setCurrentTarget: (target) =>
     set((state) => ({
       currentTarget: typeof target === 'function' ? target(state.currentTarget ?? null) : target
-    }))
+    })),
+  setCurrentTargetPoint: (point) => set({ currentTargetPoint: point }),
+  cancelTargeting: () =>
+    set({ targeting: undefined, currentTarget: null, currentTargetPoint: null, selectedCard: undefined })
 }));

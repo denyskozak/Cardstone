@@ -99,6 +99,8 @@ export default function Board({
   const updateTargeting = useUiStore((s) => s.updateTargeting);
   const currentTarget = useUiStore((s) => s.currentTarget ?? null);
   const setCurrentTarget = useUiStore((s) => s.setCurrentTarget);
+  const setCurrentTargetPoint = useUiStore((s) => s.setCurrentTargetPoint);
+  const cancelTargeting = useUiStore((s) => s.cancelTargeting);
   const setSelected = useUiStore((s) => s.setSelected);
   const targetRef = useRef<TargetDescriptor | null>(null);
 
@@ -106,14 +108,20 @@ export default function Board({
     targetRef.current = currentTarget;
   }, [currentTarget]);
 
-  const toLocal = useCallback((point: Point) => {
-    const container = boardRef.current;
-    if (!container) {
-      return { x: point.x, y: point.y };
+  useEffect(() => {
+    if (!targeting) {
+      return;
     }
-    const local = container.toLocal(point);
-    return { x: local.x, y: local.y };
-  }, []);
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        cancelTargeting();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [cancelTargeting, targeting]);
 
   const handlePointerMove = useCallback(
     (event: FederatedPointerEvent) => {
@@ -125,6 +133,20 @@ export default function Board({
     [targeting, updateTargeting]
   );
 
+  const handleBoardPointerDown = useCallback(
+    (event: FederatedPointerEvent) => {
+      if (!targeting) {
+        return;
+      }
+      if (event.button === 2 || (!currentTarget && event.target === event.currentTarget)) {
+        event.preventDefault();
+        cancelTargeting();
+        event.stopPropagation();
+      }
+    },
+    [cancelTargeting, currentTarget, targeting]
+  );
+
   const handlePointerUp = useCallback(
     (event: FederatedPointerEvent) => {
       if (!targeting || event.pointerId !== targeting.pointerId) {
@@ -132,8 +154,7 @@ export default function Board({
       }
       const action: TargetingState | undefined = targeting;
       const target = targetRef.current;
-      setTargeting(undefined);
-      setCurrentTarget(null);
+      cancelTargeting();
       if (!target || !action) {
         return;
       }
@@ -145,7 +166,7 @@ export default function Board({
         onCastSpell(action.source.card, target);
       }
     },
-    [onAttack, onCastSpell, setCurrentTarget, setSelected, setTargeting, targeting]
+    [cancelTargeting, onAttack, onCastSpell, setSelected, targeting]
   );
 
   const handleStartAttack = useCallback(
@@ -176,9 +197,10 @@ export default function Board({
         current: { x: event.global.x, y: event.global.y }
       });
       setCurrentTarget(null);
+      setCurrentTargetPoint(null);
       event.stopPropagation();
     },
-    [canAttack, setCurrentTarget, setTargeting, targeting]
+    [canAttack, setCurrentTarget, setCurrentTargetPoint, setTargeting, targeting]
   );
 
   const targetingPredicate = useMemo(() => {
@@ -195,13 +217,20 @@ export default function Board({
   }, [playerSide, targeting]);
 
   const handleTargetOver = useCallback(
-    (target: TargetDescriptor) => {
+    (target: TargetDescriptor, event: FederatedPointerEvent) => {
       if (!targetingPredicate || !targetingPredicate(target)) {
         return;
       }
       setCurrentTarget(target);
+      const display = event.currentTarget as DisplayObject | null;
+      if (display) {
+        const bounds = display.getBounds();
+        setCurrentTargetPoint({ x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 });
+      } else {
+        setCurrentTargetPoint({ x: event.global.x, y: event.global.y });
+      }
     },
-    [setCurrentTarget, targetingPredicate]
+    [setCurrentTarget, setCurrentTargetPoint, targetingPredicate]
   );
 
   const handleTargetOut = useCallback(
@@ -221,8 +250,9 @@ export default function Board({
         }
         return prev;
       });
+      setCurrentTargetPoint(null);
     },
-    [setCurrentTarget, targetingPredicate]
+    [setCurrentTarget, setCurrentTargetPoint, targetingPredicate]
   );
 
   const boardTopY = height * 0.2;
@@ -284,7 +314,7 @@ export default function Board({
             onPointerDown={handleDown}
             onPointerOver={
               targetingPredicate && canBeSpellTarget
-                ? () => handleTargetOver(targetDescriptor)
+                ? (event) => handleTargetOver(targetDescriptor, event)
                 : undefined
             }
             onPointerOut={
@@ -369,24 +399,6 @@ export default function Board({
     [currentTarget, playerSide]
   );
 
-  const attackIndicator = targeting ? (
-    <pixiGraphics
-      key="attack-indicator"
-      eventMode="none"
-      draw={(g) => {
-        g.clear();
-        g.lineStyle(4, 0xffeaa7, 0.95);
-        const originLocal = toLocal(new Point(targeting.origin.x, targeting.origin.y));
-        const currentLocal = toLocal(new Point(targeting.current.x, targeting.current.y));
-        g.moveTo(originLocal.x, originLocal.y);
-        g.lineTo(currentLocal.x, currentLocal.y);
-        g.beginFill(0xff7675, 0.9);
-        g.drawCircle(currentLocal.x, currentLocal.y, 8);
-        g.endFill();
-      }}
-    />
-  ) : null;
-
   return (
     <pixiContainer
       ref={boardRef}
@@ -396,6 +408,14 @@ export default function Board({
       onPointerUp={handlePointerUp}
       onPointerUpOutside={handlePointerUp}
       onPointerCancel={handlePointerUp}
+      onPointerDown={handleBoardPointerDown}
+      cursor={
+        targeting
+          ? currentTarget
+            ? 'pointer'
+            : 'not-allowed'
+          : undefined
+      }
     >
       <pixiGraphics
         draw={(g) => {
@@ -418,7 +438,7 @@ export default function Board({
             ? 'pointer'
             : undefined
         }
-        onPointerOver={() => handleTargetOver({ type: 'hero', side: opponentSide })}
+        onPointerOver={(event) => handleTargetOver({ type: 'hero', side: opponentSide }, event)}
         onPointerOut={() => handleTargetOut({ type: 'hero', side: opponentSide })}
       >
         <pixiGraphics
@@ -444,7 +464,7 @@ export default function Board({
             ? 'pointer'
             : undefined
         }
-        onPointerOver={() => handleTargetOver({ type: 'hero', side: playerSide })}
+        onPointerOver={(event) => handleTargetOver({ type: 'hero', side: playerSide }, event)}
         onPointerOut={() => handleTargetOut({ type: 'hero', side: playerSide })}
       >
         <pixiGraphics
@@ -459,7 +479,6 @@ export default function Board({
       </pixiContainer>
       {renderRow(opponentSide, boardTopY)}
       {renderRow(playerSide, boardBottomY)}
-      {attackIndicator}
     </pixiContainer>
   );
 }
