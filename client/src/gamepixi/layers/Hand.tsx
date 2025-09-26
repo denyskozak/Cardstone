@@ -291,19 +291,30 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
 
   const updateTargeting = useUiStore((s) => s.updateTargeting);
 
-  const handleDragMove = useCallback(
-    (card: CardInHand, event: FederatedPointerEvent) => {
+  const updateDraggingPosition = useCallback(
+    (event: FederatedPointerEvent, expectedCardId?: string) => {
       setDragging((prev) => {
-        if (!prev || prev.card.instanceId !== card.instanceId || prev.pointerId !== event.pointerId) {
+        if (!prev || prev.pointerId !== event.pointerId) {
           return prev;
         }
+        if (expectedCardId && prev.card.instanceId !== expectedCardId) {
+          return prev;
+        }
+
         const nextX = event.global.x - prev.offsetX;
         const nextY = event.global.y - prev.offsetY;
+
+        if (prev.x === nextX && prev.y === nextY && prev.hasMoved) {
+          return prev;
+        }
+
+        const hasMoved = prev.hasMoved || Math.hypot(nextX - prev.startX, nextY - prev.startY) > 4;
+
         return {
           ...prev,
           x: nextX,
           y: nextY,
-          hasMoved: prev.hasMoved || Math.hypot(nextX - prev.startX, nextY - prev.startY) > 4
+          hasMoved
         };
       });
 
@@ -312,6 +323,13 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
       }
     },
     [targeting?.pointerId, updateTargeting]
+  );
+
+  const handleDragMove = useCallback(
+    (card: CardInHand, event: FederatedPointerEvent) => {
+      updateDraggingPosition(event, card.instanceId);
+    },
+    [updateDraggingPosition]
   );
 
   const handleDragEnd = useCallback(
@@ -459,7 +477,12 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
   });
 
   return (
-    <pixiContainer sortableChildren eventMode="static" onPointerLeave={handlePointerLeave}>
+    <pixiContainer
+      sortableChildren
+      eventMode="static"
+      onPointerLeave={handlePointerLeave}
+      onGlobalPointerMove={updateDraggingPosition}
+    >
       {cardsInHand}
     </pixiContainer>
   );
