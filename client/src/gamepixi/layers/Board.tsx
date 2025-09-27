@@ -10,6 +10,7 @@ import type { FederatedPointerEvent } from 'pixi.js';
 import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useUiStore, type MinionAnimationTransform, type TargetingState } from '../../state/store';
+import { Card, CARD_SIZE } from '../Card';
 import {
   MINION_ART_INSET_X,
   MINION_ART_INSET_Y,
@@ -109,6 +110,8 @@ export default function Board({
   const setCurrentTarget = useUiStore((s) => s.setCurrentTarget);
   const setSelected = useUiStore((s) => s.setSelected);
   const minionAnimations = useUiStore((s) => s.minionAnimations);
+  const hoveredCardId = useUiStore((s) => s.hoveredCard);
+  const setHovered = useUiStore((s) => s.setHovered);
   const targetRef = useRef<TargetDescriptor | null>(null);
 
   useEffect(() => {
@@ -299,29 +302,28 @@ export default function Board({
             scale={scale}
             rotation={rotation}
             zIndex={zIndex}
-            interactive={
-              isFriendly
-                ? canAttackThisMinion || Boolean(targetingPredicate && canBeSpellTarget)
-                : Boolean(targetingPredicate && canBeSpellTarget)
-            }
+            interactive
+            eventMode="static"
             cursor={
               isFriendly && canAttackThisMinion
                 ? 'pointer'
                 : targetingPredicate && canBeSpellTarget
                   ? 'pointer'
-                  : undefined
+                  : 'default'
             }
             onPointerDown={handleDown}
-            onPointerOver={
-              targetingPredicate && canBeSpellTarget
-                ? () => handleTargetOver(targetDescriptor)
-                : undefined
-            }
-            onPointerOut={
-              targetingPredicate && canBeSpellTarget
-                ? () => handleTargetOut(targetDescriptor)
-                : undefined
-            }
+            onPointerOver={() => {
+              setHovered(entity.instanceId);
+              if (targetingPredicate && canBeSpellTarget) {
+                handleTargetOver(targetDescriptor);
+              }
+            }}
+            onPointerOut={() => {
+              if (targetingPredicate && canBeSpellTarget) {
+                handleTargetOut(targetDescriptor);
+              }
+              setHovered(undefined);
+            }}
           >
             <pixiGraphics
               draw={(g) => {
@@ -382,6 +384,7 @@ export default function Board({
       laneX,
       minionAnimations,
       playerSide,
+      setHovered,
       state.board,
       targetingPredicate
     ]
@@ -396,6 +399,56 @@ export default function Board({
     () => currentTarget?.type === 'hero' && currentTarget.side === playerSide,
     [currentTarget, playerSide]
   );
+
+  const hoveredMinionPreview = useMemo(() => {
+    if (!hoveredCardId) {
+      return null;
+    }
+
+    const sides: PlayerSide[] = ['A', 'B'];
+    for (const side of sides) {
+      const minions = state.board[side];
+      const index = minions.findIndex((minion) => minion.instanceId === hoveredCardId);
+      if (index === -1) {
+        continue;
+      }
+
+      const entity = minions[index];
+      const baseX = laneX + index * (MINION_WIDTH + MINION_HORIZONTAL_GAP);
+      const baseY = side === playerSide ? boardBottomY : boardTopY;
+      const animation = minionAnimations[entity.instanceId];
+      const offsetX = animation?.offsetX ?? 0;
+      const offsetY = animation?.offsetY ?? 0;
+      const scale = animation?.scale ?? 1;
+
+      const widthWithScale = MINION_WIDTH * scale;
+      const heightWithScale = MINION_HEIGHT * scale;
+
+      const previewX = baseX + offsetX + widthWithScale + 10 + CARD_SIZE.width / 2;
+      const previewY = baseY + offsetY + heightWithScale;
+
+      const previewCard: CardInHand = {
+        instanceId: entity.instanceId,
+        card: entity.card
+      };
+
+      return {
+        card: previewCard,
+        x: previewX,
+        y: previewY
+      };
+    }
+
+    return null;
+  }, [
+    boardBottomY,
+    boardTopY,
+    hoveredCardId,
+    laneX,
+    minionAnimations,
+    playerSide,
+    state.board
+  ]);
 
   return (
     <pixiContainer
@@ -477,6 +530,18 @@ export default function Board({
       </pixiContainer>
       {renderRow(opponentSide, boardTopY)}
       {renderRow(playerSide, boardBottomY)}
+      {hoveredMinionPreview ? (
+        <Card
+          card={hoveredMinionPreview.card}
+          x={hoveredMinionPreview.x}
+          y={hoveredMinionPreview.y}
+          rotation={0}
+          disabled
+          eventMode="none"
+          cursor="default"
+          zIndex={10000}
+        />
+      ) : null}
     </pixiContainer>
   );
 }
