@@ -7,7 +7,7 @@ import { useUiStore } from '../../state/store';
 
 const MAX_FAN_DEG = 50;
 const FAN_MIX_WEIGHT = 0.72;
-const CARD_OVERLAP = 0.32;
+const CARD_OVERLAP = 0.42;
 const MIN_RADIUS = CARD_SIZE.height * 2.6;
 const HAND_MARGIN_BOTTOM = 20;
 const HAND_MARGIN_LEFT = 50;
@@ -84,7 +84,7 @@ function computeHandLayout(count: number, width: number, height: number): Transf
     const thetaDeg = count === 1 ? 0 : -maxFan / 2 + index * stepDeg;
     const thetaRad = (thetaDeg * Math.PI) / 180;
     const arcX = centerX + radius * Math.sin(thetaRad);
-    const arcY = handBaseY - radius * (1 - Math.cos(thetaRad));
+    const arcY = handBaseY + radius * (1 - Math.cos(thetaRad));
     const linearX = linearStartX + index * linearSpacing;
     const mixedX = arcX * FAN_MIX_WEIGHT + linearX * (1 - FAN_MIX_WEIGHT);
 
