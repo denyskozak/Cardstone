@@ -2,6 +2,7 @@ import type { CardInHand, GameState, MinionEntity, PlayerSide, TargetDescriptor 
 import Background from './layers/Background';
 import Board from './layers/Board';
 import HandLayer from './layers/Hand';
+import OpponentHandLayer from './layers/OpponentHand';
 import Effects from './layers/Effects';
 import { useApplication } from '@pixi/react';
 import { useEffect, useMemo } from 'react';
@@ -81,6 +82,8 @@ export default function StageRoot({
     );
   }
   const player = state.players[playerSide];
+  const opponentSide: PlayerSide = playerSide === 'A' ? 'B' : 'A';
+  const opponent = state.players[opponentSide];
 
   return (
     <pixiContainer width={targetWidth} height={targetHeight} options={{ backgroundAlpha: 0 }}>
@@ -99,6 +102,11 @@ export default function StageRoot({
           hand={player.hand}
           canPlay={canPlayCard}
           onPlay={(card) => onPlayCard(card)}
+          width={targetWidth}
+          height={targetHeight}
+        />
+        <OpponentHandLayer
+          count={opponent.hand.length}
           width={targetWidth}
           height={targetHeight}
         />
