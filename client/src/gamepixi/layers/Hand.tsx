@@ -66,7 +66,7 @@ function approach(current: number, target: number, factor: number): number {
   return current + diff * factor;
 }
 
-function computeHandLayout(count: number, width: number, height: number): Transform[] {
+export function computeHandLayout(count: number, width: number, height: number): Transform[] {
   if (count === 0) {
     return [];
   }
