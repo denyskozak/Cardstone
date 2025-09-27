@@ -6,6 +6,8 @@ export type CardId = string;
 
 export type CardType = 'Minion' | 'Spell';
 
+export type CardPlacement = 'left' | 'right';
+
 export interface CardBase {
   id: CardId;
   name: string;
@@ -94,7 +96,7 @@ export type CommandBase<T extends string, P> = {
 };
 
 export type Command =
-  | CommandBase<'PlayCard', { cardId: EntityId; target?: TargetDescriptor }>
+  | CommandBase<'PlayCard', { cardId: EntityId; target?: TargetDescriptor; placement?: CardPlacement }>
   | CommandBase<'EndTurn', Record<string, never>>
   | CommandBase<'Attack', { attackerId: EntityId; target: TargetDescriptor }>
   | CommandBase<'Ready', object>;
@@ -131,7 +133,7 @@ export interface ClientMessageBase<T extends string, P> {
 export type ClientToServer =
   | ClientMessageBase<'JoinMatch', { matchId: 'auto' | string; playerId?: string }>
   | ClientMessageBase<'Ready', { playerId?: string }>
-  | ClientMessageBase<'PlayCard', { cardId: EntityId; target?: TargetDescriptor }>
+  | ClientMessageBase<'PlayCard', { cardId: EntityId; target?: TargetDescriptor; placement?: CardPlacement }>
   | ClientMessageBase<'EndTurn', Record<string, never>>
   | ClientMessageBase<'Attack', { attackerId: EntityId; target: TargetDescriptor }>
   | ClientMessageBase<'Emote', { type: 'Hello' | 'WellPlayed' | 'Oops' }>;

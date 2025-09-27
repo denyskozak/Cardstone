@@ -35,11 +35,15 @@ export function getBoardLaneGeometry(width: number, height: number): BoardLaneGe
 function computeRowPositions(
   minions: MinionEntity[],
   laneX: number,
+  laneWidth: number,
   y: number
 ): Record<string, EntityPosition> {
   const positions: Record<string, EntityPosition> = {};
+  const count = minions.length;
+  const rowWidth = count > 0 ? count * MINION_WIDTH + (count - 1) * MINION_HORIZONTAL_GAP : 0;
+  const startX = laneX + (laneWidth - rowWidth) / 2;
   minions.forEach((entity, index) => {
-    const x = laneX + index * (MINION_WIDTH + MINION_HORIZONTAL_GAP);
+    const x = startX + index * (MINION_WIDTH + MINION_HORIZONTAL_GAP);
     positions[entity.instanceId] = {
       x: x + MINION_WIDTH / 2,
       y: y + MINION_HEIGHT / 2
@@ -62,8 +66,18 @@ export function computeBoardLayout(
     B: {}
   };
 
-  minions[playerSide] = computeRowPositions(state.board[playerSide], geometry.laneX, geometry.boardBottomY);
-  minions[opponentSide] = computeRowPositions(state.board[opponentSide], geometry.laneX, geometry.boardTopY);
+  minions[playerSide] = computeRowPositions(
+    state.board[playerSide],
+    geometry.laneX,
+    geometry.laneWidth,
+    geometry.boardBottomY
+  );
+  minions[opponentSide] = computeRowPositions(
+    state.board[opponentSide],
+    geometry.laneX,
+    geometry.laneWidth,
+    geometry.boardTopY
+  );
 
   const heroes: Record<PlayerSide, EntityPosition> = {
     A:

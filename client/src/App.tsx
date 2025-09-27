@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   CardInHand,
+  CardPlacement,
   GameState,
   MinionEntity,
   PlayerSide,
@@ -154,7 +155,12 @@ export default function App() {
   );
 
   const handlePlayCard = useCallback(
-    (card: CardInHand, explicitTarget?: TargetDescriptor) => {
+    (
+      card: CardInHand,
+      options?: { target?: TargetDescriptor; placement?: CardPlacement }
+    ) => {
+      const explicitTarget = options?.target;
+      const placement = options?.placement;
       if (!side || !canPlayCard(card)) {
         return;
       }
@@ -169,7 +175,8 @@ export default function App() {
       }
       socket.sendWithAck('PlayCard', {
         cardId: card.instanceId,
-        ...(target ? { target } : {})
+        ...(target ? { target } : {}),
+        ...(placement ? { placement } : {})
       });
     },
     [canPlayCard, side, socket]

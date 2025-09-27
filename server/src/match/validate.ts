@@ -1,4 +1,10 @@
-import type { GameState, PlayerSide, SpellCard, TargetDescriptor } from '@cardstone/shared/types.js';
+import type {
+  CardPlacement,
+  GameState,
+  PlayerSide,
+  SpellCard,
+  TargetDescriptor
+} from '@cardstone/shared/types.js';
 import { getTargetingPredicate } from '@cardstone/shared/targeting';
 
 export class ValidationError extends Error {
@@ -18,7 +24,8 @@ export function validatePlayCard(
   state: GameState,
   side: PlayerSide,
   cardInstanceId: string,
-  target?: TargetDescriptor
+  target?: TargetDescriptor,
+  _placement?: CardPlacement
 ): void {
   assertPlayersTurn(state, side);
   if (state.turn.phase !== 'Main') {

@@ -256,8 +256,12 @@ export default function Board({
   const renderRow = useCallback(
     (side: PlayerSide, y: number) => {
       const minions = state.board[side];
+      const count = minions.length;
+      const rowWidth =
+        count > 0 ? count * MINION_WIDTH + (count - 1) * MINION_HORIZONTAL_GAP : 0;
+      const startX = laneX + (laneWidth - rowWidth) / 2;
       return minions.map((entity, index) => {
-        const x = laneX + index * (MINION_WIDTH + MINION_HORIZONTAL_GAP);
+        const x = startX + index * (MINION_WIDTH + MINION_HORIZONTAL_GAP);
         const isFriendly = side === playerSide;
         const canAttackThisMinion = isFriendly && canAttack(entity);
         const targetDescriptor: TargetDescriptor = {
@@ -361,13 +365,13 @@ export default function Board({
               text={`${entity.attack}`}
               x={MINION_WIDTH * 0.12}
               y={MINION_HEIGHT * 0.7}
-              style={{ fill: 0xFFFFFF, fontSize: 24, fontWeight: 'bold' }}
+              style={{ fill: 0xffffff, fontSize: 24, fontWeight: 'bold' }}
             />
             <pixiText
               text={`${entity.health}`}
               x={MINION_WIDTH * 0.8}
               y={MINION_HEIGHT * 0.7}
-              style={{ fill: 0xFFFFFF, fontSize: 24, fontWeight: 'bold' }}
+              style={{ fill: 0xffffff, fontSize: 24, fontWeight: 'bold' }}
             />
           </pixiContainer>
         );
@@ -380,6 +384,7 @@ export default function Board({
       handleTargetOut,
       handleTargetOver,
       laneX,
+      laneWidth,
       minionAnimations,
       playerSide,
       state.board,

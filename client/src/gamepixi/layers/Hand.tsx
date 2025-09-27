@@ -1,9 +1,10 @@
-import type { CardInHand } from '@cardstone/shared/types';
+import type { CardInHand, CardPlacement } from '@cardstone/shared/types';
 import type { FederatedPointerEvent } from 'pixi.js';
 import { DisplayObject } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CARD_SIZE } from '../Card';
 import { useUiStore } from '../../state/store';
+import { getBoardLaneGeometry } from '../layout';
 
 const MAX_FAN_DEG = 50;
 const FAN_MIX_WEIGHT = 0.72;
@@ -101,12 +102,20 @@ function computeHandLayout(count: number, width: number, height: number): Transf
 interface HandProps {
   hand: CardInHand[];
   canPlay: (card: CardInHand) => boolean;
-  onPlay: (card: CardInHand) => void;
+  onPlay: (card: CardInHand, options?: { placement?: CardPlacement }) => void;
+  boardMinionCount: number;
   width: number;
   height: number;
 }
 
-export default function HandLayer({ hand, canPlay, onPlay, width, height }: HandProps) {
+export default function HandLayer({
+  hand,
+  canPlay,
+  onPlay,
+  boardMinionCount,
+  width,
+  height
+}: HandProps) {
   const setHovered = useUiStore((s) => s.setHovered);
   const selected = useUiStore((s) => s.selectedCard);
   const setSelected = useUiStore((s) => s.setSelected);
@@ -282,13 +291,17 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
       }
     };
   }, []);
+  const { laneX, laneWidth, boardBottomY } = useMemo(() => {
+    const geometry = getBoardLaneGeometry(width, height);
+    return { laneX: geometry.laneX, laneWidth: geometry.laneWidth, boardBottomY: geometry.boardBottomY };
+  }, [height, width]);
+
   const dropZone = useMemo(() => {
-    const boardBottomY = height * 0.55;
     return {
       top: boardBottomY - 80,
       bottom: boardBottomY + 120
     };
-  }, [height]);
+  }, [boardBottomY]);
 
   const updateTargeting = useUiStore((s) => s.updateTargeting);
 
@@ -350,7 +363,14 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
         const intersectsDropZone = cardBottom >= dropZone.top && cardTop <= dropZone.bottom;
 
         if (hasMoved && intersectsDropZone && canPlay(card)) {
-          onPlay(card);
+          let placement: CardPlacement | undefined;
+          if (boardMinionCount > 0) {
+            const cardCenterX = current.x + CARD_SIZE.width / 2;
+            const boardCenterX = laneX + laneWidth / 2;
+            placement = cardCenterX < boardCenterX ? 'left' : 'right';
+          }
+
+          onPlay(card, placement ? { placement } : undefined);
           setSelected(undefined);
           playedFromDragRef.current = card.instanceId;
         } else {
@@ -360,7 +380,18 @@ export default function HandLayer({ hand, canPlay, onPlay, width, height }: Hand
         return undefined;
       });
     },
-    [canPlay, dropZone.bottom, dropZone.top, onPlay, setSelected, targeting?.pointerId, updateTargeting]
+    [
+      boardMinionCount,
+      canPlay,
+      dropZone.bottom,
+      dropZone.top,
+      laneWidth,
+      laneX,
+      onPlay,
+      setSelected,
+      targeting?.pointerId,
+      updateTargeting
+    ]
   );
 
   const handleCardClick = useCallback(

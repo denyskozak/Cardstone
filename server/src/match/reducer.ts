@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
+  type CardPlacement,
   type GameState,
   type MinionCard,
   type PlayerSide,
@@ -58,7 +59,8 @@ export function applyPlayCard(
   state: GameState,
   side: PlayerSide,
   cardInstanceId: string,
-  target?: TargetDescriptor
+  target?: TargetDescriptor,
+  placement?: CardPlacement
 ): void {
   const player = state.players[side];
   const handIndex = player.hand.findIndex((card) => card.instanceId === cardInstanceId);
@@ -73,21 +75,33 @@ export function applyPlayCard(
   player.hand.splice(handIndex, 1);
 
   if (handCard.card.type === 'Minion') {
-    summonMinion(state, side, handCard.card);
+    summonMinion(state, side, handCard.card, placement);
   } else {
     resolveSpell(state, side, handCard.card, target);
     player.graveyard.push(handCard.card.id);
   }
 }
 
-function summonMinion(state: GameState, side: PlayerSide, card: MinionCard): void {
-  state.board[side].push({
+function summonMinion(
+  state: GameState,
+  side: PlayerSide,
+  card: MinionCard,
+  placement: CardPlacement | undefined
+): void {
+  const minion = {
     instanceId: randomUUID(),
     card,
     attack: card.attack,
     health: card.health,
     attacksRemaining: 1
-  });
+  };
+
+  if (placement === 'left') {
+    state.board[side].unshift(minion);
+    return;
+  }
+
+  state.board[side].push(minion);
 }
 
 function resolveSpell(
