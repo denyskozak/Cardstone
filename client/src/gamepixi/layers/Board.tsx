@@ -429,7 +429,15 @@ export default function Board({
       const widthWithScale = MINION_WIDTH * scale;
       const heightWithScale = MINION_HEIGHT * scale;
 
-      const previewX = baseX + offsetX + widthWithScale + 10 + CARD_SIZE.width / 2;
+      const previewScale = 1.3;
+      const previewGap = 10 * 0.2;
+
+      const previewX =
+        baseX +
+        offsetX +
+        widthWithScale +
+        previewGap +
+        (CARD_SIZE.width * previewScale) / 2;
       const previewY = baseY + offsetY + heightWithScale;
 
       const previewCard: CardInHand = {
@@ -440,7 +448,8 @@ export default function Board({
       return {
         card: previewCard,
         x: previewX,
-        y: previewY
+        y: previewY,
+        scale: previewScale
       };
     }
 
@@ -557,6 +566,7 @@ export default function Board({
           x={hoveredMinionPreview.x}
           y={hoveredMinionPreview.y}
           rotation={0}
+          scale={hoveredMinionPreview.scale}
           disabled
           eventMode="none"
           cursor="default"
