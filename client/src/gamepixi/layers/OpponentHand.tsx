@@ -32,9 +32,10 @@ export default function OpponentHandLayer({ count, width, height }: OpponentHand
 
   const positions = useMemo(() => {
     const layout = computeHandLayout(count, width, height);
+    const verticalOffset = CARD_SIZE.height * HAND_BASE_SCALE * 0.5;
     return layout.map((base) => ({
       x: base.x,
-      y: CARD_SIZE.height * HAND_BASE_SCALE + (height - base.y),
+      y: CARD_SIZE.height * HAND_BASE_SCALE + (height - base.y) - verticalOffset,
       rotation: -base.rotation,
       scale: base.scale,
       z: base.z,

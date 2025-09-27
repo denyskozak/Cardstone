@@ -73,16 +73,41 @@ function approach(current: number, target: number, factor: number): number {
   return current + diff * factor;
 }
 
-export function computeHandLayout(count: number, width: number, height: number): Transform[] {
+export interface HandLayoutOptions {
+  /**
+   * Scales the base radius that determines the curvature of the card fan.
+   * Larger values flatten the arc by placing cards further away from the
+   * center of the circle.
+   */
+  radiusScale?: number;
+  /**
+   * Scales the maximum fan angle. Values below 1 reduce the spread between
+   * cards and therefore lessen the curvature.
+   */
+  fanAngleScale?: number;
+  /**
+   * Adds a fixed vertical offset to every card in the layout.
+   */
+  verticalOffset?: number;
+}
+
+export function computeHandLayout(
+  count: number,
+  width: number,
+  height: number,
+  options: HandLayoutOptions = {}
+): Transform[] {
   if (count === 0) {
     return [];
   }
 
-  const centerX = width / 2 -  HAND_MARGIN_LEFT;
+  const { radiusScale = 1, fanAngleScale = 1, verticalOffset = 0 } = options;
+
+  const centerX = width / 2 - HAND_MARGIN_LEFT;
   const handBaseY = height - HAND_MARGIN_BOTTOM;
-  const maxFan = count > 1 ? MAX_FAN_DEG : 0;
+  const maxFan = count > 1 ? MAX_FAN_DEG * fanAngleScale : 0;
   const stepDeg = count > 1 ? maxFan / (count - 1) : 0;
-  const radiusBase = Math.min(width, height) * 0.65;
+  const radiusBase = Math.min(width, height) * 0.65 * radiusScale;
   const radius = Math.max(MIN_RADIUS, radiusBase);
   const linearSpacing = HAND_CARD_DIMENSIONS.width * (1 - CARD_OVERLAP);
   const linearStartX = centerX - ((count - 1) * linearSpacing) / 2;
@@ -91,7 +116,7 @@ export function computeHandLayout(count: number, width: number, height: number):
     const thetaDeg = count === 1 ? 0 : -maxFan / 2 + index * stepDeg;
     const thetaRad = (thetaDeg * Math.PI) / 180;
     const arcX = centerX + radius * Math.sin(thetaRad);
-    const arcY = handBaseY + radius * (1 - Math.cos(thetaRad));
+    const arcY = handBaseY + radius * (1 - Math.cos(thetaRad)) + verticalOffset;
     const linearX = linearStartX + index * linearSpacing;
     const mixedX = arcX * FAN_MIX_WEIGHT + linearX * (1 - FAN_MIX_WEIGHT);
 
@@ -153,7 +178,12 @@ export default function HandLayer({
   );
 
   const handLayout = useMemo(
-    () => computeHandLayout(hand.length, width, height),
+    () =>
+      computeHandLayout(hand.length, width, height, {
+        radiusScale: 1.25,
+        fanAngleScale: 0.7,
+        verticalOffset: HAND_CARD_DIMENSIONS.height * 0.3,
+      }),
     [hand.length, width, height]
   );
 
