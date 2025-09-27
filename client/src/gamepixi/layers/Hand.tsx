@@ -9,11 +9,17 @@ import { getBoardLaneGeometry } from '../layout';
 const MAX_FAN_DEG = 50;
 const FAN_MIX_WEIGHT = 0.72;
 const CARD_OVERLAP = 0.42;
-const MIN_RADIUS = CARD_SIZE.height * 2.6;
+const BASE_CARD_SCALE = 0.8;
+export const HAND_BASE_SCALE = BASE_CARD_SCALE;
+export const HAND_CARD_DIMENSIONS = {
+  width: CARD_SIZE.width * BASE_CARD_SCALE,
+  height: CARD_SIZE.height * BASE_CARD_SCALE
+};
+const MIN_RADIUS = HAND_CARD_DIMENSIONS.height * 2.6;
 const HAND_MARGIN_BOTTOM = 20;
 const HAND_MARGIN_LEFT = 50;
 const HOVER_LIFT = 42;
-const HOVER_SCALE = 1.1;
+const HOVER_SCALE = 1.32;
 const HOVER_Z_INDEX = 9999;
 const DRAG_Z_INDEX = HOVER_Z_INDEX + 1;
 const HOVER_SPEED = 0.5;
@@ -78,7 +84,7 @@ export function computeHandLayout(count: number, width: number, height: number):
   const stepDeg = count > 1 ? maxFan / (count - 1) : 0;
   const radiusBase = Math.min(width, height) * 0.65;
   const radius = Math.max(MIN_RADIUS, radiusBase);
-  const linearSpacing = CARD_SIZE.width * (1 - CARD_OVERLAP);
+  const linearSpacing = HAND_CARD_DIMENSIONS.width * (1 - CARD_OVERLAP);
   const linearStartX = centerX - ((count - 1) * linearSpacing) / 2;
 
   return new Array(count).fill(null).map((_, index) => {
@@ -93,7 +99,7 @@ export function computeHandLayout(count: number, width: number, height: number):
       x: mixedX,
       y: arcY,
       rotation: thetaRad,
-      scale: 1,
+      scale: BASE_CARD_SCALE,
       z: index
     };
   });
