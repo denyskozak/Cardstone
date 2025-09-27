@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Assets, Texture } from 'pixi.js';
 
 import { CARD_SIZE } from '../Card';
-import { computeHandLayout } from './Hand';
+import { computeHandLayout, HAND_BASE_SCALE } from './Hand';
 
 interface OpponentHandProps {
   count: number;
@@ -34,7 +34,7 @@ export default function OpponentHandLayer({ count, width, height }: OpponentHand
     const layout = computeHandLayout(count, width, height);
     return layout.map((base) => ({
       x: base.x,
-      y: CARD_SIZE.height + (height - base.y),
+      y: CARD_SIZE.height * HAND_BASE_SCALE + (height - base.y),
       rotation: -base.rotation,
       scale: base.scale,
       z: base.z,

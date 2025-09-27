@@ -1,10 +1,12 @@
 import type { GameState, MinionEntity, PlayerSide } from '@cardstone/shared/types';
 
-export const MINION_WIDTH = 120;
-export const MINION_HEIGHT = 140;
+export const MINION_WIDTH = 96;
+export const MINION_HEIGHT = 112;
 export const MINION_ART_INSET_X = 2;
 export const MINION_ART_INSET_Y = 6;
 export const MINION_HORIZONTAL_GAP = 20;
+const PLAYER_HORIZONTAL_SHIFT_RATIO = 0.1;
+const PLAYER_VERTICAL_SHIFT_RATIO = 0.05;
 
 export interface BoardLaneGeometry {
   boardTopY: number;
@@ -68,9 +70,9 @@ export function computeBoardLayout(
 
   minions[playerSide] = computeRowPositions(
     state.board[playerSide],
-    geometry.laneX,
+    geometry.laneX - geometry.laneWidth * PLAYER_HORIZONTAL_SHIFT_RATIO,
     geometry.laneWidth,
-    geometry.boardBottomY
+    geometry.boardBottomY - height * PLAYER_VERTICAL_SHIFT_RATIO
   );
   minions[opponentSide] = computeRowPositions(
     state.board[opponentSide],
