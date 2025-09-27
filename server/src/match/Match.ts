@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { GameState, PlayerSide, TargetDescriptor } from '@cardstone/shared/types';
+import type { CardPlacement, GameState, PlayerSide, TargetDescriptor } from '@cardstone/shared/types';
 import { CARD_IDS, DEFAULT_DECK, MATCH_CONFIG, STARTING_SEQ } from '@cardstone/shared/constants';
 import { getCardDefinition } from '@cardstone/shared/cards/demo';
 import { createRng, createSeed, shuffleInPlace, type RNG } from '../util/rng.js';
@@ -127,7 +127,8 @@ export class Match {
     seq: number,
     nonce: string,
     cardInstanceId: string,
-    target?: TargetDescriptor
+    target?: TargetDescriptor,
+    placement?: CardPlacement
   ): CommandResult {
     const side = this.requireSide(playerId);
     const meta = this.players[side];
@@ -136,8 +137,8 @@ export class Match {
       if (duplicate) {
         return { ok: true, stateChanged: false, duplicate: true };
       }
-      validatePlayCard(this.state, side, cardInstanceId, target);
-      applyPlayCard(this.state, side, cardInstanceId, target);
+      validatePlayCard(this.state, side, cardInstanceId, target, placement);
+      applyPlayCard(this.state, side, cardInstanceId, target, placement);
       this.bumpSeq();
       return { ok: true, stateChanged: true };
     } catch (error) {

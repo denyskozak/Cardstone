@@ -1,4 +1,11 @@
-import type { CardInHand, GameState, MinionEntity, PlayerSide, TargetDescriptor } from '@cardstone/shared/types';
+import type {
+  CardInHand,
+  CardPlacement,
+  GameState,
+  MinionEntity,
+  PlayerSide,
+  TargetDescriptor
+} from '@cardstone/shared/types';
 import Background from './layers/Background';
 import Board from './layers/Board';
 import HandLayer from './layers/Hand';
@@ -10,7 +17,10 @@ import { useEffect, useMemo } from 'react';
 interface StageRootProps {
   state: GameState | null;
   playerSide: PlayerSide | null;
-  onPlayCard: (card: CardInHand, target?: TargetDescriptor) => void;
+  onPlayCard: (
+    card: CardInHand,
+    options?: { target?: TargetDescriptor; placement?: CardPlacement }
+  ) => void;
   canPlayCard: (card: CardInHand) => boolean;
   onAttack: (attackerId: string, target: TargetDescriptor) => void;
   canAttack: (minion: MinionEntity) => boolean;
@@ -96,12 +106,13 @@ export default function StageRoot({
           height={targetHeight}
           onAttack={onAttack}
           canAttack={canAttack}
-          onCastSpell={(card, target) => onPlayCard(card, target)}
+          onCastSpell={(card, target) => onPlayCard(card, { target })}
         />
         <HandLayer
           hand={player.hand}
           canPlay={canPlayCard}
-          onPlay={(card) => onPlayCard(card)}
+          onPlay={(card, options) => onPlayCard(card, options)}
+          boardMinionCount={state.board[playerSide].length}
           width={targetWidth}
           height={targetHeight}
         />

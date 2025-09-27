@@ -25,6 +25,7 @@ const targetSchema: z.ZodType<TargetDescriptor> = z.discriminatedUnion('type', [
 
 const nonce = () => z.string().min(8).max(64);
 const seq = () => z.number().int().nonnegative();
+const placementSchema = z.enum(['left', 'right']);
 
 export const clientMessageSchema = z.discriminatedUnion('t', [
   z.object({
@@ -37,7 +38,11 @@ export const clientMessageSchema = z.discriminatedUnion('t', [
   }),
   z.object({
     t: z.literal('PlayCard'),
-    payload: z.object({ cardId: z.string(), target: targetSchema.optional() }),
+    payload: z.object({
+      cardId: z.string(),
+      target: targetSchema.optional(),
+      placement: placementSchema.optional()
+    }),
     seq: seq(),
     nonce: nonce()
   }),

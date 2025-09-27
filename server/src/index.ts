@@ -197,7 +197,8 @@ async function handleClientMessage(
         message.seq!,
         message.nonce!,
         message.payload.cardId,
-        message.payload.target
+        message.payload.target,
+        message.payload.placement
       );
       sendMessage(context, { t: 'ActionResult', seq: message.seq, payload: result });
       if (result.stateChanged) {
