@@ -476,7 +476,7 @@ export default function Board({
         }}
       />
       <pixiContainer
-        x={40}
+        x={laneX + laneWidth / 2}
         y={boardTopY - 80}
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: opponentSide })
@@ -493,19 +493,27 @@ export default function Board({
           draw={(g) => {
             g.clear();
             g.beginFill(opponentTargeted ? 0xff7675 : 0xd63031, opponentTargeted ? 1 : 0.8);
-            g.drawCircle(0, 0, 48);
+            g.drawPolygon([
+              0,
+              -48,
+              48,
+              36,
+              -48,
+              36
+            ]);
             g.endFill();
           }}
         />
         <pixiText
           text={`HP ${opponentHero.hero.hp}`}
-          x={-36}
-          y={-12}
-          style={{ fill: 0xffffff, fontSize: 18 }}
+          x={0}
+          y={0}
+          anchor={{ x: 0.5, y: 0.5 }}
+          style={{ fill: 0xffffff, fontSize: 18, align: 'center' }}
         />
       </pixiContainer>
       <pixiContainer
-        x={40}
+        x={laneX + laneWidth / 2}
         y={boardBottomY + MINION_HEIGHT - 20}
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: playerSide })
@@ -522,15 +530,23 @@ export default function Board({
           draw={(g) => {
             g.clear();
             g.beginFill(friendlyTargeted ? 0x55efc4 : 0x0984e3, friendlyTargeted ? 1 : 0.8);
-            g.drawCircle(0, 0, 48);
+            g.drawPolygon([
+              0,
+              48,
+              48,
+              -36,
+              -48,
+              -36
+            ]);
             g.endFill();
           }}
         />
         <pixiText
           text={`HP ${playerHero.hero.hp}`}
-          x={-36}
-          y={-12}
-          style={{ fill: 0xffffff, fontSize: 18 }}
+          x={0}
+          y={0}
+          anchor={{ x: 0.5, y: 0.5 }}
+          style={{ fill: 0xffffff, fontSize: 18, align: 'center' }}
         />
       </pixiContainer>
       {renderRow(opponentSide, boardTopY)}
