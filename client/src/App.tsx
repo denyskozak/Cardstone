@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { sound } from '@pixi/sound';
 import type {
   CardInHand,
   CardPlacement,
@@ -55,6 +56,14 @@ export default function App() {
   useEffect(() => {
     playerIdRef.current = playerId;
   }, [playerId]);
+
+  useEffect(() => {
+    // if (!sound.exists('taverna-1')) {
+    //   sound.add('taverna-1', '/assets/music/taverna.mp3');
+    // }
+    // console.log('1: ', 1);
+    // sound.play('taverna-1');
+  }, []);
 
   useEffect(() => {
     socket.connect();

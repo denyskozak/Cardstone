@@ -484,9 +484,10 @@ export default function Board({
           g.drawRoundedRect(laneX, boardBottomY - 20, laneWidth, MINION_HEIGHT + 40, 20);
         }}
       />
+      {/*Opponent*/}
       <pixiContainer
         x={laneX + laneWidth / 2}
-        y={boardTopY - 80}
+        y={boardTopY - 0.9}
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: opponentSide })
         )}
@@ -523,7 +524,7 @@ export default function Board({
       </pixiContainer>
       <pixiContainer
         x={laneX + laneWidth / 2}
-        y={boardBottomY + MINION_HEIGHT - 20}
+        y={(boardBottomY + MINION_HEIGHT) * 1.15  }
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: playerSide })
         )}
