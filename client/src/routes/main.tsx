@@ -33,15 +33,15 @@ export function MainRoute() {
 
   const slides = [
     {
-      titles: ['First Play-to-Earn', 'MOBA PVP'],
+      titles: ['Collective Cards', 'Online Game'],
       subtitle: ' Spell-slinging PvP with the thrill of FPS combat',
     },
     {
-      titles: ['We not just build game', 'We rebuild Game Industry!'],
+      titles: ['Inspired Hearthstone Classic', 'Bring back the feelings'],
       subtitle: 'Innovative technology which opens new world of opportunities',
     },
     {
-      titles: ['on Sui Blockchain', 'Platform Agnostic'],
+      titles: ['Built on Sui', 'for the community'],
       subtitle: 'Claim $SuiWars tokens, loot, and rare gear — fully tradable',
     },
   ];
@@ -55,18 +55,18 @@ export function MainRoute() {
         <img
           ref={logoRef}
           alt="Big Logo"
-          className="mt-[64px] max-w-[350px] object-cover z-[2]"
+          className="mt-[64px] max-w-[280px] object-cover z-[2]"
           src="/assets/images/logo_big.webp"
         />
 
         <img
           alt="Turtle Art"
-          className="absolute top-0 left-0 w-full h-full object-cover z-[0]"
-          src="/assets/board_template.webp"
+          className="absolute top-0 left-0 w-full h-full object-fit z-[0]"
+          src="/assets/images/background.webp"
         />
 
         <main className="z-[2] flex justify-center w-full h-full overflow-y-auto">
-          <div className="mt-4 flex items-center flex-col">
+          <div className="flex items-center flex-col">
             {/* HeroUI-like header */}
             <div className="text-center">
               <div className="inline-block max-w-xl text-center justify-center items-center">
@@ -79,10 +79,10 @@ export function MainRoute() {
                     initial={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.5 }}
                   >
-              <span className="tracking-tight inline font-semibold title-text z-[2] from-[#00b7fa] to-[#01cfea] text-4xl lg:text-6xl bg-clip-text text-transparent bg-gradient-to-b">
+              <span className="tracking-tight inline font-semibold title-text z-[2] from-[#00b7fa] to-[#01cfea] text-4xl lg:text-5xl bg-clip-text text-transparent bg-gradient-to-b">
                 {slides[index].titles[0]}
               </span>
-                    <span className="tracking-tight inline font-semibold title-text z-[2] from-[#FF705B] to-[#FFB457] text-4xl lg:text-6xl bg-clip-text text-transparent bg-gradient-to-b">
+                    <span className="tracking-tight inline font-semibold title-text z-[2] from-[#FF705B] to-[#FFB457] text-4xl lg:text-5xl bg-clip-text text-transparent bg-gradient-to-b">
                 &nbsp;-&nbsp;{slides[index].titles[1]}
               </span>
 
