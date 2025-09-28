@@ -4,17 +4,31 @@ interface BackgroundProps {
 }
 
 export default function Background({ width, height }: BackgroundProps) {
+  const deckWidth = 1100;
+  const deckHeight = 650;
+  const deckX = (width - deckWidth) / 2;
+  const deckY = (height - deckHeight) / 2;
+
   return (
-    <pixiGraphics
-      draw={(g) => {
-        g.clear();
-        g.beginFill(0x2d3436);
-        g.drawRect(0, 0, width, height);
-        g.endFill();
-        g.beginFill(0x3e2723, 0.5);
-        g.drawRoundedRect(32, 32, width - 64, height - 64, 24);
-        g.endFill();
-      }}
-    />
+    <>
+      <pixiGraphics
+        draw={(g) => {
+          g.clear();
+          g.beginFill(0x2d3436);
+          g.drawRect(0, 0, width, height);
+          g.endFill();
+          g.beginFill(0x3e2723, 0.5);
+          g.drawRoundedRect(32, 32, width - 64, height - 64, 24);
+          g.endFill();
+        }}
+      />
+      <pixiSprite
+        image="/assets/deck_template.webp"
+        width={deckWidth}
+        height={deckHeight}
+        x={deckX}
+        y={deckY}
+      />
+    </>
   );
 }
