@@ -92,6 +92,127 @@ function MinionCardArt({ cardId }: { cardId: string }) {
   );
 }
 
+const HERO_ASSET_PATHS = [
+  '/assets/heroes/anduin.webp',
+  '/assets/heroes/djaina.webp',
+  '/assets/heroes/garosh.webp',
+  '/assets/heroes/guldan.webp',
+  '/assets/heroes/illidan.webp',
+  '/assets/heroes/tral.webp'
+];
+
+const assignedHeroByKey = new Map<string, string>();
+
+function getHeroAssetForPlayer(gameId: string, playerId: string) {
+  const key = `${gameId}:${playerId}`;
+  let asset = assignedHeroByKey.get(key);
+  if (!asset) {
+    const index = Math.floor(Math.random() * HERO_ASSET_PATHS.length);
+    asset = HERO_ASSET_PATHS[index] ?? HERO_ASSET_PATHS[0];
+    assignedHeroByKey.set(key, asset);
+  }
+  return asset;
+}
+
+function useHeroTexture(gameId: string | undefined, playerId: string | undefined) {
+  const [texture, setTexture] = useState<Texture>(Texture.EMPTY);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!gameId || !playerId) {
+      setTexture(Texture.EMPTY);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setTexture(Texture.EMPTY);
+    const assetPath = getHeroAssetForPlayer(gameId, playerId);
+    Assets.load(assetPath).then((result) => {
+      if (!cancelled) {
+        setTexture(result);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gameId, playerId]);
+
+  return texture;
+}
+
+interface HeroAvatarProps {
+  gameId: string;
+  playerId: string;
+  hp: number;
+  targeted: boolean;
+  baseColor: number;
+  targetedColor: number;
+  orientation: 'top' | 'bottom';
+}
+
+function HeroAvatar({
+  gameId,
+  playerId,
+  hp,
+  targeted,
+  baseColor,
+  targetedColor,
+  orientation
+}: HeroAvatarProps) {
+  const texture = useHeroTexture(gameId, playerId);
+  const [mask, setMask] = useState<Graphics | null>(null);
+
+  const avatarSize = 96;
+  const backgroundRadius = avatarSize / 2 + 12;
+
+  const handleMaskRef = useCallback((instance: Graphics | null) => {
+    setMask(instance);
+  }, []);
+
+  const hpTextOffset = avatarSize / 2 + 18;
+  const hpTextY = orientation === 'top' ? hpTextOffset : -hpTextOffset;
+
+  return (
+    <>
+      <pixiGraphics
+        draw={(g) => {
+          g.clear();
+          g.beginFill(targeted ? targetedColor : baseColor, targeted ? 1 : 0.9);
+          g.drawCircle(0, 0, backgroundRadius);
+          g.endFill();
+        }}
+      />
+      <pixiSprite
+        texture={texture}
+        width={avatarSize}
+        height={avatarSize}
+        anchor={{ x: 0.5, y: 0.5 }}
+        alpha={texture === Texture.EMPTY ? 0 : 1}
+        mask={mask ?? undefined}
+      />
+      <pixiGraphics
+        ref={handleMaskRef}
+        draw={(g) => {
+          g.clear();
+          g.beginFill(0xffffff, 1);
+          g.drawCircle(0, 0, avatarSize / 2);
+          g.endFill();
+        }}
+      />
+      <pixiText
+        text={`HP ${hp}`}
+        x={0}
+        y={hpTextY}
+        anchor={{ x: 0.5, y: 0.5 }}
+        style={{ fill: 0xffffff, fontSize: 18, align: 'center', fontWeight: 'bold' }}
+      />
+    </>
+  );
+}
+
 export default function Board({
   state,
   playerSide,
@@ -252,8 +373,8 @@ export default function Board({
   );
 
   const opponentSide: PlayerSide = playerSide === 'A' ? 'B' : 'A';
-  const opponentHero = state.players[opponentSide];
-  const playerHero = state.players[playerSide];
+  const opponentPlayer = state.players[opponentSide];
+  const playerPlayer = state.players[playerSide];
   const boardHitArea = useMemo(() => new Rectangle(0, 0, width, height), [height, width]);
 
   const renderRow = useCallback(
@@ -487,7 +608,7 @@ export default function Board({
       {/*Opponent*/}
       <pixiContainer
         x={laneX + laneWidth / 2}
-        y={boardTopY - 0.9}
+        y={boardTopY - 20}
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: opponentSide })
         )}
@@ -499,32 +620,19 @@ export default function Board({
         onPointerOver={() => handleTargetOver({ type: 'hero', side: opponentSide })}
         onPointerOut={() => handleTargetOut({ type: 'hero', side: opponentSide })}
       >
-        <pixiGraphics
-          draw={(g) => {
-            g.clear();
-            g.beginFill(opponentTargeted ? 0xff7675 : 0xd63031, opponentTargeted ? 1 : 0.8);
-            g.drawPolygon([
-              0,
-              -48,
-              48,
-              36,
-              -48,
-              36
-            ]);
-            g.endFill();
-          }}
-        />
-        <pixiText
-          text={`HP ${opponentHero.hero.hp}`}
-          x={0}
-          y={0}
-          anchor={{ x: 0.5, y: 0.5 }}
-          style={{ fill: 0xffffff, fontSize: 18, align: 'center' }}
+        <HeroAvatar
+          gameId={state.id}
+          playerId={opponentPlayer.id}
+          hp={opponentPlayer.hero.hp}
+          targeted={opponentTargeted}
+          baseColor={0xd63031}
+          targetedColor={0xff7675}
+          orientation="top"
         />
       </pixiContainer>
       <pixiContainer
         x={laneX + laneWidth / 2}
-        y={(boardBottomY + MINION_HEIGHT) * 1.15  }
+        y={boardBottomY + MINION_HEIGHT + 70}
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: playerSide })
         )}
@@ -536,27 +644,14 @@ export default function Board({
         onPointerOver={() => handleTargetOver({ type: 'hero', side: playerSide })}
         onPointerOut={() => handleTargetOut({ type: 'hero', side: playerSide })}
       >
-        <pixiGraphics
-          draw={(g) => {
-            g.clear();
-            g.beginFill(friendlyTargeted ? 0x55efc4 : 0x0984e3, friendlyTargeted ? 1 : 0.8);
-            g.drawPolygon([
-              0,
-              48,
-              48,
-              -36,
-              -48,
-              -36
-            ]);
-            g.endFill();
-          }}
-        />
-        <pixiText
-          text={`HP ${playerHero.hero.hp}`}
-          x={0}
-          y={0}
-          anchor={{ x: 0.5, y: 0.5 }}
-          style={{ fill: 0xffffff, fontSize: 18, align: 'center' }}
+        <HeroAvatar
+          gameId={state.id}
+          playerId={playerPlayer.id}
+          hp={playerPlayer.hero.hp}
+          targeted={friendlyTargeted}
+          baseColor={0x0984e3}
+          targetedColor={0x55efc4}
+          orientation="bottom"
         />
       </pixiContainer>
       {renderRow(opponentSide, boardTopY)}
