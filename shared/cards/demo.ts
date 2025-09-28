@@ -29,6 +29,33 @@ const minions: Record<string, MinionCard> = {
     health: 4,
     effect: 'taunt'
   },
+  [CARD_IDS.cunningPeople]: {
+    id: CARD_IDS.cunningPeople,
+    name: 'Cunning People',
+    type: 'Minion',
+    cost: 1,
+    attack: 1,
+    health: 2,
+    effect: 'battlecry'
+  },
+  [CARD_IDS.delivarer]: {
+    id: CARD_IDS.delivarer,
+    name: 'Delivarer',
+    type: 'Minion',
+    cost: 2,
+    attack: 2,
+    health: 3,
+    effect: 'battlecry'
+  },
+  [CARD_IDS.draugr]: {
+    id: CARD_IDS.draugr,
+    name: 'Draugr',
+    type: 'Minion',
+    cost: 2,
+    attack: 3,
+    health: 2,
+    effect: 'deathrattle'
+  },
   [CARD_IDS.elunaPrist]: {
     id: CARD_IDS.elunaPrist,
     name: 'Eluna Prist',
@@ -36,6 +63,15 @@ const minions: Record<string, MinionCard> = {
     cost: 3,
     attack: 3,
     health: 4
+  },
+  [CARD_IDS.fairyLife]: {
+    id: CARD_IDS.fairyLife,
+    name: 'Fairy Life',
+    type: 'Minion',
+    cost: 1,
+    attack: 1,
+    health: 3,
+    effect: 'battlecry'
   },
   [CARD_IDS.fireBeard]: {
     id: CARD_IDS.fireBeard,
@@ -46,6 +82,42 @@ const minions: Record<string, MinionCard> = {
     health: 3,
     effect: 'berserk'
   },
+  [CARD_IDS.forestDweller]: {
+    id: CARD_IDS.forestDweller,
+    name: 'Forest Dweller',
+    type: 'Minion',
+    cost: 2,
+    attack: 2,
+    health: 4,
+    effect: 'taunt'
+  },
+  [CARD_IDS.frongProtector]: {
+    id: CARD_IDS.frongProtector,
+    name: 'Frong Protector',
+    type: 'Minion',
+    cost: 3,
+    attack: 3,
+    health: 5,
+    effect: 'taunt'
+  },
+  [CARD_IDS.gatplank]: {
+    id: CARD_IDS.gatplank,
+    name: 'Gatplank',
+    type: 'Minion',
+    cost: 4,
+    attack: 5,
+    health: 3,
+    effect: 'battlecry'
+  },
+  [CARD_IDS.germesProtector]: {
+    id: CARD_IDS.germesProtector,
+    name: 'Germes Protector',
+    type: 'Minion',
+    cost: 3,
+    attack: 2,
+    health: 6,
+    effect: 'taunt'
+  },
   [CARD_IDS.hoarder]: {
     id: CARD_IDS.hoarder,
     name: 'Hoarder',
@@ -53,7 +125,7 @@ const minions: Record<string, MinionCard> = {
     cost: 2,
     attack: 2,
     health: 1,
-    'effect': 'take_card'
+    effect: 'take_card'
   },
   [CARD_IDS.knight]: {
     id: CARD_IDS.knight,
@@ -69,7 +141,8 @@ const minions: Record<string, MinionCard> = {
     type: 'Minion',
     cost: 1,
     attack: 2,
-    health: 1
+    health: 1,
+    effect: 'deathrattle'
   },
   [CARD_IDS.miniDragon]: {
     id: CARD_IDS.miniDragon,
@@ -78,6 +151,15 @@ const minions: Record<string, MinionCard> = {
     cost: 5,
     attack: 5,
     health: 4
+  },
+  [CARD_IDS.nighOwl]: {
+    id: CARD_IDS.nighOwl,
+    name: 'Nigh Owl',
+    type: 'Minion',
+    cost: 2,
+    attack: 2,
+    health: 3,
+    effect: 'battlecry'
   },
   [CARD_IDS.ninja]: {
     id: CARD_IDS.ninja,
@@ -88,6 +170,15 @@ const minions: Record<string, MinionCard> = {
     health: 2,
     effect: 'steals'
   },
+  [CARD_IDS.python]: {
+    id: CARD_IDS.python,
+    name: 'Python',
+    type: 'Minion',
+    cost: 4,
+    attack: 4,
+    health: 4,
+    effect: 'steals'
+  },
   [CARD_IDS.raider]: {
     id: CARD_IDS.raider,
     name: 'Raider',
@@ -95,6 +186,24 @@ const minions: Record<string, MinionCard> = {
     cost: 2,
     attack: 3,
     health: 2
+  },
+  [CARD_IDS.sacredGargoyle]: {
+    id: CARD_IDS.sacredGargoyle,
+    name: 'Sacred Gargoyle',
+    type: 'Minion',
+    cost: 3,
+    attack: 2,
+    health: 4,
+    effect: 'divide_shield'
+  },
+  [CARD_IDS.sage]: {
+    id: CARD_IDS.sage,
+    name: 'Sage',
+    type: 'Minion',
+    cost: 4,
+    attack: 2,
+    health: 5,
+    effect: 'take_card'
   },
   [CARD_IDS.sergeant]: {
     id: CARD_IDS.sergeant,
@@ -113,6 +222,24 @@ const minions: Record<string, MinionCard> = {
     health: 6,
     effect: 'taunt'
   },
+  [CARD_IDS.skeleton]: {
+    id: CARD_IDS.skeleton,
+    name: 'Skeleton',
+    type: 'Minion',
+    cost: 1,
+    attack: 2,
+    health: 1,
+    effect: 'deathrattle'
+  },
+  [CARD_IDS.surtur]: {
+    id: CARD_IDS.surtur,
+    name: 'Surtur',
+    type: 'Minion',
+    cost: 7,
+    attack: 7,
+    health: 7,
+    effect: 'berserk'
+  },
   [CARD_IDS.tiger]: {
     id: CARD_IDS.tiger,
     name: 'Tiger',
@@ -121,6 +248,33 @@ const minions: Record<string, MinionCard> = {
     attack: 6,
     health: 5,
     effect: 'steals'
+  },
+  [CARD_IDS.vikingGirl]: {
+    id: CARD_IDS.vikingGirl,
+    name: 'Viking Girl',
+    type: 'Minion',
+    cost: 3,
+    attack: 3,
+    health: 4,
+    effect: 'battlecry'
+  },
+  [CARD_IDS.warrior]: {
+    id: CARD_IDS.warrior,
+    name: 'Warrior',
+    type: 'Minion',
+    cost: 6,
+    attack: 6,
+    health: 7,
+    effect: 'taunt'
+  },
+  [CARD_IDS.waterElemental]: {
+    id: CARD_IDS.waterElemental,
+    name: 'Water Elemental',
+    type: 'Minion',
+    cost: 5,
+    attack: 4,
+    health: 6,
+    effect: 'battlecry'
   },
   [CARD_IDS.wisp]: {
     id: CARD_IDS.wisp,
