@@ -39,7 +39,7 @@ function MinionCardArt({ cardId }: { cardId: string }) {
   useEffect(() => {
     let cancelled = false;
     if (innerTexture === Texture.EMPTY) {
-      Assets.load(`/assets/cards/${cardId}.png`).then((result) => {
+      Assets.load(`/assets/cards/${cardId}.webp`).then((result) => {
         if (!cancelled) {
           setInnerTexture(result);
         }
@@ -165,7 +165,7 @@ function HeroAvatar({
   const texture = useHeroTexture(gameId, playerId);
   const [mask, setMask] = useState<Graphics | null>(null);
 
-  const avatarSize = 96;
+  const avatarSize = 198;
   const backgroundRadius = avatarSize / 2 + 12;
 
   const handleMaskRef = useCallback((instance: Graphics | null) => {
@@ -177,14 +177,14 @@ function HeroAvatar({
 
   return (
     <>
-      <pixiGraphics
-        draw={(g) => {
-          g.clear();
-          g.beginFill(targeted ? targetedColor : baseColor, targeted ? 1 : 0.9);
-          g.drawCircle(0, 0, backgroundRadius);
-          g.endFill();
-        }}
-      />
+      {/*<pixiGraphics*/}
+      {/*  draw={(g) => {*/}
+      {/*    g.clear();*/}
+      {/*    g.beginFill(targeted ? targetedColor : baseColor, targeted ? 1 : 0.9);*/}
+      {/*    g.drawCircle(0, 0, backgroundRadius);*/}
+      {/*    g.endFill();*/}
+      {/*  }}*/}
+      {/*/>*/}
       <pixiSprite
         texture={texture}
         width={avatarSize}
@@ -276,6 +276,7 @@ export default function Board({
       }
 
       if (action.source.kind === 'minion') {
+        onAttack(action.source.entityId, target);
         onAttack(action.source.entityId, target);
       } else if (action.source.kind === 'spell') {
         setSelected(undefined);

@@ -1,0 +1,71 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+    background: radial-gradient(circle at top, #3e2723, #1e1e1e);
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.stageWrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+}
+
+.overlay {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+.controls {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.endTurnButton {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #74b9ff, #0984e3);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.endTurnButton:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+.log {
+    pointer-events: auto;
+    max-width: 320px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.statBlock {
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 12px 18px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}

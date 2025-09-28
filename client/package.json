@@ -10,10 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mysten/dapp-kit": "^0.18.0",
+    "@mysten/sui": "^1.38.0",
     "@pixi/react": "^8.0.3",
+    "@radix-ui/themes": "^3.2.1",
+    "@tanstack/react-query": "^5.90.2",
+    "framer-motion": "^12.23.22",
+    "gsap": "^3.13.0",
     "pixi.js": "^8.13.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-router": "^7.9.3",
     "zustand": "^5.0.1"
   },
   "devDependencies": {

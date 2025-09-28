@@ -3,8 +3,8 @@ import { Assets, Texture, type FederatedPointerEvent } from 'pixi.js';
 import { useEffect, useState } from 'react';
 
 
-const CARD_WIDTH = 140;
-const CARD_HEIGHT = 200;
+const CARD_WIDTH = 160;
+const CARD_HEIGHT = 220;
 
 
 interface CardProps {
@@ -60,7 +60,7 @@ export function Card({
     let cancelled = false
     setInnerTexture(Texture.EMPTY)
     Assets
-      .load(`/assets/cards/${card.card.id}.png`)
+      .load(`/assets/cards/${card.card.id}.webp`)
       .then((result) => {
         if (!cancelled) {
           setInnerTexture(result)
