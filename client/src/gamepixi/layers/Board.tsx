@@ -9,7 +9,11 @@ import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import type { FederatedPointerEvent } from 'pixi.js';
 import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useUiStore, type MinionAnimationTransform, type TargetingState } from '../../state/store';
+import {
+  useUiStore,
+  type MinionAnimationTransform,
+  type TargetingState
+} from '../../state/store';
 import { Card, CARD_SIZE } from '../Card';
 import {
   MINION_ART_INSET_X,
@@ -240,6 +244,7 @@ export default function Board({
   const hoveredCardId = useUiStore((s) => s.hoveredCard);
   const setHovered = useUiStore((s) => s.setHovered);
   const targetRef = useRef<TargetDescriptor | null>(null);
+  const enqueueLocalAttackAnimation = useUiStore((s) => s.enqueueLocalAttackAnimation);
 
   useEffect(() => {
     targetRef.current = currentTarget;
@@ -269,14 +274,31 @@ export default function Board({
       }
 
       if (action.source.kind === 'minion') {
-        onAttack(action.source.entityId, target);
+        const queuedTarget: TargetDescriptor =
+          target.type === 'hero'
+            ? { type: 'hero', side: target.side }
+            : { type: 'minion', side: target.side, entityId: target.entityId };
+        enqueueLocalAttackAnimation({
+          attackerId: action.source.entityId,
+          side: playerSide,
+          target: queuedTarget
+        });
         onAttack(action.source.entityId, target);
       } else if (action.source.kind === 'spell') {
         setSelected(undefined);
         onCastSpell(action.source.card, target);
       }
     },
-    [onAttack, onCastSpell, setCurrentTarget, setSelected, setTargeting, targeting]
+    [
+      enqueueLocalAttackAnimation,
+      onAttack,
+      onCastSpell,
+      playerSide,
+      setCurrentTarget,
+      setSelected,
+      setTargeting,
+      targeting
+    ]
   );
 
   const handleStartAttack = useCallback(

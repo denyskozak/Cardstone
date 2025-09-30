@@ -82,14 +82,14 @@ export function computeBoardLayout(
   );
 
   const heroes: Record<PlayerSide, EntityPosition> = {
-    A:
-      playerSide === 'A'
-        ? { x: 40, y: geometry.boardBottomY + MINION_HEIGHT - 20 }
-        : { x: 40, y: geometry.boardTopY - 80 },
-    B:
-      playerSide === 'B'
-        ? { x: 40, y: geometry.boardBottomY + MINION_HEIGHT - 20 }
-        : { x: 40, y: geometry.boardTopY - 80 }
+    [playerSide]: {
+      x: geometry.laneX + geometry.laneWidth / 2 - 5,
+      y: geometry.boardBottomY + MINION_HEIGHT + 70
+    },
+    [opponentSide]: {
+      x: geometry.laneX + geometry.laneWidth / 2 - 10,
+      y: geometry.boardTopY - 100
+    }
   };
 
   return { minions, heroes };
