@@ -19,7 +19,8 @@ export interface MinionCard extends CardBase {
   type: 'Minion';
   attack: number;
   health: number;
-  effect?: 'steals' | 'divide_shield' | 'berserk' | 'taunt' |'take_card' | 'battlecry' | 'deathrattle';
+  text?: string;
+  effect?: string;
   effectProperty?: {
     damageToEnemyHero: number
   }

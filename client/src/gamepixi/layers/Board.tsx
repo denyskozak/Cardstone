@@ -93,12 +93,12 @@ function MinionCardArt({ cardId }: { cardId: string }) {
 }
 
 const HERO_ASSET_PATHS = [
-  '/assets/heroes/anduin.webp',
+  // '/assets/heroes/anduin.webp',
   '/assets/heroes/djaina.webp',
-  '/assets/heroes/garosh.webp',
-  '/assets/heroes/guldan.webp',
-  '/assets/heroes/illidan.webp',
-  '/assets/heroes/tral.webp'
+  // '/assets/heroes/garosh.webp',
+  // '/assets/heroes/guldan.webp',
+  // '/assets/heroes/illidan.webp',
+  // '/assets/heroes/tral.webp'
 ];
 
 const assignedHeroByKey = new Map<string, string>();
@@ -116,6 +116,7 @@ function getHeroAssetForPlayer(gameId: string, playerId: string) {
 
 function useHeroTexture(gameId: string | undefined, playerId: string | undefined) {
   const [texture, setTexture] = useState<Texture>(Texture.EMPTY);
+  const [hpTexture, setHPTexture] = useState<Texture>(Texture.EMPTY);
 
   useEffect(() => {
     let cancelled = false;
@@ -134,13 +135,18 @@ function useHeroTexture(gameId: string | undefined, playerId: string | undefined
         setTexture(result);
       }
     });
+    Assets.load('/assets/images/hp.webp').then((result) => {
+      if (!cancelled) {
+        setHPTexture(result);
+      }
+    });
 
     return () => {
       cancelled = true;
     };
   }, [gameId, playerId]);
 
-  return texture;
+  return [texture, hpTexture];
 }
 
 interface HeroAvatarProps {
@@ -162,18 +168,12 @@ function HeroAvatar({
   targetedColor,
   orientation
 }: HeroAvatarProps) {
-  const texture = useHeroTexture(gameId, playerId);
+  const [texture, hpTexture] = useHeroTexture(gameId, playerId);
   const [mask, setMask] = useState<Graphics | null>(null);
 
-  const avatarSize = 198;
-  const backgroundRadius = avatarSize / 2 + 12;
-
-  const handleMaskRef = useCallback((instance: Graphics | null) => {
-    setMask(instance);
-  }, []);
+  const avatarSize = 140;
 
   const hpTextOffset = avatarSize / 2 + 18;
-  const hpTextY = orientation === 'top' ? hpTextOffset : -hpTextOffset;
 
   return (
     <>
@@ -187,27 +187,34 @@ function HeroAvatar({
       {/*/>*/}
       <pixiSprite
         texture={texture}
-        width={avatarSize}
+        width={avatarSize + 20}
         height={avatarSize}
         anchor={{ x: 0.5, y: 0.5 }}
         alpha={texture === Texture.EMPTY ? 0 : 1}
-        mask={mask ?? undefined}
       />
-      <pixiGraphics
-        ref={handleMaskRef}
-        draw={(g) => {
-          g.clear();
-          g.beginFill(0xffffff, 1);
-          g.drawCircle(0, 0, avatarSize / 2);
-          g.endFill();
-        }}
+      <pixiSprite
+        texture={hpTexture}
+        width={40}
+        height={50}
+        x={40}
+        y={25}
+        // mask={mask ?? undefined}
       />
+      {/*<pixiGraphics*/}
+      {/*  ref={handleMaskRef}*/}
+      {/*  draw={(g) => {*/}
+      {/*    g.clear();*/}
+      {/*    g.beginFill(0xffffff, 1);*/}
+      {/*    g.drawCircle(0, 0, avatarSize / 2);*/}
+      {/*    g.endFill();*/}
+      {/*  }}*/}
+      {/*/>*/}
       <pixiText
-        text={`HP ${hp}`}
-        x={0}
-        y={hpTextY}
+        text={hp}
+        x={60}
+        y={55}
         anchor={{ x: 0.5, y: 0.5 }}
-        style={{ fill: 0xffffff, fontSize: 18, align: 'center', fontWeight: 'bold' }}
+        style={{ fill: 0xffffff, fontSize: 24, align: 'center', fontWeight: 'bold' }}
       />
     </>
   );
@@ -223,7 +230,6 @@ export default function Board({
   onCastSpell
 }: BoardProps) {
   const boardRef = useRef<Container | null>(null);
-  const [boardTexture, setBoardTexture] = useState<Texture>(Texture.EMPTY);
   const targeting = useUiStore((s) => s.targeting);
   const setTargeting = useUiStore((s) => s.setTargeting);
   const updateTargeting = useUiStore((s) => s.updateTargeting);
@@ -234,19 +240,6 @@ export default function Board({
   const hoveredCardId = useUiStore((s) => s.hoveredCard);
   const setHovered = useUiStore((s) => s.setHovered);
   const targetRef = useRef<TargetDescriptor | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    Assets.load('/assets/board_template.webp').then((result) => {
-      if (!cancelled) {
-        setBoardTexture(result);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     targetRef.current = currentTarget;
@@ -385,6 +378,7 @@ export default function Board({
       const rowWidth =
         count > 0 ? count * MINION_WIDTH + (count - 1) * MINION_HORIZONTAL_GAP : 0;
       const startX = laneX + (laneWidth - rowWidth) / 2;
+
       return minions.map((entity, index) => {
         const x = startX + index * (MINION_WIDTH + MINION_HORIZONTAL_GAP);
         const isFriendly = side === playerSide;
@@ -487,15 +481,15 @@ export default function Board({
             {/*/>*/}
             <pixiText
               text={`${entity.attack}`}
-              x={MINION_WIDTH * 0.12}
+              x={MINION_WIDTH * 0.09}
               y={MINION_HEIGHT * 0.7}
-              style={{ fill: 0xffffff, fontSize: 24, fontWeight: 'bold' }}
+              style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
             />
             <pixiText
               text={`${entity.health}`}
               x={MINION_WIDTH * 0.8}
               y={MINION_HEIGHT * 0.7}
-              style={{ fill: 0xffffff, fontSize: 24, fontWeight: 'bold' }}
+              style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
             />
           </pixiContainer>
         );
@@ -597,7 +591,6 @@ export default function Board({
       onPointerUpOutside={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
-      <pixiSprite texture={boardTexture} width={width} height={height} />
       <pixiGraphics
         draw={(g) => {
           g.clear();
@@ -608,8 +601,8 @@ export default function Board({
       />
       {/*Opponent*/}
       <pixiContainer
-        x={laneX + laneWidth / 2}
-        y={boardTopY - 20}
+        x={laneX + laneWidth / 2 - 10}
+        y={boardTopY - 100}
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: opponentSide })
         )}
@@ -632,7 +625,7 @@ export default function Board({
         />
       </pixiContainer>
       <pixiContainer
-        x={laneX + laneWidth / 2}
+        x={laneX + laneWidth / 2 - 5}
         y={boardBottomY + MINION_HEIGHT + 70}
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: playerSide })

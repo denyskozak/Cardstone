@@ -26,8 +26,8 @@ export interface BoardEntityLayout {
 }
 
 export function getBoardLaneGeometry(width: number, height: number): BoardLaneGeometry {
-  const boardTopY = height * 0.2;
-  const boardBottomY = height * 0.55;
+  const boardTopY = height * 0.35;
+  const boardBottomY = height * 0.5;
   const laneWidth = width - 200;
   const laneX = (width - laneWidth) / 2;
 

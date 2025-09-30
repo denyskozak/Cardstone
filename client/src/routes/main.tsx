@@ -33,11 +33,11 @@ export function MainRoute() {
 
   const slides = [
     {
-      titles: ['Collective Cards', 'Online Game'],
+      titles: ['Online Digital', ' Collectible Cards Game'],
       subtitle: ' Spell-slinging PvP with the thrill of FPS combat',
     },
     {
-      titles: ['Inspired Hearthstone Classic', 'Bring back the feelings'],
+      titles: ['Developed by', 'Hearthstone Classic Fan'],
       subtitle: 'Innovative technology which opens new world of opportunities',
     },
     {

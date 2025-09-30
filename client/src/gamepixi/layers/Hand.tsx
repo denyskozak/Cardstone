@@ -16,10 +16,10 @@ export const HAND_CARD_DIMENSIONS = {
   height: CARD_SIZE.height * BASE_CARD_SCALE
 };
 const MIN_RADIUS = HAND_CARD_DIMENSIONS.height * 2.6;
-const HAND_MARGIN_BOTTOM = 20;
+const HAND_MARGIN_BOTTOM = -10;
 const HAND_MARGIN_LEFT = 50;
-const HOVER_LIFT = 42;
-const HOVER_SCALE = 1.32;
+const HOVER_LIFT = 80;
+const HOVER_SCALE = 1.7;
 const HOVER_Z_INDEX = 9999;
 const DRAG_Z_INDEX = HOVER_Z_INDEX + 1;
 const HOVER_SPEED = 0.5;

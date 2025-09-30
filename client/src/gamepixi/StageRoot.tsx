@@ -95,6 +95,7 @@ export default function StageRoot({
   const opponentSide: PlayerSide = playerSide === 'A' ? 'B' : 'A';
   const opponent = state.players[opponentSide];
 
+
   return (
     <pixiContainer width={targetWidth} height={targetHeight} options={{ backgroundAlpha: 0 }}>
       <Background width={targetWidth} height={targetHeight} />
