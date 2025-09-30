@@ -535,7 +535,11 @@ export default function Board({
       }
 
       const entity = minions[index];
-      const baseX = laneX + index * (MINION_WIDTH + MINION_HORIZONTAL_GAP);
+      const count = minions.length;
+      const rowWidth =
+        count > 0 ? count * MINION_WIDTH + (count - 1) * MINION_HORIZONTAL_GAP : 0;
+      const startX = laneX + (laneWidth - rowWidth) / 2;
+      const baseX = startX + index * (MINION_WIDTH + MINION_HORIZONTAL_GAP);
       const baseY = side === playerSide ? boardBottomY : boardTopY;
       const animation = minionAnimations[entity.instanceId];
       const offsetX = animation?.offsetX ?? 0;
