@@ -138,9 +138,9 @@ export function Card({
       />
       <pixiText
         text={card.card.cost}
-        x={CARD_WIDTH * 0.1}
-        y={CARD_HEIGHT * 0.03}
-        style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
+        x={CARD_WIDTH * 0.12}
+        y={CARD_HEIGHT * 0.04}
+        style={{ fill: 0xffffff, fontSize: 24, fontWeight: 'bold' }}
       />
       {card.card.effect ? (<pixiText
         text={card.card.effect}
@@ -150,15 +150,15 @@ export function Card({
       />) : null}
       {card.card.attack ? (<pixiText
         text={card.card.attack}
-        x={12}
+        x={CARD_WIDTH * 0.11}
         y={CARD_HEIGHT * 0.85}
-        style={{ fill: 0xffffff, fontSize: 20, fontWeight: 'bold' }}
+        style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
       />) : null}
       {card.card?.health ? (<pixiText
         text={card.card?.health}
-        x={CARD_WIDTH * 0.85}
+        x={CARD_WIDTH * 0.87}
         y={CARD_HEIGHT * 0.85}
-        style={{ fill: 0xffffff, fontSize: 20, fontWeight: 'bold' }}
+        style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
       />) : null}
     </pixiContainer>
   );

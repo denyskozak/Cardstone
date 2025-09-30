@@ -23,7 +23,6 @@ import {
   getBoardLaneGeometry,
   MINION_HORIZONTAL_GAP
 } from '../layout';
-
 interface BoardProps {
   state: GameState;
   playerSide: PlayerSide;

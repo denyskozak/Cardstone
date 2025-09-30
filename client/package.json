@@ -12,6 +12,7 @@
   "dependencies": {
     "@mysten/dapp-kit": "^0.18.0",
     "@mysten/sui": "^1.38.0",
+    "@pixi/filter-glow": "^5.2.1",
     "@pixi/react": "^8.0.3",
     "@radix-ui/themes": "^3.2.1",
     "@tanstack/react-query": "^5.90.2",
