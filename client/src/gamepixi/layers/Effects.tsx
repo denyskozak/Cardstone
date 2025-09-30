@@ -5,7 +5,7 @@ import type {
   PlayerSide,
   TargetDescriptor
 } from '@cardstone/shared/types';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import TargetingArrow from '../effects/TargetingArrow';
 import { computeBoardLayout } from '../layout';
 import useMiniTicker from '../hooks/useMiniTicker';
@@ -96,9 +96,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     setAnimations((current) => {
       const survivors: AttackAnimation[] = [];
       current.forEach((animation) => {
-        if (busyAttackers.has(animation.attackerId)) {
-          clearMinionAnimation(animation.attackerId);
-        } else {
+        if (!busyAttackers.has(animation.attackerId)) {
           survivors.push(animation);
         }
       });
@@ -117,15 +115,6 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         }
 
         const key = `${state.seq}:${event.attackerId}:${index}`;
-
-        setMinionAnimation(event.attackerId, {
-          offsetX: 0,
-          offsetY: 0,
-          rotation: 0,
-          scale: 1,
-          zIndex: 2000
-        });
-
         survivors.push({
           key,
           attackerId: event.attackerId,
@@ -141,7 +130,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     });
     prevStateRef.current = state;
     prevLayoutRef.current = layout;
-  }, [clearMinionAnimation, layout, setMinionAnimation, state]);
+  }, [layout, state]);
 
   useEffect(() => {
     if (!localAttackQueueVersion) {
@@ -156,9 +145,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       const survivors: AttackAnimation[] = [];
       const busyAttackers = new Set(localEvents.map((event) => event.attackerId));
       current.forEach((animation) => {
-        if (busyAttackers.has(animation.attackerId)) {
-          clearMinionAnimation(animation.attackerId);
-        } else {
+        if (!busyAttackers.has(animation.attackerId)) {
           survivors.push(animation);
         }
       });
@@ -173,13 +160,6 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
           return;
         }
         const key = `local:${localAttackQueueVersion}:${event.attackerId}:${index}`;
-        setMinionAnimation(event.attackerId, {
-          offsetX: 0,
-          offsetY: 0,
-          rotation: 0,
-          scale: 1,
-          zIndex: 2000
-        });
         survivors.push({
           key,
           attackerId: event.attackerId,
@@ -193,13 +173,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       });
       return survivors;
     });
-  }, [
-    clearMinionAnimation,
-    consumeLocalAttackQueue,
-    layout,
-    localAttackQueueVersion,
-    setMinionAnimation
-  ]);
+  }, [consumeLocalAttackQueue, layout, localAttackQueueVersion]);
 
   useMiniTicker(
     (deltaMS) => {
@@ -210,21 +184,8 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         const next: AttackAnimation[] = [];
         current.forEach((animation) => {
           const elapsed = Math.min(animation.elapsed + deltaMS, animation.duration);
-          const progress = elapsed / animation.duration;
-          const frame = computeAttackFrame(animation, progress);
-
-          setMinionAnimation(animation.attackerId, {
-            offsetX: frame.x - animation.origin.x,
-            offsetY: frame.y - animation.origin.y,
-            rotation: 0,
-            scale: frame.scale,
-            zIndex: 2000
-          });
-
           if (elapsed < animation.duration) {
             next.push({ ...animation, elapsed });
-          } else {
-            clearMinionAnimation(animation.attackerId);
           }
         });
         return next;
@@ -232,6 +193,34 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     },
     animations.length > 0
   );
+
+  const previousAnimationIdsRef = useRef<Set<string>>(new Set());
+
+  useLayoutEffect(() => {
+    const previousIds = previousAnimationIdsRef.current;
+    const nextIds = new Set<string>();
+
+    animations.forEach((animation) => {
+      nextIds.add(animation.attackerId);
+      const progress = animation.duration === 0 ? 1 : animation.elapsed / animation.duration;
+      const frame = computeAttackFrame(animation, progress);
+      setMinionAnimation(animation.attackerId, {
+        offsetX: frame.x - animation.origin.x,
+        offsetY: frame.y - animation.origin.y,
+        rotation: 0,
+        scale: frame.scale,
+        zIndex: 2000
+      });
+    });
+
+    previousIds.forEach((id) => {
+      if (!nextIds.has(id)) {
+        clearMinionAnimation(id);
+      }
+    });
+
+    previousAnimationIdsRef.current = nextIds;
+  }, [animations, clearMinionAnimation, setMinionAnimation]);
 
   return (
     <pixiContainer>
