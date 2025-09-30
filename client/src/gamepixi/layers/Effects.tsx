@@ -319,36 +319,23 @@ function detectAttackEvents(previous: GameState, next: GameState) {
     const nextMap = new Map(next.board[side].map((minion) => [minion.instanceId, minion]));
     previous.board[side].forEach((minion) => {
       const updated = nextMap.get(minion.instanceId);
-      if (!updated) {
+      const opponentSide: PlayerSide = side === 'A' ? 'B' : 'A';
+      const summary = damageSummaries[opponentSide];
+      const record = consumed[opponentSide];
+
+      const attacked = !!updated && updated.attacksRemaining < minion.attacksRemaining;
+      const removed = !updated;
+
+      if (!attacked && !removed) {
         return;
       }
-      if (updated.attacksRemaining < minion.attacksRemaining) {
-        const opponentSide: PlayerSide = side === 'A' ? 'B' : 'A';
-        const summary = damageSummaries[opponentSide];
-        const record = consumed[opponentSide];
 
-        let target: TargetDescriptor | null = null;
-        const destroyed = summary.destroyed.find((id) => !record.destroyed.has(id));
-        if (destroyed) {
-          record.destroyed.add(destroyed);
-          target = { type: 'minion', side: opponentSide, entityId: destroyed };
-        } else {
-          const damaged = summary.damaged.find((id) => !record.damaged.has(id));
-          if (damaged) {
-            record.damaged.add(damaged);
-            target = { type: 'minion', side: opponentSide, entityId: damaged };
-          } else if (summary.heroDamaged && !record.hero) {
-            record.hero = true;
-            target = { type: 'hero', side: opponentSide };
-          }
-        }
-
-        if (!target) {
-          target = { type: 'hero', side: opponentSide };
-        }
-
-        events.push({ side, attackerId: minion.instanceId, target });
+      const target = allocateAttackTarget(summary, record, opponentSide, attacked);
+      if (!target) {
+        return;
       }
+
+      events.push({ side, attackerId: minion.instanceId, target });
     });
   });
 
@@ -378,4 +365,34 @@ function summarizeDamage(
   });
 
   return summary;
+}
+
+function allocateAttackTarget(
+  summary: DamageSummary,
+  record: { damaged: Set<string>; destroyed: Set<string>; hero: boolean },
+  opponentSide: PlayerSide,
+  allowFallback: boolean
+): TargetDescriptor | null {
+  const destroyed = summary.destroyed.find((id) => !record.destroyed.has(id));
+  if (destroyed) {
+    record.destroyed.add(destroyed);
+    return { type: 'minion', side: opponentSide, entityId: destroyed };
+  }
+
+  const damaged = summary.damaged.find((id) => !record.damaged.has(id));
+  if (damaged) {
+    record.damaged.add(damaged);
+    return { type: 'minion', side: opponentSide, entityId: damaged };
+  }
+
+  if (summary.heroDamaged && !record.hero) {
+    record.hero = true;
+    return { type: 'hero', side: opponentSide };
+  }
+
+  if (allowFallback) {
+    return { type: 'hero', side: opponentSide };
+  }
+
+  return null;
 }
