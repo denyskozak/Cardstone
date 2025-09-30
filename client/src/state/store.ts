@@ -1,4 +1,4 @@
-import type { CardInHand, TargetDescriptor } from '@cardstone/shared/types';
+import type { CardInHand, PlayerSide, TargetDescriptor } from '@cardstone/shared/types';
 import { create } from 'zustand';
 
 type TargetingSource =
@@ -20,12 +20,20 @@ export interface MinionAnimationTransform {
   zIndex?: number;
 }
 
+interface LocalAttackAnimation {
+  attackerId: string;
+  side: PlayerSide;
+  target: TargetDescriptor;
+}
+
 interface UiState {
   hoveredCard?: string;
   selectedCard?: string;
   targeting?: TargetingState;
   currentTarget?: TargetDescriptor | null;
   minionAnimations: Record<string, MinionAnimationTransform>;
+  localAttackQueue: LocalAttackAnimation[];
+  localAttackQueueVersion: number;
   setHovered: (id?: string) => void;
   setSelected: (id?: string) => void;
   setTargeting: (targeting?: TargetingState) => void;
@@ -39,6 +47,8 @@ interface UiState {
   setMinionAnimation: (id: string, transform?: MinionAnimationTransform) => void;
   clearMinionAnimation: (id: string) => void;
   resetMinionAnimations: () => void;
+  enqueueLocalAttackAnimation: (animation: LocalAttackAnimation) => void;
+  consumeLocalAttackQueue: () => LocalAttackAnimation[];
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -47,6 +57,8 @@ export const useUiStore = create<UiState>((set) => ({
   targeting: undefined,
   currentTarget: null,
   minionAnimations: {},
+  localAttackQueue: [],
+  localAttackQueueVersion: 0,
   setHovered: (id) => set({ hoveredCard: id }),
   setSelected: (id) => set({ selectedCard: id }),
   setTargeting: (targeting) => set({ targeting }),
@@ -84,5 +96,18 @@ export const useUiStore = create<UiState>((set) => ({
       delete next[id];
       return { minionAnimations: next };
     }),
-  resetMinionAnimations: () => set({ minionAnimations: {} })
+  resetMinionAnimations: () => set({ minionAnimations: {} }),
+  enqueueLocalAttackAnimation: (animation) =>
+    set((state) => ({
+      localAttackQueue: [...state.localAttackQueue, animation],
+      localAttackQueueVersion: state.localAttackQueueVersion + 1
+    })),
+  consumeLocalAttackQueue: () => {
+    let queue: LocalAttackAnimation[] = [];
+    set((state) => {
+      queue = state.localAttackQueue;
+      return { localAttackQueue: [] };
+    });
+    return queue;
+  }
 }));

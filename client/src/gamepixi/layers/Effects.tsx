@@ -47,6 +47,8 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const setMinionAnimation = useUiStore((s) => s.setMinionAnimation);
   const clearMinionAnimation = useUiStore((s) => s.clearMinionAnimation);
   const resetMinionAnimations = useUiStore((s) => s.resetMinionAnimations);
+  const consumeLocalAttackQueue = useUiStore((s) => s.consumeLocalAttackQueue);
+  const localAttackQueueVersion = useUiStore((s) => s.localAttackQueueVersion);
 
   const layout = useMemo(
     () => computeBoardLayout(state, playerSide, width, height),
@@ -140,6 +142,64 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     prevStateRef.current = state;
     prevLayoutRef.current = layout;
   }, [clearMinionAnimation, layout, setMinionAnimation, state]);
+
+  useEffect(() => {
+    if (!localAttackQueueVersion) {
+      return;
+    }
+    const localEvents = consumeLocalAttackQueue();
+    if (localEvents.length === 0) {
+      return;
+    }
+    const previousLayout = prevLayoutRef.current;
+    setAnimations((current) => {
+      const survivors: AttackAnimation[] = [];
+      const busyAttackers = new Set(localEvents.map((event) => event.attackerId));
+      current.forEach((animation) => {
+        if (busyAttackers.has(animation.attackerId)) {
+          clearMinionAnimation(animation.attackerId);
+        } else {
+          survivors.push(animation);
+        }
+      });
+      localEvents.forEach((event, index) => {
+        const origin = layout.minions[event.side]?.[event.attackerId] ??
+          previousLayout?.minions[event.side]?.[event.attackerId];
+        if (!origin) {
+          return;
+        }
+        const targetPoint = resolveTargetPoint(event.target, layout, previousLayout);
+        if (!targetPoint) {
+          return;
+        }
+        const key = `local:${localAttackQueueVersion}:${event.attackerId}:${index}`;
+        setMinionAnimation(event.attackerId, {
+          offsetX: 0,
+          offsetY: 0,
+          rotation: 0,
+          scale: 1,
+          zIndex: 2000
+        });
+        survivors.push({
+          key,
+          attackerId: event.attackerId,
+          side: event.side,
+          target: event.target,
+          origin,
+          targetPoint,
+          elapsed: 0,
+          duration: ATTACK_DURATION
+        });
+      });
+      return survivors;
+    });
+  }, [
+    clearMinionAnimation,
+    consumeLocalAttackQueue,
+    layout,
+    localAttackQueueVersion,
+    setMinionAnimation
+  ]);
 
   useMiniTicker(
     (deltaMS) => {
