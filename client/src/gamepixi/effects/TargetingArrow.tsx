@@ -4,7 +4,7 @@ import useMiniTicker from '../hooks/useMiniTicker';
 import type { Graphics } from 'pixi.js';
 
 // Hearthstone's targeting line looks "hand drawn" because it is smooth yet chunky;
-// 32 samples keep the curve fluid while still allowing us to rebuild the geometry each frame.
+// 32 samples keep the line fluid while still allowing us to rebuild the geometry each frame.
 const SAMPLE_COUNT = 32;
 const BASE_BODY_WIDTH = 28;
 const TIP_WIDTH = 12;
@@ -45,69 +45,21 @@ function normalize(vec: Vec2): Vec2 {
   return { x: vec.x / mag, y: vec.y / mag };
 }
 
-function computeCurve(
-  cache: CurveCache,
-  origin: Vec2,
-  target: Vec2,
-  bendPulse: number
-): CurveGeometry {
+function computeCurve(cache: CurveCache, origin: Vec2, target: Vec2): CurveGeometry {
   const dx = target.x - origin.x;
   const dy = target.y - origin.y;
-  const length = Math.hypot(dx, dy);
-
-  const safeLength = Math.max(length, NORMALIZE_EPSILON);
-  const dir = { x: dx / safeLength, y: dy / safeLength };
-  const normal = { x: -dir.y, y: dir.x };
-
-  // A short drag should still feel responsive, while longer drags get the dramatic bend.
-  const distanceFactor = Math.min(1.25, Math.max(0.45, safeLength / 380));
-  const bendEnvelope = distanceFactor + bendPulse * 0.18;
-  const k1 = 0.25 * bendEnvelope;
-  const k2 = 0.15 * bendEnvelope;
-
-  const control1 = {
-    x: origin.x + normal.x * safeLength * k1,
-    y: origin.y + normal.y * safeLength * k1
-  };
-  const control2 = {
-    x: target.x + normal.x * safeLength * k2,
-    y: target.y + normal.y * safeLength * k2
-  };
 
   const { positions, tangents } = cache;
 
   for (let i = 0; i < SAMPLE_COUNT; i += 1) {
     const t = i / (SAMPLE_COUNT - 1);
-    const oneMinusT = 1 - t;
-    const oneMinusTSquared = oneMinusT * oneMinusT;
-    const oneMinusTCubed = oneMinusTSquared * oneMinusT;
-    const tSquared = t * t;
-    const tCubed = tSquared * t;
-
-    const px =
-      oneMinusTCubed * origin.x +
-      3 * oneMinusTSquared * t * control1.x +
-      3 * oneMinusT * tSquared * control2.x +
-      tCubed * target.x;
-    const py =
-      oneMinusTCubed * origin.y +
-      3 * oneMinusTSquared * t * control1.y +
-      3 * oneMinusT * tSquared * control2.y +
-      tCubed * target.y;
-
-    const derivativeX =
-      3 * oneMinusTSquared * (control1.x - origin.x) +
-      6 * oneMinusT * t * (control2.x - control1.x) +
-      3 * tSquared * (target.x - control2.x);
-    const derivativeY =
-      3 * oneMinusTSquared * (control1.y - origin.y) +
-      6 * oneMinusT * t * (control2.y - control1.y) +
-      3 * tSquared * (target.y - control2.y);
+    const px = origin.x + dx * t;
+    const py = origin.y + dy * t;
 
     positions[i * 2] = px;
     positions[i * 2 + 1] = py;
-    tangents[i * 2] = derivativeX;
-    tangents[i * 2 + 1] = derivativeY;
+    tangents[i * 2] = dx;
+    tangents[i * 2 + 1] = dy;
   }
 
   const tipIndex = (SAMPLE_COUNT - 1) * 2;
@@ -115,10 +67,7 @@ function computeCurve(
     x: positions[tipIndex],
     y: positions[tipIndex + 1]
   };
-  const tipDirection = normalize({
-    x: tangents[tipIndex],
-    y: tangents[tipIndex + 1]
-  });
+  const tipDirection = normalize({ x: dx, y: dy });
 
   return { positions, tangents, tipPosition, tipDirection };
 }
@@ -271,7 +220,7 @@ export default function TargetingArrow() {
     }
     const cache = cacheRef.current;
     if (hasTarget && origin && smoothedCurrent) {
-      const curve = computeCurve(cache, origin, smoothedCurrent, bendPulse * 0.12);
+      const curve = computeCurve(cache, origin, smoothedCurrent);
       lastCurveRef.current = curve;
       return curve;
     }
@@ -283,7 +232,7 @@ export default function TargetingArrow() {
         tipDirection: { x: 1, y: 0 }
       }
     );
-  }, [bendPulse, hasTarget, origin?.x, origin?.y, smoothedCurrent?.x, smoothedCurrent?.y]);
+  }, [hasTarget, origin?.x, origin?.y, smoothedCurrent?.x, smoothedCurrent?.y]);
 
   const { graphicsRef, setEmitterDirection, setEmitterPosition } = useParticles(tipDirection, hasTarget);
 
