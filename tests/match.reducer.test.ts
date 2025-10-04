@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CARD_IDS, MATCH_CONFIG } from '@cardstone/shared/constants.js';
 import type { GameState, PlayerSide } from '@cardstone/shared/types.js';
 import { getCardDefinition } from '@cardstone/shared/cards/demo.js';
-import { applyPlayCard, gainMana } from '@cardstone/server/match/reducer.js';
+import { applyPlayCard, gainMana, startTurn } from '@cardstone/server/match/reducer.js';
 import { validatePlayCard, ValidationError } from '@cardstone/server/match/validate.js';
 
 function createState(): GameState {
@@ -56,12 +56,27 @@ describe('match reducer', () => {
 
   it('plays a minion and reduces mana', () => {
     const state = createState();
-    const instanceId = addCard(state, 'A', CARD_IDS.noviceMage);
+    const instanceId = addCard(state, 'A', CARD_IDS.lepraGnome);
     state.players.A.mana = { current: 5, max: 5 };
     applyPlayCard(state, 'A', instanceId);
     expect(state.players.A.hand).toHaveLength(0);
     expect(state.board.A).toHaveLength(1);
-    expect(state.players.A.mana.current).toBe(3);
+    expect(state.players.A.mana.current).toBe(4);
+  });
+
+  it('prevents newly summoned minions from attacking immediately', () => {
+    const state = createState();
+    const instanceId = addCard(state, 'A', CARD_IDS.lepraGnome);
+    state.players.A.mana = { current: 5, max: 5 };
+
+    applyPlayCard(state, 'A', instanceId);
+
+    expect(state.board.A).toHaveLength(1);
+    expect(state.board.A[0]?.attacksRemaining).toBe(0);
+
+    startTurn(state, 'A');
+
+    expect(state.board.A[0]?.attacksRemaining).toBe(1);
   });
 
   it('applies coin temporary mana boost', () => {
@@ -75,7 +90,7 @@ describe('match reducer', () => {
 
   it('rejects playing cards without enough mana', () => {
     const state = createState();
-    const instanceId = addCard(state, 'A', CARD_IDS.riverCrocolisk);
+    const instanceId = addCard(state, 'A', CARD_IDS.miniDragon);
     state.players.A.mana = { current: 1, max: 1 };
     expect(() => validatePlayCard(state, 'A', instanceId)).toThrow(ValidationError);
   });
