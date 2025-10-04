@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { CARD_IDS, MATCH_CONFIG } from '@cardstone/shared/constants.js';
-import type { GameState, PlayerSide } from '@cardstone/shared/types.js';
+import type { GameState, MinionCard, PlayerSide } from '@cardstone/shared/types.js';
 import { getCardDefinition } from '@cardstone/shared/cards/demo.js';
 import { applyPlayCard, gainMana, startTurn } from '@cardstone/server/match/reducer.js';
-import { validatePlayCard, ValidationError } from '@cardstone/server/match/validate.js';
+import {
+  validateAttack,
+  validatePlayCard,
+  ValidationError
+} from '@cardstone/server/match/validate.js';
+
 
 function createState(): GameState {
   return {
@@ -44,6 +49,23 @@ function addCard(state: GameState, side: PlayerSide, cardId: string): string {
   return instanceId;
 }
 
+function summonMinion(state: GameState, side: PlayerSide, cardId: string): string {
+  const card = getCardDefinition(cardId);
+  if (card.type !== 'Minion') {
+    throw new Error('Card must be a minion to summon');
+  }
+  const minionCard = card as MinionCard;
+  const instanceId = `${cardId}_${Math.random()}`;
+  state.board[side].push({
+    instanceId,
+    card: minionCard,
+    attack: minionCard.attack,
+    health: minionCard.health,
+    attacksRemaining: 1
+  });
+  return instanceId;
+}
+
 describe('match reducer', () => {
   it('increases mana until the cap', () => {
     const state = createState();
@@ -57,6 +79,7 @@ describe('match reducer', () => {
   it('plays a minion and reduces mana', () => {
     const state = createState();
     const instanceId = addCard(state, 'A', CARD_IDS.lepraGnome);
+
     state.players.A.mana = { current: 5, max: 5 };
     applyPlayCard(state, 'A', instanceId);
     expect(state.players.A.hand).toHaveLength(0);
@@ -91,7 +114,41 @@ describe('match reducer', () => {
   it('rejects playing cards without enough mana', () => {
     const state = createState();
     const instanceId = addCard(state, 'A', CARD_IDS.miniDragon);
+
     state.players.A.mana = { current: 1, max: 1 };
     expect(() => validatePlayCard(state, 'A', instanceId)).toThrow(ValidationError);
+  });
+});
+
+describe('validateAttack', () => {
+  it('prevents attacking hero when taunt minion is present', () => {
+    const state = createState();
+    const attackerId = summonMinion(state, 'A', CARD_IDS.knight);
+    summonMinion(state, 'B', CARD_IDS.forestDweller);
+
+    expect(() => validateAttack(state, 'A', attackerId, { type: 'hero', side: 'B' })).toThrow(
+      ValidationError
+    );
+  });
+
+  it('forces attacks to target taunt minions first', () => {
+    const state = createState();
+    const attackerId = summonMinion(state, 'A', CARD_IDS.knight);
+    const tauntId = summonMinion(state, 'B', CARD_IDS.forestDweller);
+    const nonTauntId = summonMinion(state, 'B', CARD_IDS.nighOwl);
+
+    expect(() =>
+      validateAttack(state, 'A', attackerId, { type: 'minion', side: 'B', entityId: nonTauntId })
+    ).toThrow(ValidationError);
+    expect(() =>
+      validateAttack(state, 'A', attackerId, { type: 'minion', side: 'B', entityId: tauntId })
+    ).not.toThrow();
+  });
+
+  it('allows attacking hero when no taunt minions exist', () => {
+    const state = createState();
+    const attackerId = summonMinion(state, 'A', CARD_IDS.knight);
+
+    expect(() => validateAttack(state, 'A', attackerId, { type: 'hero', side: 'B' })).not.toThrow();
   });
 });

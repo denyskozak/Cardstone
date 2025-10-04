@@ -211,6 +211,9 @@ export function applyAttack(
   if (!attacker) {
     throw new Error('Attacker not found');
   }
+  if (attacker.attack <= 0) {
+    throw new Error('Attacker cannot attack');
+  }
   if (attacker.attacksRemaining <= 0) {
     throw new Error('Attacker has no attacks remaining');
   }
