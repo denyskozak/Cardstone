@@ -3,6 +3,7 @@ import {
   type CardPlacement,
   type GameState,
   type MinionCard,
+  type MinionEntity,
   type PlayerSide,
   type SpellCard,
   type TargetDescriptor
@@ -98,10 +99,21 @@ function summonMinion(
 
   if (placement === 'left') {
     state.board[side].unshift(minion);
-    return;
+  } else {
+    state.board[side].push(minion);
   }
 
-  state.board[side].push(minion);
+  applySummonEffects(state, side, minion);
+}
+
+function applySummonEffects(state: GameState, side: PlayerSide, minion: MinionEntity): void {
+  switch (minion.card.effect) {
+    case 'take_card':
+      drawCard(state, side);
+      break;
+    default:
+      break;
+  }
 }
 
 function resolveSpell(
