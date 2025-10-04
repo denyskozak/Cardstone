@@ -233,6 +233,18 @@ export default function Board({
   onCastSpell
 }: BoardProps) {
   const boardRef = useRef<Container | null>(null);
+  const minionCacheRef = useRef(
+    new Map<
+      string,
+      {
+        entity: MinionEntity;
+        side: PlayerSide;
+        baseX: number;
+        baseY: number;
+        defaultZIndex: number;
+      }
+    >()
+  );
   const targeting = useUiStore((s) => s.targeting);
   const setTargeting = useUiStore((s) => s.setTargeting);
   const updateTargeting = useUiStore((s) => s.updateTargeting);
@@ -243,11 +255,43 @@ export default function Board({
   const hoveredCardId = useUiStore((s) => s.hoveredCard);
   const setHovered = useUiStore((s) => s.setHovered);
   const targetRef = useRef<TargetDescriptor | null>(null);
+  const pendingAttackTimeoutsRef = useRef<Array<ReturnType<typeof window.setTimeout>>>([]);
   const enqueueLocalAttackAnimation = useUiStore((s) => s.enqueueLocalAttackAnimation);
+
+  useEffect(() => {
+    return () => {
+      pendingAttackTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
+      pendingAttackTimeoutsRef.current = [];
+    };
+  }, []);
 
   useEffect(() => {
     targetRef.current = currentTarget;
   }, [currentTarget]);
+
+  useEffect(() => {
+    const cache = minionCacheRef.current;
+    const activeIds = new Set<string>();
+    (['A', 'B'] as PlayerSide[]).forEach((side) => {
+      state.board[side].forEach((minion) => {
+        const cached = cache.get(minion.instanceId);
+        cache.set(minion.instanceId, {
+          entity: minion,
+          side,
+          baseX: cached?.baseX ?? 0,
+          baseY: cached?.baseY ?? 0,
+          defaultZIndex: cached?.defaultZIndex ?? 0
+        });
+        activeIds.add(minion.instanceId);
+      });
+    });
+
+    Array.from(cache.keys()).forEach((id) => {
+      if (!activeIds.has(id) && !minionAnimations[id]) {
+        cache.delete(id);
+      }
+    });
+  }, [minionAnimations, state.board]);
 
   const handlePointerMove = useCallback(
     (event: FederatedPointerEvent) => {
@@ -282,7 +326,13 @@ export default function Board({
           side: playerSide,
           target: queuedTarget
         });
-        onAttack(action.source.entityId, target);
+        const timeout = window.setTimeout(() => {
+          onAttack(action.source.entityId, target);
+          pendingAttackTimeoutsRef.current = pendingAttackTimeoutsRef.current.filter(
+            (value) => value !== timeout
+          );
+        }, 420);
+        pendingAttackTimeoutsRef.current.push(timeout);
       } else if (action.source.kind === 'spell') {
         setSelected(undefined);
         onCastSpell(action.source.card, target);
@@ -395,24 +445,35 @@ export default function Board({
 
   const renderRow = useCallback(
     (side: PlayerSide, y: number) => {
+      const cache = minionCacheRef.current;
       const minions = state.board[side];
       const count = minions.length;
       const rowWidth =
         count > 0 ? count * MINION_WIDTH + (count - 1) * MINION_HORIZONTAL_GAP : 0;
       const startX = laneX + (laneWidth - rowWidth) / 2;
 
-      return minions.map((entity, index) => {
-        const x = startX + index * (MINION_WIDTH + MINION_HORIZONTAL_GAP);
+      const renderedIds = new Set<string>();
+
+      const createMinion = (
+        entity: MinionEntity,
+        baseX: number,
+        baseY: number,
+        interactive: boolean,
+        defaultZIndex: number,
+        key: string
+      ) => {
         const isFriendly = side === playerSide;
-        const canAttackThisMinion = isFriendly && canAttack(entity);
+        const canAttackThisMinion = interactive && isFriendly && canAttack(entity);
         const targetDescriptor: TargetDescriptor = {
           type: 'minion',
           side,
           entityId: entity.instanceId
         };
 
-        const canBeSpellTarget = targetingPredicate ? targetingPredicate(targetDescriptor) : false;
+        const canBeSpellTarget =
+          interactive && targetingPredicate ? targetingPredicate(targetDescriptor) : false;
         const isTargeted =
+          interactive &&
           currentTarget?.type === 'minion' &&
           currentTarget.side === side &&
           currentTarget.entityId === entity.instanceId;
@@ -425,47 +486,56 @@ export default function Board({
             ? 0xff7675
             : 0xd63031;
 
-        const handleDown = isFriendly
-          ? (event: FederatedPointerEvent) => handleStartAttack(entity, event)
-          : undefined;
+        const handleDown =
+          interactive && isFriendly
+            ? (event: FederatedPointerEvent) => handleStartAttack(entity, event)
+            : undefined;
 
         const animation: MinionAnimationTransform | undefined = minionAnimations[entity.instanceId];
         const offsetX = animation?.offsetX ?? 0;
         const offsetY = animation?.offsetY ?? 0;
         const scale = animation?.scale ?? 1;
         const rotation = animation?.rotation ?? 0;
-        const zIndex = animation?.zIndex ?? index;
+        const zIndex = animation?.zIndex ?? defaultZIndex;
 
         return (
           <pixiContainer
-            key={entity.instanceId}
-            x={x + offsetX}
-            y={y + offsetY}
+            key={key}
+            x={baseX + offsetX}
+            y={baseY + offsetY}
             scale={scale}
             rotation={rotation}
             zIndex={zIndex}
-            interactive
-            eventMode="static"
+            interactive={interactive}
+            eventMode={interactive ? 'static' : undefined}
             cursor={
-              isFriendly && canAttackThisMinion
+              interactive && isFriendly && canAttackThisMinion
                 ? 'pointer'
-                : targetingPredicate && canBeSpellTarget
+                : interactive && targetingPredicate && canBeSpellTarget
                   ? 'pointer'
                   : 'default'
             }
             onPointerDown={handleDown}
-            onPointerOver={() => {
-              setHovered(entity.instanceId);
-              if (targetingPredicate && canBeSpellTarget) {
-                handleTargetOver(targetDescriptor);
-              }
-            }}
-            onPointerOut={() => {
-              if (targetingPredicate && canBeSpellTarget) {
-                handleTargetOut(targetDescriptor);
-              }
-              setHovered(undefined);
-            }}
+            onPointerOver={
+              interactive
+                ? () => {
+                    setHovered(entity.instanceId);
+                    if (targetingPredicate && canBeSpellTarget) {
+                      handleTargetOver(targetDescriptor);
+                    }
+                  }
+                : undefined
+            }
+            onPointerOut={
+              interactive
+                ? () => {
+                    if (targetingPredicate && canBeSpellTarget) {
+                      handleTargetOut(targetDescriptor);
+                    }
+                    setHovered(undefined);
+                  }
+                : undefined
+            }
           >
             <pixiGraphics
               draw={(g) => {
@@ -481,26 +551,6 @@ export default function Board({
               }}
             />
             <MinionCardArt cardId={entity.card.id} />
-            {/*<pixiGraphics*/}
-            {/*  draw={(g) => {*/}
-            {/*    g.clear();*/}
-            {/*    g.beginFill(0x000000, 0.35);*/}
-            {/*    g.drawRoundedRect(*/}
-            {/*      MINION_WIDTH * 0.12,*/}
-            {/*      MINION_HEIGHT * 0.62,*/}
-            {/*      MINION_WIDTH * 0.76,*/}
-            {/*      MINION_HEIGHT * 0.22,*/}
-            {/*      12*/}
-            {/*    );*/}
-            {/*    g.endFill();*/}
-            {/*  }}*/}
-            {/*/>*/}
-            {/*<pixiText*/}
-            {/*  text={entity.card.name}*/}
-            {/*  x={8}*/}
-            {/*  y={12}*/}
-            {/*  style={{ fill: 0xffffff, fontSize: 14 }}*/}
-            {/*/>*/}
             <pixiText
               text={`${entity.attack}`}
               x={MINION_WIDTH * 0.09}
@@ -515,7 +565,47 @@ export default function Board({
             />
           </pixiContainer>
         );
+      };
+
+      const elements = minions.map((entity, index) => {
+        const baseX = startX + index * (MINION_WIDTH + MINION_HORIZONTAL_GAP);
+        const baseY = y;
+        cache.set(entity.instanceId, {
+          entity,
+          side,
+          baseX,
+          baseY,
+          defaultZIndex: index
+        });
+        renderedIds.add(entity.instanceId);
+        return createMinion(entity, baseX, baseY, true, index, entity.instanceId);
       });
+
+      Object.entries(minionAnimations).forEach(([id, animation]) => {
+        if (!animation) {
+          return;
+        }
+        if (renderedIds.has(id)) {
+          return;
+        }
+        const cached = cache.get(id);
+        if (!cached || cached.side !== side) {
+          return;
+        }
+        renderedIds.add(id);
+        elements.push(
+          createMinion(
+            cached.entity,
+            cached.baseX,
+            cached.baseY,
+            false,
+            cached.defaultZIndex,
+            `ghost-${id}`
+          )
+        );
+      });
+
+      return elements;
     },
     [
       canAttack,
