@@ -338,13 +338,14 @@ export default function Board({
       return null;
     }
     if (targeting.source.kind === 'minion') {
-      return getTargetingPredicate({ kind: 'minion' }, playerSide);
+      return getTargetingPredicate({ kind: 'minion' }, playerSide, state);
     }
     return getTargetingPredicate(
       { kind: 'spell', effect: targeting.source.card.card.effect },
-      playerSide
+      playerSide,
+      state
     );
-  }, [playerSide, targeting]);
+  }, [playerSide, state, targeting]);
 
   const handleTargetOver = useCallback(
     (target: TargetDescriptor) => {
