@@ -550,6 +550,20 @@ export default function Board({
                 g.endFill();
               }}
             />
+            {entity.divineShield ? (
+              <pixiGraphics
+                draw={(g) => {
+                  g.clear();
+                  g.lineStyle(4, 0xfff4aa, 0.9);
+                  g.drawEllipse(
+                    MINION_WIDTH / 2,
+                    MINION_HEIGHT / 2,
+                    MINION_WIDTH / 2 - 4,
+                    MINION_HEIGHT / 2 - 4
+                  );
+                }}
+              />
+            ) : null}
             <MinionCardArt cardId={entity.card.id} />
             <pixiText
               text={`${entity.attack}`}
