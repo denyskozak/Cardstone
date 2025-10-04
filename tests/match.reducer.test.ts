@@ -111,6 +111,19 @@ describe('match reducer', () => {
     expect(state.players.A.mana.temporary).toBe(1);
   });
 
+  it('draws a card when summoning a take_card minion', () => {
+    const state = createState();
+    const instanceId = addCard(state, 'A', CARD_IDS.hoarder);
+    state.players.A.deck = [CARD_IDS.knight];
+    state.players.A.mana = { current: 2, max: 2 };
+
+    applyPlayCard(state, 'A', instanceId);
+
+    expect(state.players.A.hand).toHaveLength(1);
+    expect(state.players.A.hand[0]?.card.id).toBe(CARD_IDS.knight);
+    expect(state.players.A.deck).toHaveLength(0);
+  });
+
   it('rejects playing cards without enough mana', () => {
     const state = createState();
     const instanceId = addCard(state, 'A', CARD_IDS.miniDragon);
