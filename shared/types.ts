@@ -22,7 +22,8 @@ export type EffectTrigger =
   | { type: 'TurnEnd' }
   | { type: 'Attack' }
   | { type: 'Play' }
-  | { type: 'Aura' };
+  | { type: 'Aura' }
+  | { type: 'Custom'; key: string };
 
 export type EffectAction =
   | { type: 'Damage'; amount: number; target: TargetSelector }
@@ -37,7 +38,8 @@ export type EffectCondition =
   | { type: 'IfDamaged'; target: TargetSelector }
   | { type: 'IfClass'; class: string }
   | { type: 'RandomChance'; percent: number }
-  | { type: 'HasTribe'; tribe: string };
+  | { type: 'HasTribe'; tribe: string }
+  | { type: 'Custom'; key: string; [key: string]: unknown };
 
 export type Effect = {
   trigger: EffectTrigger;
