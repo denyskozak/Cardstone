@@ -5,7 +5,7 @@ import type {
   SpellCard,
   TargetDescriptor
 } from '@cardstone/shared/types.js';
-import { getTargetingPredicate } from '@cardstone/shared/targeting';
+import { getTargetingPredicate, hasTauntOnBoard } from '@cardstone/shared/targeting';
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -103,12 +103,18 @@ export function validateAttack(
     throw new ValidationError('This minion has already attacked');
   }
 
+  const opponentSide: PlayerSide = side === 'A' ? 'B' : 'A';
+  const opponentHasTaunt = hasTauntOnBoard(state, opponentSide);
+
   if (target.type === 'hero') {
     if (target.side === side) {
       throw new ValidationError('Cannot attack your own hero');
     }
     if (!state.players[target.side]) {
       throw new ValidationError('Target hero not found');
+    }
+    if (opponentHasTaunt) {
+      throw new ValidationError('Must attack taunt minions first');
     }
     return;
   }
@@ -119,5 +125,8 @@ export function validateAttack(
   const defender = state.board[target.side].find((entity) => entity.instanceId === target.entityId);
   if (!defender) {
     throw new ValidationError('Target minion not found');
+  }
+  if (opponentHasTaunt && defender.card.effect !== 'taunt') {
+    throw new ValidationError('Must attack taunt minions first');
   }
 }
