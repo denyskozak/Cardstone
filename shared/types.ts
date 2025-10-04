@@ -21,9 +21,7 @@ export interface MinionCard extends CardBase {
   health: number;
   text?: string;
   effect?: string;
-  effectProperty?: {
-    damageToEnemyHero: number
-  }
+  effectProperty?: Record<string, number>
 
 }
 

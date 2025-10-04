@@ -18,7 +18,10 @@ const minions: Record<string, MinionCard> = {
     cost: 2,
     attack: 2,
     health: 3,
-    effect: 'berserk'
+    effect: 'berserk',
+    effectProperty: {
+      attack: 2
+    }
   },
   [CARD_IDS.bullguard]: {
     id: CARD_IDS.bullguard,
@@ -36,7 +39,6 @@ const minions: Record<string, MinionCard> = {
     cost: 1,
     attack: 1,
     health: 2,
-    effect: 'battlecry'
   },
   [CARD_IDS.delivarer]: {
     id: CARD_IDS.delivarer,
@@ -44,8 +46,8 @@ const minions: Record<string, MinionCard> = {
     type: 'Minion',
     cost: 2,
     attack: 2,
-    health: 3,
-    effect: 'battlecry'
+    health: 2,
+    effect: 'battlecry',
   },
   [CARD_IDS.draugr]: {
     id: CARD_IDS.draugr,
