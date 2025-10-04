@@ -5,7 +5,17 @@ import type {
   SpellCard,
   TargetDescriptor
 } from '@cardstone/shared/types.js';
-import { getTargetingPredicate, hasTauntOnBoard } from '@cardstone/shared/targeting';
+import {
+  getTargetingPredicate,
+  hasTauntOnBoard,
+  targetMatchesSelector
+} from '@cardstone/shared/targeting';
+import {
+  actionRequiresTarget,
+  getActionTargetSelector,
+  getPrimaryPlayAction,
+  hasTaunt
+} from '@cardstone/shared/effects';
 
 export class ValidationError extends Error {
   constructor(message: string) {
@@ -40,28 +50,38 @@ export function validatePlayCard(
     throw new ValidationError('Not enough mana');
   }
   if (handCard.card.type === 'Spell') {
-    validateSpellTarget(state, side, handCard.card.effect, target);
+    validateSpellTarget(state, side, handCard.card, target);
   }
 }
 
 function validateSpellTarget(
   state: GameState,
   actingSide: PlayerSide,
-  effect: SpellCard['effect'],
+  card: SpellCard,
   target: TargetDescriptor | undefined
 ): void {
-  if (effect === 'Coin') {
+  const action = getPrimaryPlayAction(card);
+  if (!action || !actionRequiresTarget(action)) {
     return;
   }
   if (!target) {
     throw new ValidationError('Target required');
   }
 
-  const predicate = getTargetingPredicate({ kind: 'spell', effect }, actingSide);
+  assertSpellTargetExists(state, target);
+
+  const predicate = getTargetingPredicate({ kind: 'spell', action }, actingSide);
   if (!predicate(target)) {
     throw new ValidationError('Invalid target for spell');
   }
 
+  const selector = getActionTargetSelector(action);
+  if (selector && !targetMatchesSelector(target, selector, actingSide)) {
+    throw new ValidationError('Invalid target for spell');
+  }
+}
+
+function assertSpellTargetExists(state: GameState, target: TargetDescriptor): void {
   if (target.type === 'hero') {
     if (!state.players[target.side]) {
       throw new ValidationError('Target hero not found');
@@ -126,7 +146,7 @@ export function validateAttack(
   if (!defender) {
     throw new ValidationError('Target minion not found');
   }
-  if (opponentHasTaunt && defender.card.effect !== 'taunt') {
+  if (opponentHasTaunt && !hasTaunt(defender.card)) {
     throw new ValidationError('Must attack taunt minions first');
   }
 }

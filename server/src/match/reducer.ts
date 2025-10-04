@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   type CardPlacement,
+  type EffectAction,
   type GameState,
   type MinionCard,
   type MinionEntity,
@@ -10,7 +11,13 @@ import {
 } from '@cardstone/shared/types';
 import { getCardDefinition } from '@cardstone/shared/cards/demo';
 import { CARD_IDS, DRAW_PER_TURN, MATCH_CONFIG } from '@cardstone/shared/constants';
-import { getTargetingPredicate } from '@cardstone/shared/targeting';
+import { getTargetingPredicate, targetMatchesSelector } from '@cardstone/shared/targeting';
+import {
+  actionRequiresTarget,
+  getActionTargetSelector,
+  getEffectsByTrigger,
+  hasDivineShield
+} from '@cardstone/shared/effects';
 
 export function gainMana(state: GameState, side: PlayerSide): void {
   const player = state.players[side];
@@ -77,9 +84,11 @@ export function applyPlayCard(
 
   if (handCard.card.type === 'Minion') {
     summonMinion(state, side, handCard.card, placement);
-  } else {
+  } else if (handCard.card.type === 'Spell') {
     resolveSpell(state, side, handCard.card, target);
     player.graveyard.push(handCard.card.id);
+  } else {
+    throw new Error(`Unsupported card type ${handCard.card.type}`);
   }
 }
 
@@ -95,7 +104,7 @@ function summonMinion(
     attack: card.attack,
     health: card.health,
     attacksRemaining: 0,
-    divineShield: card.effect === 'divide_shield'
+    divineShield: hasDivineShield(card)
   };
 
   if (placement === 'left') {
@@ -108,12 +117,88 @@ function summonMinion(
 }
 
 function applySummonEffects(state: GameState, side: PlayerSide, minion: MinionEntity): void {
-  switch (minion.card.effect) {
-    case 'take_card':
-      drawCard(state, side);
-      break;
+  const effects = [
+    ...getEffectsByTrigger(minion.card, 'Battlecry'),
+    ...getEffectsByTrigger(minion.card, 'Play')
+  ];
+  for (const effect of effects) {
+    if (actionRequiresTarget(effect.action)) {
+      throw new Error('Summon effect requires a target which is not supported yet');
+    }
+    executeEffectAction(state, side, effect.action);
+  }
+}
+
+function executeEffectAction(
+  state: GameState,
+  side: PlayerSide,
+  action: EffectAction,
+  target?: TargetDescriptor
+): void {
+  switch (action.type) {
+    case 'Damage':
+      if (!target) {
+        throw new Error('Target required for damage effect');
+      }
+      applyDamage(state, target, action.amount, side);
+      return;
+    case 'Heal':
+      if (!target) {
+        throw new Error('Target required for heal effect');
+      }
+      applyHeal(state, target, action.amount);
+      return;
+    case 'DrawCard':
+      for (let i = 0; i < action.amount; i += 1) {
+        drawCard(state, side);
+      }
+      return;
+    case 'ManaCrystal':
+      applyManaCrystal(state, side, action.amount);
+      return;
+    case 'Buff':
+      if (!target) {
+        throw new Error('Target required for buff effect');
+      }
+      applyBuff(state, target, action.stats);
+      return;
+    case 'Summon':
+      if (action.target !== 'Board') {
+        throw new Error('Unsupported summon target');
+      }
+      for (let i = 0; i < action.count; i += 1) {
+        const definition = getCardDefinition(action.cardId);
+        if (definition.type !== 'Minion') {
+          throw new Error('Only minions can be summoned onto the board');
+        }
+        summonMinion(state, side, definition, undefined);
+      }
+      return;
+    case 'Custom':
+      return;
     default:
-      break;
+      throw new Error('Unhandled effect action');
+  }
+}
+
+function applyBuff(
+  state: GameState,
+  target: TargetDescriptor,
+  stats: { attack?: number; health?: number }
+): void {
+  if (target.type !== 'minion') {
+    throw new Error('Buff effects can only target minions');
+  }
+  const minions = state.board[target.side];
+  const entity = minions.find((m) => m.instanceId === target.entityId);
+  if (!entity) {
+    throw new Error('Target minion missing');
+  }
+  if (typeof stats.attack === 'number') {
+    entity.attack += stats.attack;
+  }
+  if (typeof stats.health === 'number') {
+    entity.health += stats.health;
   }
 }
 
@@ -123,38 +208,47 @@ function resolveSpell(
   card: SpellCard,
   target?: TargetDescriptor
 ): void {
-  switch (card.effect) {
-    case 'Firebolt':
+  const effects = getEffectsByTrigger(card, 'Play');
+  for (const effect of effects) {
+    const action = effect.action;
+    if (actionRequiresTarget(action)) {
       if (!target) {
-        throw new Error('Firebolt requires target');
+        throw new Error('Target required for spell effect');
       }
-      assertSpellTargetAllowed(side, card.effect, target);
-      applyDamage(state, target, card.amount ?? 0, side);
-      break;
-    case 'Heal':
-      if (!target) {
-        throw new Error('Heal requires target');
-      }
-      assertSpellTargetAllowed(side, card.effect, target);
-      applyHeal(state, target, card.amount ?? 0);
-      break;
-    case 'Coin':
-      applyCoin(state, side, card.amount ?? 1);
-      break;
-    default:
-      const effect: never = card.effect;
-      throw new Error(`Unhandled spell effect ${effect}`);
+      assertSpellTargetAllowed(state, side, action, target);
+      executeEffectAction(state, side, action, target);
+    } else {
+      executeEffectAction(state, side, action);
+    }
   }
 }
 
 function assertSpellTargetAllowed(
+  state: GameState,
   actingSide: PlayerSide,
-  effect: SpellCard['effect'],
+  action: EffectAction,
   target: TargetDescriptor
 ): void {
-  const predicate = getTargetingPredicate({ kind: 'spell', effect }, actingSide);
+  const predicate = getTargetingPredicate({ kind: 'spell', action }, actingSide);
   if (!predicate(target)) {
     throw new Error('Invalid target for spell effect');
+  }
+  const selector = getActionTargetSelector(action);
+  if (!selector) {
+    throw new Error('Spell action does not take a target');
+  }
+  if (!targetMatchesSelector(target, selector, actingSide)) {
+    throw new Error('Invalid target for spell effect');
+  }
+  if (target.type === 'hero') {
+    if (!state.players[target.side]) {
+      throw new Error('Target hero not found');
+    }
+    return;
+  }
+  const board = state.board[target.side];
+  if (!board.find((entity) => entity.instanceId === target.entityId)) {
+    throw new Error('Target minion not found');
   }
 }
 
@@ -197,7 +291,7 @@ function applyHeal(state: GameState, target: TargetDescriptor, amount: number): 
   entity.health += amount;
 }
 
-function applyCoin(state: GameState, side: PlayerSide, amount: number): void {
+function applyManaCrystal(state: GameState, side: PlayerSide, amount: number): void {
   const player = state.players[side];
   player.mana.current += amount;
   player.mana.temporary = (player.mana.temporary ?? 0) + amount;

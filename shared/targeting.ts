@@ -1,10 +1,15 @@
-import type { GameState, PlayerSide, SpellCard, TargetDescriptor } from './types.js';
-
-type SpellEffect = SpellCard['effect'];
+import type {
+  EffectAction,
+  GameState,
+  PlayerSide,
+  TargetDescriptor,
+  TargetSelector
+} from './types.js';
+import { getActionTargetSelector, hasTaunt } from './effects.js';
 
 export type TargetingSource =
   | { kind: 'minion' }
-  | { kind: 'spell'; effect: SpellEffect };
+  | { kind: 'spell'; action: EffectAction };
 
 export type TargetingPredicate = (target: TargetDescriptor) => boolean;
 
@@ -23,8 +28,8 @@ export function getTargetingPredicate(
       }
 
       const defendingBoard = state.board[target.side];
-      const hasTaunt = defendingBoard.some((entity) => entity.card.effect === 'taunt');
-      if (!hasTaunt) {
+      const hasTauntMinion = defendingBoard.some((entity) => hasTaunt(entity.card));
+      if (!hasTauntMinion) {
         return true;
       }
 
@@ -33,28 +38,50 @@ export function getTargetingPredicate(
       }
 
       const defender = defendingBoard.find((entity) => entity.instanceId === target.entityId);
-      return Boolean(defender && defender.card.effect === 'taunt');
+      return Boolean(defender && hasTaunt(defender.card));
     };
   }
 
-  return getSpellTargetingPredicate(source.effect, actingSide);
+  return getSpellTargetingPredicate(source.action, actingSide);
 }
 
 export function hasTauntOnBoard(state: GameState, side: PlayerSide): boolean {
-  return state.board[side].some((entity) => entity.card.effect === 'taunt');
+  return state.board[side].some((entity) => hasTaunt(entity.card));
 }
 
-function getSpellTargetingPredicate(effect: SpellEffect, actingSide: PlayerSide): TargetingPredicate {
-  switch (effect) {
-    case 'Firebolt':
-      return (target) => target.side !== actingSide;
-    case 'Heal':
-      return (target) => target.side === actingSide;
-    case 'Coin':
-      return () => false;
-    default: {
-      const exhaustive: never = effect;
-      throw new Error(`Unhandled spell effect: ${exhaustive}`);
-    }
+export function targetMatchesSelector(
+  target: TargetDescriptor,
+  selector: TargetSelector,
+  actingSide: PlayerSide
+): boolean {
+  switch (selector) {
+    case 'Self':
+      return target.type === 'hero' && target.side === actingSide;
+    case 'FriendlyMinion':
+      return target.type === 'minion' && target.side === actingSide;
+    case 'EnemyMinion':
+      return target.type === 'minion' && target.side !== actingSide;
+    case 'AnyMinion':
+      return target.type === 'minion';
+    case 'Hero':
+      return target.type === 'hero';
+    case 'AllEnemies':
+    case 'RandomEnemy':
+      return target.side !== actingSide;
+    case 'AllFriendlies':
+      return target.side === actingSide;
+    default:
+      throw new Error('Unhandled target selector');
   }
+}
+
+function getSpellTargetingPredicate(
+  action: EffectAction,
+  actingSide: PlayerSide
+): TargetingPredicate {
+  const selector = getActionTargetSelector(action);
+  if (!selector) {
+    return () => false;
+  }
+  return (target) => targetMatchesSelector(target, selector, actingSide);
 }

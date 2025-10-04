@@ -1,4 +1,5 @@
 import type { CardInHand, CardPlacement } from '@cardstone/shared/types';
+import { actionRequiresTarget, getPrimaryPlayAction } from '@cardstone/shared/effects';
 import type { FederatedPointerEvent } from 'pixi.js';
 import { DisplayObject } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -44,7 +45,11 @@ interface CardAnimationState {
 }
 
 function isTargetedSpell(card: CardInHand): boolean {
-  return card.card.type === 'Spell' && (card.card.effect === 'Firebolt' || card.card.effect === 'Heal');
+  if (card.card.type !== 'Spell') {
+    return false;
+  }
+  const action = getPrimaryPlayAction(card.card);
+  return Boolean(action && actionRequiresTarget(action));
 }
 
 function cloneTransform(transform: Transform): Transform {
