@@ -89,12 +89,13 @@ function summonMinion(
   card: MinionCard,
   placement: CardPlacement | undefined
 ): void {
-  const minion = {
+  const minion: MinionEntity = {
     instanceId: randomUUID(),
     card,
     attack: card.attack,
     health: card.health,
-    attacksRemaining: 0
+    attacksRemaining: 0,
+    divineShield: card.effect === 'divide_shield'
   };
 
   if (placement === 'left') {
@@ -171,6 +172,10 @@ function applyDamage(state: GameState, target: TargetDescriptor, amount: number,
   const entity = minions.find((m) => m.instanceId === target.entityId);
   if (!entity) {
     throw new Error('Target minion missing');
+  }
+  if (amount > 0 && entity.divineShield) {
+    entity.divineShield = false;
+    return;
   }
   entity.health -= amount;
   if (entity.health <= 0) {

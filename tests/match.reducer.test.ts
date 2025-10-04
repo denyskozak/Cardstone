@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CARD_IDS, MATCH_CONFIG } from '@cardstone/shared/constants.js';
 import type { GameState, MinionCard, PlayerSide } from '@cardstone/shared/types.js';
 import { getCardDefinition } from '@cardstone/shared/cards/demo.js';
-import { applyPlayCard, gainMana, startTurn } from '@cardstone/server/match/reducer.js';
+import { applyAttack, applyPlayCard, gainMana, startTurn } from '@cardstone/server/match/reducer.js';
 import {
   validateAttack,
   validatePlayCard,
@@ -61,7 +61,8 @@ function summonMinion(state: GameState, side: PlayerSide, cardId: string): strin
     card: minionCard,
     attack: minionCard.attack,
     health: minionCard.health,
-    attacksRemaining: 1
+    attacksRemaining: 1,
+    divineShield: minionCard.effect === 'divide_shield'
   });
   return instanceId;
 }
@@ -163,5 +164,54 @@ describe('validateAttack', () => {
     const attackerId = summonMinion(state, 'A', CARD_IDS.knight);
 
     expect(() => validateAttack(state, 'A', attackerId, { type: 'hero', side: 'B' })).not.toThrow();
+  });
+});
+
+describe('divide shield effect', () => {
+  it('absorbs the first instance of damage from attacks', () => {
+    const state = createState();
+    const defenderId = summonMinion(state, 'A', CARD_IDS.argentSquare);
+    const attackerId = summonMinion(state, 'B', CARD_IDS.knight);
+
+    applyAttack(state, 'B', attackerId, { type: 'minion', side: 'A', entityId: defenderId });
+
+    const defender = state.board.A.find((entity) => entity.instanceId === defenderId);
+    expect(defender?.health).toBe(getCardDefinition(CARD_IDS.argentSquare).health);
+    expect(defender?.divineShield).toBe(false);
+
+    const attacker = state.board.B.find((entity) => entity.instanceId === attackerId);
+    expect(attacker?.health).toBe(
+      getCardDefinition(CARD_IDS.knight).health - getCardDefinition(CARD_IDS.argentSquare).attack
+    );
+
+    if (attacker) {
+      attacker.attacksRemaining = 1;
+    }
+
+    applyAttack(state, 'B', attackerId, { type: 'minion', side: 'A', entityId: defenderId });
+
+    const defenderAfter = state.board.A.find((entity) => entity.instanceId === defenderId);
+    expect(defenderAfter).toBeUndefined();
+  });
+
+  it('absorbs the first instance of spell damage', () => {
+    const state = createState();
+    const defenderId = summonMinion(state, 'B', CARD_IDS.argentSquare);
+    const firstFireboltId = addCard(state, 'A', CARD_IDS.firebolt);
+    state.players.A.mana = { current: 10, max: 10 };
+
+    applyPlayCard(state, 'A', firstFireboltId, { type: 'minion', side: 'B', entityId: defenderId });
+
+    let defender = state.board.B.find((entity) => entity.instanceId === defenderId);
+    expect(defender?.health).toBe(getCardDefinition(CARD_IDS.argentSquare).health);
+    expect(defender?.divineShield).toBe(false);
+
+    const secondFireboltId = addCard(state, 'A', CARD_IDS.firebolt);
+    state.players.A.mana = { current: 10, max: 10 };
+
+    applyPlayCard(state, 'A', secondFireboltId, { type: 'minion', side: 'B', entityId: defenderId });
+
+    defender = state.board.B.find((entity) => entity.instanceId === defenderId);
+    expect(defender).toBeUndefined();
   });
 });

@@ -46,6 +46,7 @@ export interface MinionEntity {
   attack: number;
   health: number;
   attacksRemaining: number;
+  divineShield?: boolean;
 }
 
 export interface HeroState {
