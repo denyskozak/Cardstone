@@ -96,6 +96,9 @@ export function validateAttack(
   if (!attacker) {
     throw new ValidationError('Attacking minion not found');
   }
+  if (attacker.attack <= 0) {
+    throw new ValidationError('This minion cannot attack');
+  }
   if (attacker.attacksRemaining <= 0) {
     throw new ValidationError('This minion has already attacked');
   }
