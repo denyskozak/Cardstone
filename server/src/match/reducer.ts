@@ -93,7 +93,7 @@ function summonMinion(
     card,
     attack: card.attack,
     health: card.health,
-    attacksRemaining: 1
+    attacksRemaining: 0
   };
 
   if (placement === 'left') {
