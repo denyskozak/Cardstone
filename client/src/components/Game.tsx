@@ -7,8 +7,14 @@ import type {
   MinionEntity,
   PlayerSide,
   ServerToClient,
-  TargetDescriptor
+  TargetDescriptor,
+  TargetSelector
 } from '@cardstone/shared/types';
+import {
+  actionRequiresTarget,
+  getActionTargetSelector,
+  getPrimaryPlayAction
+} from '@cardstone/shared/effects';
 import StageRoot from '../gamepixi/StageRoot';
 import { GameSocket } from '../net/ws';
 import styles from './Game.module.css';
@@ -33,6 +39,24 @@ extend({
 });
 
 const PLAYER_STORAGE_KEY = 'cardstone:playerId';
+
+function getDefaultTargetForSelector(
+  selector: TargetSelector,
+  side: PlayerSide
+): TargetDescriptor | undefined {
+  const opponentSide: PlayerSide = side === 'A' ? 'B' : 'A';
+  switch (selector) {
+    case 'AllEnemies':
+    case 'RandomEnemy':
+      return { type: 'hero', side: opponentSide };
+    case 'AllFriendlies':
+    case 'Self':
+    case 'Hero':
+      return { type: 'hero', side };
+    default:
+      return undefined;
+  }
+}
 
 export function Game() {
   const [socket] = useState(() => new GameSocket());
@@ -173,13 +197,14 @@ export function Game() {
       if (!side || !canPlayCard(card)) {
         return;
       }
-      const opponentSide: PlayerSide = side === 'A' ? 'B' : 'A';
       let target: TargetDescriptor | undefined = explicitTarget;
       if (!target && card.card.type === 'Spell') {
-        if (card.card.effect === 'Firebolt') {
-          target = { type: 'hero', side: opponentSide };
-        } else if (card.card.effect === 'Heal') {
-          target = { type: 'hero', side };
+        const action = getPrimaryPlayAction(card.card);
+        if (action && actionRequiresTarget(action)) {
+          const selector = getActionTargetSelector(action);
+          if (selector) {
+            target = getDefaultTargetForSelector(selector, side);
+          }
         }
       }
       socket.sendWithAck('PlayCard', {

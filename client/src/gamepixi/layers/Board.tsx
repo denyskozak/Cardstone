@@ -6,6 +6,7 @@ import type {
   TargetDescriptor
 } from '@cardstone/shared/types';
 import { getTargetingPredicate } from '@cardstone/shared/targeting';
+import { actionRequiresTarget, getPrimaryPlayAction } from '@cardstone/shared/effects';
 import type { FederatedPointerEvent } from 'pixi.js';
 import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -390,11 +391,11 @@ export default function Board({
     if (targeting.source.kind === 'minion') {
       return getTargetingPredicate({ kind: 'minion' }, playerSide, state);
     }
-    return getTargetingPredicate(
-      { kind: 'spell', effect: targeting.source.card.card.effect },
-      playerSide,
-      state
-    );
+    const action = getPrimaryPlayAction(targeting.source.card.card);
+    if (!action || !actionRequiresTarget(action)) {
+      return null;
+    }
+    return getTargetingPredicate({ kind: 'spell', action }, playerSide, state);
   }, [playerSide, state, targeting]);
 
   const handleTargetOver = useCallback(

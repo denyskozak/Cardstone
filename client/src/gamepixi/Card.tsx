@@ -142,8 +142,8 @@ export function Card({
         y={CARD_HEIGHT * 0.04}
         style={{ fill: 0xffffff, fontSize: 24, fontWeight: 'bold' }}
       />
-      {card.card.effect ? (<pixiText
-        text={card.card.effect}
+      {card.card.text ? (<pixiText
+        text={card.card.text}
         x={CARD_WIDTH * 0.25}
         y={CARD_HEIGHT * 0.7}
         style={{ fill: 0x000000, fontSize: CARD_WIDTH * 0.1, fontWeight: 'bold' }}

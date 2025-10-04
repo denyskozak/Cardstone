@@ -4,36 +4,84 @@ export type Phase = 'Start' | 'Main' | 'End';
 export type EntityId = string;
 export type CardId = string;
 
-export type CardType = 'Minion' | 'Spell';
+export type TargetSelector =
+  | 'Self'
+  | 'FriendlyMinion'
+  | 'EnemyMinion'
+  | 'AnyMinion'
+  | 'Hero'
+  | 'AllEnemies'
+  | 'AllFriendlies'
+  | 'RandomEnemy';
+
+export type EffectTrigger =
+  | { type: 'Battlecry' }
+  | { type: 'Deathrattle' }
+  | { type: 'SpellCast' }
+  | { type: 'TurnStart' }
+  | { type: 'TurnEnd' }
+  | { type: 'Attack' }
+  | { type: 'Play' }
+  | { type: 'Aura' };
+
+export type EffectAction =
+  | { type: 'Damage'; amount: number; target: TargetSelector }
+  | { type: 'Heal'; amount: number; target: TargetSelector }
+  | { type: 'DrawCard'; amount: number }
+  | { type: 'Summon'; cardId: string; count: number; target: 'Board' }
+  | { type: 'Buff'; stats: { attack?: number; health?: number }; target: TargetSelector }
+  | { type: 'ManaCrystal'; amount: number }
+  | { type: 'Custom'; key: string; data?: unknown };
+
+export type EffectCondition =
+  | { type: 'IfDamaged'; target: TargetSelector }
+  | { type: 'IfClass'; class: string }
+  | { type: 'RandomChance'; percent: number }
+  | { type: 'HasTribe'; tribe: string };
+
+export type Effect = {
+  trigger: EffectTrigger;
+  action: EffectAction;
+  condition?: EffectCondition;
+};
+
+export type CardType = 'Minion' | 'Spell' | 'Weapon' | 'Hero';
 
 export type CardPlacement = 'left' | 'right';
 
-export interface CardBase {
+interface CardDefinitionBase {
   id: CardId;
   name: string;
-  cost: number;
   type: CardType;
+  cost: number;
+  rarity?: 'Common' | 'Rare' | 'Epic' | 'Legendary';
+  set?: string;
+  tribe?: string;
+  text?: string;
+  effects?: Effect[];
 }
 
-export interface MinionCard extends CardBase {
+export type MinionCard = CardDefinitionBase & {
   type: 'Minion';
   attack: number;
   health: number;
-  text?: string;
-  effect?: string;
-  effectProperty?: Record<string, number>
+};
 
-}
-
-export type SpellEffect = 'Firebolt' | 'Heal' | 'Coin';
-
-export interface SpellCard extends CardBase {
+export type SpellCard = CardDefinitionBase & {
   type: 'Spell';
-  effect: SpellEffect;
-  amount?: number;
-}
+};
 
-export type CardDefinition = MinionCard | SpellCard;
+export type WeaponCard = CardDefinitionBase & {
+  type: 'Weapon';
+  attack: number;
+  durability: number;
+};
+
+export type HeroCard = CardDefinitionBase & {
+  type: 'Hero';
+};
+
+export type CardDefinition = MinionCard | SpellCard | WeaponCard | HeroCard;
 
 export interface CardInHand {
   instanceId: EntityId;

@@ -1,6 +1,5 @@
 import type { CardDefinition, MinionCard, SpellCard } from '../types.js';
 import { CARD_IDS } from '../constants.js';
-
 const minions: Record<string, MinionCard> = {
   [CARD_IDS.argentSquare]: {
     id: CARD_IDS.argentSquare,
@@ -9,7 +8,12 @@ const minions: Record<string, MinionCard> = {
     cost: 1,
     attack: 1,
     health: 1,
-    effect: 'divide_shield'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'DivineShield' }
+      }
+    ]
   },
   [CARD_IDS.berserk]: {
     id: CARD_IDS.berserk,
@@ -18,10 +22,12 @@ const minions: Record<string, MinionCard> = {
     cost: 2,
     attack: 2,
     health: 3,
-    effect: 'berserk',
-    effectProperty: {
-      attack: 2
-    }
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Berserk', data: { attack: 2 } }
+      }
+    ]
   },
   [CARD_IDS.bullguard]: {
     id: CARD_IDS.bullguard,
@@ -30,7 +36,12 @@ const minions: Record<string, MinionCard> = {
     cost: 1,
     attack: 0,
     health: 4,
-    effect: 'taunt'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Taunt' }
+      }
+    ]
   },
   [CARD_IDS.cunningPeople]: {
     id: CARD_IDS.cunningPeople,
@@ -47,7 +58,12 @@ const minions: Record<string, MinionCard> = {
     cost: 2,
     attack: 2,
     health: 2,
-    effect: 'battlecry',
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'Battlecry' }
+      }
+    ],
   },
   [CARD_IDS.draugr]: {
     id: CARD_IDS.draugr,
@@ -56,7 +72,12 @@ const minions: Record<string, MinionCard> = {
     cost: 2,
     attack: 3,
     health: 2,
-    effect: 'deathrattle'
+    effects: [
+      {
+        trigger: { type: 'Deathrattle' },
+        action: { type: 'Custom', key: 'Deathrattle' }
+      }
+    ]
   },
   [CARD_IDS.elunaPrist]: {
     id: CARD_IDS.elunaPrist,
@@ -73,7 +94,12 @@ const minions: Record<string, MinionCard> = {
     cost: 1,
     attack: 1,
     health: 3,
-    effect: 'battlecry'
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'Battlecry' }
+      }
+    ]
   },
   [CARD_IDS.fireBeard]: {
     id: CARD_IDS.fireBeard,
@@ -82,7 +108,12 @@ const minions: Record<string, MinionCard> = {
     cost: 3,
     attack: 2,
     health: 3,
-    effect: 'berserk'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Berserk' }
+      }
+    ]
   },
   [CARD_IDS.forestDweller]: {
     id: CARD_IDS.forestDweller,
@@ -91,7 +122,12 @@ const minions: Record<string, MinionCard> = {
     cost: 2,
     attack: 2,
     health: 4,
-    effect: 'taunt'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Taunt' }
+      }
+    ]
   },
   [CARD_IDS.frongProtector]: {
     id: CARD_IDS.frongProtector,
@@ -100,7 +136,12 @@ const minions: Record<string, MinionCard> = {
     cost: 3,
     attack: 3,
     health: 5,
-    effect: 'taunt'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Taunt' }
+      }
+    ]
   },
   [CARD_IDS.gatplank]: {
     id: CARD_IDS.gatplank,
@@ -109,7 +150,12 @@ const minions: Record<string, MinionCard> = {
     cost: 4,
     attack: 5,
     health: 3,
-    effect: 'battlecry'
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'Battlecry' }
+      }
+    ]
   },
   [CARD_IDS.germesProtector]: {
     id: CARD_IDS.germesProtector,
@@ -118,7 +164,12 @@ const minions: Record<string, MinionCard> = {
     cost: 3,
     attack: 2,
     health: 6,
-    effect: 'taunt'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Taunt' }
+      }
+    ]
   },
   [CARD_IDS.hoarder]: {
     id: CARD_IDS.hoarder,
@@ -127,7 +178,12 @@ const minions: Record<string, MinionCard> = {
     cost: 2,
     attack: 2,
     health: 1,
-    effect: 'take_card'
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'DrawCard', amount: 1 }
+      }
+    ]
   },
   [CARD_IDS.knight]: {
     id: CARD_IDS.knight,
@@ -144,7 +200,12 @@ const minions: Record<string, MinionCard> = {
     cost: 1,
     attack: 2,
     health: 1,
-    effect: 'deathrattle'
+    effects: [
+      {
+        trigger: { type: 'Deathrattle' },
+        action: { type: 'Custom', key: 'Deathrattle' }
+      }
+    ]
   },
   [CARD_IDS.miniDragon]: {
     id: CARD_IDS.miniDragon,
@@ -161,7 +222,12 @@ const minions: Record<string, MinionCard> = {
     cost: 2,
     attack: 2,
     health: 3,
-    effect: 'battlecry'
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'Battlecry' }
+      }
+    ]
   },
   [CARD_IDS.ninja]: {
     id: CARD_IDS.ninja,
@@ -170,7 +236,12 @@ const minions: Record<string, MinionCard> = {
     cost: 3,
     attack: 3,
     health: 2,
-    effect: 'steals'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Steals' }
+      }
+    ]
   },
   [CARD_IDS.python]: {
     id: CARD_IDS.python,
@@ -179,7 +250,12 @@ const minions: Record<string, MinionCard> = {
     cost: 4,
     attack: 4,
     health: 4,
-    effect: 'steals'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Steals' }
+      }
+    ]
   },
   [CARD_IDS.raider]: {
     id: CARD_IDS.raider,
@@ -196,7 +272,12 @@ const minions: Record<string, MinionCard> = {
     cost: 3,
     attack: 2,
     health: 4,
-    effect: 'divide_shield'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'DivineShield' }
+      }
+    ]
   },
   [CARD_IDS.sage]: {
     id: CARD_IDS.sage,
@@ -205,7 +286,12 @@ const minions: Record<string, MinionCard> = {
     cost: 4,
     attack: 2,
     health: 5,
-    effect: 'take_card'
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'DrawCard', amount: 1 }
+      }
+    ]
   },
   [CARD_IDS.sergeant]: {
     id: CARD_IDS.sergeant,
@@ -222,7 +308,12 @@ const minions: Record<string, MinionCard> = {
     cost: 4,
     attack: 3,
     health: 6,
-    effect: 'taunt'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Taunt' }
+      }
+    ]
   },
   [CARD_IDS.skeleton]: {
     id: CARD_IDS.skeleton,
@@ -231,7 +322,12 @@ const minions: Record<string, MinionCard> = {
     cost: 1,
     attack: 2,
     health: 1,
-    effect: 'deathrattle'
+    effects: [
+      {
+        trigger: { type: 'Deathrattle' },
+        action: { type: 'Custom', key: 'Deathrattle' }
+      }
+    ]
   },
   [CARD_IDS.surtur]: {
     id: CARD_IDS.surtur,
@@ -240,7 +336,12 @@ const minions: Record<string, MinionCard> = {
     cost: 7,
     attack: 7,
     health: 7,
-    effect: 'berserk'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Berserk' }
+      }
+    ]
   },
   [CARD_IDS.tiger]: {
     id: CARD_IDS.tiger,
@@ -249,7 +350,12 @@ const minions: Record<string, MinionCard> = {
     cost: 6,
     attack: 6,
     health: 5,
-    effect: 'steals'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Steals' }
+      }
+    ]
   },
   [CARD_IDS.vikingGirl]: {
     id: CARD_IDS.vikingGirl,
@@ -258,7 +364,12 @@ const minions: Record<string, MinionCard> = {
     cost: 3,
     attack: 3,
     health: 4,
-    effect: 'battlecry'
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'Battlecry' }
+      }
+    ]
   },
   [CARD_IDS.warrior]: {
     id: CARD_IDS.warrior,
@@ -267,7 +378,12 @@ const minions: Record<string, MinionCard> = {
     cost: 6,
     attack: 6,
     health: 7,
-    effect: 'taunt'
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Taunt' }
+      }
+    ]
   },
   [CARD_IDS.waterElemental]: {
     id: CARD_IDS.waterElemental,
@@ -276,7 +392,12 @@ const minions: Record<string, MinionCard> = {
     cost: 5,
     attack: 4,
     health: 6,
-    effect: 'battlecry'
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'Battlecry' }
+      }
+    ]
   },
   [CARD_IDS.wisp]: {
     id: CARD_IDS.wisp,
@@ -303,42 +424,52 @@ const minions: Record<string, MinionCard> = {
     health: 5
   }
 };
-
 const spells: Record<string, SpellCard> = {
   [CARD_IDS.firebolt]: {
     id: CARD_IDS.firebolt,
     name: 'Firebolt',
     type: 'Spell',
     cost: 2,
-    effect: 'Firebolt',
-    amount: 2
+    text: 'Deal 2 damage.',
+    effects: [
+      {
+        trigger: { type: 'Play' },
+        action: { type: 'Damage', amount: 2, target: 'AllEnemies' }
+      }
+    ]
   },
   [CARD_IDS.heal]: {
     id: CARD_IDS.heal,
     name: 'Mending Touch',
     type: 'Spell',
     cost: 2,
-    effect: 'Heal',
-    amount: 2
+    text: 'Restore 2 Health.',
+    effects: [
+      {
+        trigger: { type: 'Play' },
+        action: { type: 'Heal', amount: 2, target: 'AllFriendlies' }
+      }
+    ]
   },
   [CARD_IDS.coin]: {
     id: CARD_IDS.coin,
     name: 'The Coin',
     type: 'Spell',
     cost: 0,
-    effect: 'Coin',
-    amount: 1
+    text: 'Gain 1 temporary mana crystal.',
+    effects: [
+      {
+        trigger: { type: 'Play' },
+        action: { type: 'ManaCrystal', amount: 1 }
+      }
+    ]
   }
 };
-
-
 export const DEMO_CARDS: Record<string, CardDefinition> = {
   ...minions,
   ...spells
 };
-
 export const DEMO_CARD_POOL = Object.values(DEMO_CARDS);
-
 export function getCardDefinition(cardId: string): CardDefinition {
   const card = DEMO_CARDS[cardId];
   if (!card) {

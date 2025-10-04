@@ -8,6 +8,7 @@ import {
   validatePlayCard,
   ValidationError
 } from '@cardstone/server/match/validate.js';
+import { hasDivineShield } from '@cardstone/shared/effects.js';
 
 
 function createState(): GameState {
@@ -62,7 +63,7 @@ function summonMinion(state: GameState, side: PlayerSide, cardId: string): strin
     attack: minionCard.attack,
     health: minionCard.health,
     attacksRemaining: 1,
-    divineShield: minionCard.effect === 'divide_shield'
+    divineShield: hasDivineShield(minionCard)
   });
   return instanceId;
 }
