@@ -199,6 +199,9 @@ export function Game() {
       if (state.turn.current !== side || state.turn.phase !== 'Main') {
         return false;
       }
+      if (minion.attack <= 0) {
+        return false;
+      }
       return minion.attacksRemaining > 0;
     },
     [side, state]
