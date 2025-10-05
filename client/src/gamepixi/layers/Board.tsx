@@ -8,7 +8,7 @@ import type {
 import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import { actionRequiresTarget, getPrimaryPlayAction } from '@cardstone/shared/effects';
 import type { FederatedPointerEvent } from 'pixi.js';
-import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture } from 'pixi.js';
+import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture, BlurFilter, BLEND_MODES } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   useUiStore,
@@ -24,6 +24,7 @@ import {
   getBoardLaneGeometry,
   MINION_HORIZONTAL_GAP
 } from '../layout';
+
 interface BoardProps {
   state: GameState;
   playerSide: PlayerSide;
@@ -34,6 +35,7 @@ interface BoardProps {
   onCastSpell: (card: CardInHand, target: TargetDescriptor) => void;
 }
 
+const blurFilter = new BlurFilter(6);
 function MinionCardArt({ cardId }: { cardId: string }) {
   const [innerTexture, setInnerTexture] = useState<Texture>(Texture.EMPTY);
   const [texture, setTexture] = useState(Texture.EMPTY);
@@ -481,7 +483,7 @@ export default function Board({
 
         const fillColor = isFriendly
           ? canAttackThisMinion
-            ? 0x55efc4
+            ? 0x78ff5a
             : 0x0984e3
           : isTargeted
             ? 0xff7675
@@ -539,16 +541,21 @@ export default function Board({
             }
           >
             <pixiGraphics
+                blendMode={"add"}
+                anchor={0.5}
+                alpha={0.7}
+                filters={[blurFilter]}
               draw={(g) => {
                 g.clear();
-                g.beginFill(fillColor, isFriendly && !canAttackThisMinion ? 0.6 : 0.85);
-                g.drawEllipse(
-                  MINION_WIDTH / 2,
-                  MINION_HEIGHT / 2,
-                  MINION_WIDTH / 2,
-                  MINION_HEIGHT / 2
-                );
-                g.endFill();
+                  g.beginFill(fillColor,  isFriendly && !canAttackThisMinion ? 0.6 : 0.85); // зелёный
+                  g.drawEllipse(
+                      MINION_WIDTH / 2,
+                      MINION_HEIGHT / 2,
+                      MINION_WIDTH / 2 + 8,
+                      MINION_HEIGHT / 2 + 8
+                  );
+                  // g.drawCircle(0, 0, 50);   // радиус ореола
+                  g.endFill();
               }}
             />
             {entity.divineShield ? (
