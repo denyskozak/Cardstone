@@ -51,6 +51,24 @@ export function hasDivineShield(card: CardDefinition): boolean {
   );
 }
 
+export function getBerserkAttackBonus(card: CardDefinition): number | undefined {
+  const effect = getCardEffects(card).find(
+    (candidate) =>
+      candidate.trigger.type === 'Aura' &&
+      candidate.action.type === 'Custom' &&
+      candidate.action.key === 'Berserk'
+  );
+  if (!effect) {
+    return undefined;
+  }
+  const data = (effect.action as { data?: { attack?: number } }).data;
+  const bonus = data?.attack;
+  if (typeof bonus === 'number') {
+    return bonus;
+  }
+  return 2;
+}
+
 export function actionRequiresTarget(action: EffectAction): boolean {
   switch (action.type) {
     case 'Damage':

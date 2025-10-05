@@ -16,6 +16,7 @@ import {
   actionRequiresTarget,
   getActionTargetSelector,
   getEffectsByTrigger,
+  getBerserkAttackBonus,
   hasDivineShield
 } from '@cardstone/shared/effects';
 
@@ -103,6 +104,7 @@ function summonMinion(
     card,
     attack: card.attack,
     health: card.health,
+    maxHealth: card.health,
     attacksRemaining: 0,
     divineShield: hasDivineShield(card)
   };
@@ -199,7 +201,12 @@ function applyBuff(
   }
   if (typeof stats.health === 'number') {
     entity.health += stats.health;
+    entity.maxHealth += stats.health;
+    if (entity.health > entity.maxHealth) {
+      entity.health = entity.maxHealth;
+    }
   }
+  updateBerserkState(entity);
 }
 
 function resolveSpell(
@@ -274,7 +281,9 @@ function applyDamage(state: GameState, target: TargetDescriptor, amount: number,
   entity.health -= amount;
   if (entity.health <= 0) {
     removeMinion(state, target.side, target.entityId);
+    return;
   }
+  updateBerserkState(entity);
 }
 
 function applyHeal(state: GameState, target: TargetDescriptor, amount: number): void {
@@ -288,7 +297,9 @@ function applyHeal(state: GameState, target: TargetDescriptor, amount: number): 
   if (!entity) {
     throw new Error('Target minion missing');
   }
-  entity.health += amount;
+  const maxHealth = entity.maxHealth ?? entity.card.health;
+  entity.health = Math.min(maxHealth, entity.health + amount);
+  updateBerserkState(entity);
 }
 
 function applyManaCrystal(state: GameState, side: PlayerSide, amount: number): void {
@@ -347,4 +358,21 @@ export function applyAttack(
 
   const attackerTarget: TargetDescriptor = { type: 'minion', side, entityId: attackerId };
   applyDamage(state, attackerTarget, retaliation, target.side);
+}
+
+function updateBerserkState(entity: MinionEntity): void {
+  const bonus = getBerserkAttackBonus(entity.card);
+  if (!bonus) {
+    return;
+  }
+  const maxHealth = entity.maxHealth ?? entity.card.health;
+  const isDamaged = entity.health < maxHealth;
+  const active = Boolean(entity.berserkActive);
+  if (isDamaged && !active) {
+    entity.attack += bonus;
+    entity.berserkActive = true;
+  } else if (!isDamaged && active) {
+    entity.attack -= bonus;
+    entity.berserkActive = false;
+  }
 }

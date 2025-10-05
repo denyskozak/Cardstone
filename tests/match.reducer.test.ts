@@ -62,6 +62,7 @@ function summonMinion(state: GameState, side: PlayerSide, cardId: string): strin
     card: minionCard,
     attack: minionCard.attack,
     health: minionCard.health,
+    maxHealth: minionCard.health,
     attacksRemaining: 1,
     divineShield: hasDivineShield(minionCard)
   });
@@ -132,6 +133,21 @@ describe('match reducer', () => {
 
     state.players.A.mana = { current: 1, max: 1 };
     expect(() => validatePlayCard(state, 'A', instanceId)).toThrow(ValidationError);
+  });
+
+  it('grants Berserk minions +2 attack after taking damage', () => {
+    const state = createState();
+    const berserkerId = summonMinion(state, 'A', CARD_IDS.berserk);
+    const attackerId = summonMinion(state, 'B', CARD_IDS.nighOwl);
+
+    expect(state.board.A[0]?.attack).toBe(2);
+
+    applyAttack(state, 'B', attackerId, { type: 'minion', side: 'A', entityId: berserkerId });
+
+    const berserker = state.board.A.find((minion) => minion.instanceId === berserkerId);
+    expect(berserker?.health).toBe(1);
+    expect(berserker?.attack).toBe(4);
+    expect(berserker?.berserkActive).toBe(true);
   });
 });
 
