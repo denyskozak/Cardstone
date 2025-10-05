@@ -95,8 +95,10 @@ export interface MinionEntity {
   card: MinionCard;
   attack: number;
   health: number;
+  maxHealth: number;
   attacksRemaining: number;
   divineShield?: boolean;
+  berserkActive?: boolean;
 }
 
 export interface HeroState {
