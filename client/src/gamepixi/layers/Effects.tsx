@@ -56,6 +56,8 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const consumeLocalAttackQueue = useUiStore((s) => s.consumeLocalAttackQueue);
   const localAttackQueueVersion = useUiStore((s) => s.localAttackQueueVersion);
 
+  const pendingLocalAttackersRef = useRef(new Map<string, number>());
+
   const layout = useMemo(
     () => computeBoardLayout(state, playerSide, width, height),
     [state, playerSide, width, height]
@@ -77,6 +79,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       setBurnBursts([]);
       burnPrevStateRef.current = null;
       burnSequenceRef.current = 0;
+      pendingLocalAttackersRef.current.clear();
     };
   }, [resetMinionAnimations]);
 
@@ -134,14 +137,28 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       return;
     }
 
+    const pendingLocalAttackers = pendingLocalAttackersRef.current;
     const attackEvents = detectAttackEvents(previous, state);
-    if (attackEvents.length === 0) {
+    const filteredEvents = attackEvents.filter((event) => {
+      const pending = pendingLocalAttackers.get(event.attackerId);
+      if (pending && pending > 0) {
+        if (pending === 1) {
+          pendingLocalAttackers.delete(event.attackerId);
+        } else {
+          pendingLocalAttackers.set(event.attackerId, pending - 1);
+        }
+        return false;
+      }
+      return true;
+    });
+
+    if (filteredEvents.length === 0) {
       prevStateRef.current = state;
       prevLayoutRef.current = layout;
       return;
     }
 
-    const busyAttackers = new Set(attackEvents.map((event) => event.attackerId));
+    const busyAttackers = new Set(filteredEvents.map((event) => event.attackerId));
 
     setAnimations((current) => {
       const survivors: AttackAnimation[] = [];
@@ -151,7 +168,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         }
       });
 
-      attackEvents.forEach((event, index) => {
+      filteredEvents.forEach((event, index) => {
         const origin =
           layout.minions[event.side]?.[event.attackerId] ??
           previousLayout?.minions[event.side]?.[event.attackerId];
@@ -191,6 +208,13 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       return;
     }
     const previousLayout = prevLayoutRef.current;
+    // Record that these attackers are already animating locally so that
+    // the upcoming authoritative server update does not schedule a
+    // duplicate strike animation for the same attacker.
+    localEvents.forEach((event) => {
+      const pending = pendingLocalAttackersRef.current.get(event.attackerId) ?? 0;
+      pendingLocalAttackersRef.current.set(event.attackerId, pending + 1);
+    });
     setAnimations((current) => {
       const survivors: AttackAnimation[] = [];
       const busyAttackers = new Set(localEvents.map((event) => event.attackerId));

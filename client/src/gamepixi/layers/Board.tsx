@@ -324,6 +324,8 @@ export default function Board({
           target.type === 'hero'
             ? { type: 'hero', side: target.side }
             : { type: 'minion', side: target.side, entityId: target.entityId };
+        // Kick off the local strike animation immediately so the attacker
+        // lunges before the server confirms the combat result.
         enqueueLocalAttackAnimation({
           attackerId: action.source.entityId,
           side: playerSide,
