@@ -221,4 +221,5 @@ export interface MatchConfig {
   startingMana: number;
   maxMana: number;
   heroHp: number;
+  handLimit: number;
 }

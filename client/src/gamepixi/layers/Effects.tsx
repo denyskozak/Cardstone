@@ -5,11 +5,12 @@ import type {
   PlayerSide,
   TargetDescriptor
 } from '@cardstone/shared/types';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import TargetingArrow from '../effects/TargetingArrow';
 import { computeBoardLayout } from '../layout';
 import useMiniTicker from '../hooks/useMiniTicker';
 import { useUiStore } from '../../state/store';
+import CardBurnEmitter from '../effects/CardBurnEmitter';
 
 interface EffectsProps {
   state: GameState;
@@ -35,6 +36,11 @@ interface DamageSummary {
   heroDamaged: boolean;
 }
 
+interface BurnBurst {
+  key: string;
+  side: PlayerSide;
+}
+
 const ATTACK_DURATION = 420;
 const ATTACK_ARC_HEIGHT = 36;
 const ATTACK_LUNGE_SCALE = 0.08;
@@ -58,6 +64,9 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const [animations, setAnimations] = useState<AttackAnimation[]>([]);
   const prevStateRef = useRef<GameState | null>(null);
   const prevLayoutRef = useRef<ReturnType<typeof computeBoardLayout> | null>(null);
+  const burnPrevStateRef = useRef<GameState | null>(null);
+  const burnSequenceRef = useRef(0);
+  const [burnBursts, setBurnBursts] = useState<BurnBurst[]>([]);
 
   useEffect(() => {
     return () => {
@@ -65,8 +74,49 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       setAnimations([]);
       prevStateRef.current = null;
       prevLayoutRef.current = null;
+      setBurnBursts([]);
+      burnPrevStateRef.current = null;
+      burnSequenceRef.current = 0;
     };
   }, [resetMinionAnimations]);
+
+  useEffect(() => {
+    const previous = burnPrevStateRef.current;
+    if (!previous) {
+      burnPrevStateRef.current = state;
+      return;
+    }
+    if (previous.seq >= state.seq) {
+      burnPrevStateRef.current = state;
+      return;
+    }
+    const burnEvents = detectBurnCounts(previous, state);
+    if (burnEvents.length > 0) {
+      setBurnBursts((current) => {
+        if (burnEvents.length === 0) {
+          return current;
+        }
+        let sequence = burnSequenceRef.current;
+        const additions: BurnBurst[] = [];
+        burnEvents.forEach((event) => {
+          for (let i = 0; i < event.count; i += 1) {
+            additions.push({ key: `${state.seq}:${event.side}:${sequence}`, side: event.side });
+            sequence += 1;
+          }
+        });
+        if (additions.length === 0) {
+          return current;
+        }
+        burnSequenceRef.current = sequence;
+        return [...current, ...additions];
+      });
+    }
+    burnPrevStateRef.current = state;
+  }, [state]);
+
+  const handleBurnComplete = useCallback((key: string) => {
+    setBurnBursts((current) => current.filter((burst) => burst.key !== key));
+  }, []);
 
   useEffect(() => {
     const previous = prevStateRef.current;
@@ -245,6 +295,16 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         y={80}
         style={{ fill: 0xffffff, fontSize: 18 }}
       />
+      {burnBursts
+        .filter((burst) => burst.side === playerSide)
+        .map((burst) => (
+          <CardBurnEmitter
+            key={burst.key}
+            x={Math.max(64, width * 0.12)}
+            y={Math.max(96, height - 120)}
+            onComplete={() => handleBurnComplete(burst.key)}
+          />
+        ))}
     </pixiContainer>
   );
 }
@@ -340,6 +400,38 @@ function detectAttackEvents(previous: GameState, next: GameState) {
   });
 
   return events;
+}
+
+interface BurnDetectionResult {
+  side: PlayerSide;
+  count: number;
+}
+
+function detectBurnCounts(previous: GameState, next: GameState): BurnDetectionResult[] {
+  const results: BurnDetectionResult[] = [];
+  SIDES.forEach((side) => {
+    const prevPlayer = previous.players[side];
+    const nextPlayer = next.players[side];
+    if (!prevPlayer || !nextPlayer) {
+      return;
+    }
+    const deckDiff = prevPlayer.deck.length - nextPlayer.deck.length;
+    if (deckDiff <= 0) {
+      return;
+    }
+    const prevHandIds = new Set(prevPlayer.hand.map((card) => card.instanceId));
+    let added = 0;
+    nextPlayer.hand.forEach((card) => {
+      if (!prevHandIds.has(card.instanceId)) {
+        added += 1;
+      }
+    });
+    const burned = deckDiff - added;
+    if (burned > 0) {
+      results.push({ side, count: burned });
+    }
+  });
+  return results;
 }
 
 function summarizeDamage(
