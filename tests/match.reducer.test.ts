@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CARD_IDS, MATCH_CONFIG } from '@cardstone/shared/constants.js';
 import type { GameState, MinionCard, PlayerSide } from '@cardstone/shared/types.js';
 import { getCardDefinition } from '@cardstone/shared/cards/demo.js';
-import { applyAttack, applyPlayCard, gainMana, startTurn } from '@cardstone/server/match/reducer.js';
+import { applyAttack, applyPlayCard, drawCard, gainMana, startTurn } from '@cardstone/server/match/reducer.js';
 import {
   validateAttack,
   validatePlayCard,
@@ -112,6 +112,22 @@ describe('match reducer', () => {
     applyPlayCard(state, 'A', instanceId);
     expect(state.players.A.mana.current).toBe(2);
     expect(state.players.A.mana.temporary).toBe(1);
+  });
+
+  it('burns cards drawn beyond hand limit', () => {
+    const state = createState();
+    const fillerCard = getCardDefinition(CARD_IDS.lepraGnome);
+    state.players.A.hand = Array.from({ length: MATCH_CONFIG.handLimit }, (_, index) => ({
+      instanceId: `hand_${index}`,
+      card: fillerCard,
+    }));
+    state.players.A.deck = [CARD_IDS.knight, CARD_IDS.knight];
+
+    drawCard(state, 'A');
+
+    expect(state.players.A.hand).toHaveLength(MATCH_CONFIG.handLimit);
+    expect(state.players.A.deck).toHaveLength(1);
+    expect(state.players.A.graveyard).toContain(CARD_IDS.knight);
   });
 
   it('draws a card when summoning a take_card minion', () => {

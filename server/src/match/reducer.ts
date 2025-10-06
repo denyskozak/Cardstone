@@ -34,6 +34,10 @@ export function drawCard(state: GameState, side: PlayerSide): void {
     return;
   }
   const definition = getCardDefinition(cardId);
+  if (player.hand.length >= MATCH_CONFIG.handLimit) {
+    player.graveyard.push(cardId);
+    return;
+  }
   player.hand.push({
     instanceId: randomUUID(),
     card: definition

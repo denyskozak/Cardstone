@@ -4,7 +4,8 @@ export const MATCH_CONFIG: MatchConfig = {
   startingHandSize: 4,
   startingMana: 1,
   maxMana: 10,
-  heroHp: 30
+  heroHp: 30,
+  handLimit: 10
 };
 
 export const DRAW_PER_TURN = 1;
