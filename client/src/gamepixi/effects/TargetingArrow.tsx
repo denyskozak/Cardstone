@@ -202,6 +202,12 @@ function useParticles(initialDirection: Vec2, enabled = true) {
 }
 
 export default function TargetingArrow() {
+  // Когда игрок зажимает существо на доске, слой Board записывает в zustand-store структуру
+  // TargetingState: точку старта (центр существа), id указателя и текущие координаты курсора.
+  // Пока эта запись существует, Board обновляет поле `current` в onPointerMove, а этот эффект
+  // просто читает состояние из стора и заново строит геометрию стрелки каждый кадр. Как только
+  // Board сбрасывает TargetingState (на отпускании кнопки или отмене), компонент перестает
+  // рендериться — именно так появляется и исчезает «стрелочка» наведения атаки.
   const targeting = useUiStore((state) => state.targeting);
   const smoothedCurrent = useSmoothedPoint(targeting ? targeting.current : null);
   // Small sinusoidal modulation keeps the curve alive even when the cursor rests.
