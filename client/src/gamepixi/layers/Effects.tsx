@@ -374,7 +374,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
 
   return (
     <pixiContainer>
-      <TargetingArrow />
+      <TargetingArrow playerSide={playerSide} />
       <pixiText
         text={`Mana ${player.mana.current}/${player.mana.max}`}
         x={width - 220}
