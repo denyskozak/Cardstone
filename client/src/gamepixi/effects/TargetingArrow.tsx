@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useUiStore } from '../../state/store';
 import useMiniTicker from '../hooks/useMiniTicker';
 import type { Graphics } from 'pixi.js';
@@ -9,8 +9,8 @@ const SAMPLE_COUNT = 32;
 const BASE_BODY_WIDTH = 28;
 const TIP_WIDTH = 12;
 const TIP_LENGTH = 46;
+const TIP_SCALE = 1.5;
 const NORMALIZE_EPSILON = 1e-4;
-const PARTICLE_COUNT = 14;
 
 interface Vec2 {
   x: number;
@@ -27,14 +27,6 @@ interface CurveGeometry {
   tangents: Float32Array;
   tipPosition: Vec2;
   tipDirection: Vec2;
-}
-
-interface Particle {
-  position: Vec2;
-  velocity: Vec2;
-  life: number;
-  ttl: number;
-  size: number;
 }
 
 function normalize(vec: Vec2): Vec2 {
@@ -114,93 +106,6 @@ function useSmoothedPoint(target: Vec2 | null, stiffness = 18) {
   return point;
 }
 
-function usePulse(frequency = 2.4, enabled = true) {
-  const [value, setValue] = useState(0);
-  const phaseRef = useRef(0);
-  useMiniTicker((deltaMS) => {
-    const dt = deltaMS / 1000;
-    const nextPhase = phaseRef.current + dt * frequency * Math.PI * 2;
-    phaseRef.current = nextPhase % (Math.PI * 2);
-    setValue(Math.sin(phaseRef.current));
-  }, enabled);
-  return value;
-}
-
-function useParticles(initialDirection: Vec2, enabled = true) {
-  const graphicsRef = useRef<Graphics | null>(null);
-  const particlesRef = useRef<Particle[] | null>(null);
-  const positionRef = useRef<Vec2>({ x: 0, y: 0 });
-  const directionRef = useRef<Vec2>(normalize(initialDirection));
-
-  if (!particlesRef.current) {
-    particlesRef.current = new Array(PARTICLE_COUNT).fill(null).map(() => ({
-      position: { x: 0, y: 0 },
-      velocity: { x: 0, y: 0 },
-      life: 1,
-      ttl: 0,
-      size: 2
-    }));
-  }
-
-  const respawnParticle = (particle: Particle) => {
-    const tip = positionRef.current;
-    const dir = directionRef.current;
-    const perpendicular = { x: -dir.y, y: dir.x };
-    const speed = 200 + Math.random() * 100;
-    // The sparks are biased forward so they travel with the tip instead of drifting backwards.
-    const ttl = 0.2 + Math.random() * 0.2;
-    const spread = (Math.random() - 0.5) * 10;
-    particle.position.x = tip.x - dir.x * 6 + perpendicular.x * spread;
-    particle.position.y = tip.y - dir.y * 6 + perpendicular.y * spread;
-    particle.velocity.x = dir.x * speed + perpendicular.x * (Math.random() - 0.5) * 80;
-    particle.velocity.y = dir.y * speed + perpendicular.y * (Math.random() - 0.5) * 80;
-    particle.life = 0;
-    particle.ttl = ttl;
-    particle.size = 2 + Math.random() * 2;
-  };
-
-  useMiniTicker((deltaMS) => {
-    const graphics = graphicsRef.current;
-    if (!graphics) {
-      return;
-    }
-    const particles = particlesRef.current;
-    if (!particles) {
-      return;
-    }
-    const dt = Math.min(deltaMS / 1000, 0.05);
-    graphics.clear();
-    particles.forEach((particle) => {
-      particle.life += dt;
-      if (particle.life >= particle.ttl) {
-        respawnParticle(particle);
-      }
-      particle.position.x += particle.velocity.x * dt;
-      particle.position.y += particle.velocity.y * dt;
-      const progress = particle.life / particle.ttl;
-      const alpha = Math.max(0, 1 - progress);
-      const radius = particle.size * (1 - progress * 0.6);
-      graphics.beginFill(0xffeaa7, alpha * 0.9);
-      graphics.drawCircle(particle.position.x, particle.position.y, radius);
-      graphics.endFill();
-    });
-  }, enabled);
-
-  const setEmitterPosition = useCallback((position: Vec2) => {
-    positionRef.current = position;
-  }, []);
-
-  const setEmitterDirection = useCallback((direction: Vec2) => {
-    directionRef.current = normalize(direction);
-  }, []);
-
-  return {
-    graphicsRef,
-    setEmitterPosition,
-    setEmitterDirection
-  };
-}
-
 export default function TargetingArrow() {
   // Когда игрок зажимает существо на доске, слой Board записывает в zustand-store структуру
   // TargetingState: точку старта (центр существа), id указателя и текущие координаты курсора.
@@ -210,8 +115,6 @@ export default function TargetingArrow() {
   // рендериться — именно так появляется и исчезает «стрелочка» наведения атаки.
   const targeting = useUiStore((state) => state.targeting);
   const smoothedCurrent = useSmoothedPoint(targeting ? targeting.current : null);
-  // Small sinusoidal modulation keeps the curve alive even when the cursor rests.
-  const bendPulse = usePulse(1.8, Boolean(targeting));
   const cacheRef = useRef<CurveCache>();
   const lastCurveRef = useRef<CurveGeometry | null>(null);
   const hasTarget = Boolean(targeting && smoothedCurrent);
@@ -240,27 +143,6 @@ export default function TargetingArrow() {
     );
   }, [hasTarget, origin?.x, origin?.y, smoothedCurrent?.x, smoothedCurrent?.y]);
 
-  const { graphicsRef, setEmitterDirection, setEmitterPosition } = useParticles(tipDirection, hasTarget);
-
-  const tipX = tipPosition.x;
-  const tipY = tipPosition.y;
-  const tipDirX = tipDirection.x;
-  const tipDirY = tipDirection.y;
-
-  useEffect(() => {
-    if (!hasTarget) {
-      return;
-    }
-    setEmitterPosition({ x: tipX, y: tipY });
-  }, [hasTarget, setEmitterPosition, tipX, tipY]);
-
-  useEffect(() => {
-    if (!hasTarget) {
-      return;
-    }
-    setEmitterDirection({ x: tipDirX, y: tipDirY });
-  }, [hasTarget, setEmitterDirection, tipDirX, tipDirY]);
-
   const tipRotation = Math.atan2(tipDirection.y, tipDirection.x);
 
   const drawBody = (graphics: Graphics) => {
@@ -276,9 +158,8 @@ export default function TargetingArrow() {
       const nx = -ty / tangentLength;
       const ny = tx / tangentLength;
       const t = i / (SAMPLE_COUNT - 1);
-      const widthPulse = 1 + bendPulse * 0.15;
       const width =
-        (BASE_BODY_WIDTH * widthPulse) * (1 - t * 0.55) +
+        BASE_BODY_WIDTH * (1 - t * 0.55) +
         (TIP_WIDTH + 4) * t;
       const halfWidth = width * 0.5;
       leftOutline.push({ x: px + nx * halfWidth, y: py + ny * halfWidth });
@@ -286,8 +167,8 @@ export default function TargetingArrow() {
     }
 
     // The fill-first, stroke-second order matches how Hearthstone's VFX keeps the center glowing.
-    graphics.lineStyle(3, 0xffffff, 0.18);
-    graphics.beginFill(0xd63031, 0.92);
+    graphics.lineStyle(3, 0xffffff, 1);
+    graphics.beginFill(0xd63031, 1);
     graphics.moveTo(leftOutline[0].x, leftOutline[0].y);
     for (let i = 1; i < leftOutline.length; i += 1) {
       graphics.lineTo(leftOutline[i].x, leftOutline[i].y);
@@ -298,7 +179,7 @@ export default function TargetingArrow() {
     graphics.closePath();
     graphics.endFill();
 
-    graphics.lineStyle(2, 0xff7675, 0.65);
+    graphics.lineStyle(2, 0xff7675, 1);
     graphics.moveTo(positions[0], positions[1]);
     for (let i = 1; i < SAMPLE_COUNT; i += 1) {
       graphics.lineTo(positions[i * 2], positions[i * 2 + 1]);
@@ -307,11 +188,16 @@ export default function TargetingArrow() {
 
   const drawHead = (graphics: Graphics) => {
     graphics.clear();
-    graphics.lineStyle(2, 0xffffff, 0.24);
+    graphics.lineStyle(2, 0xffffff, 1);
     graphics.beginFill(0xc0392b, 1);
     graphics.moveTo(0, 0);
-    graphics.lineTo(-TIP_LENGTH, TIP_WIDTH * 0.9);
-    graphics.quadraticCurveTo(-TIP_LENGTH * 0.5, 0, -TIP_LENGTH, -TIP_WIDTH * 0.9);
+    graphics.lineTo(-TIP_LENGTH * TIP_SCALE, TIP_WIDTH * TIP_SCALE * 0.9);
+    graphics.quadraticCurveTo(
+      (-TIP_LENGTH * 0.5) * TIP_SCALE,
+      0,
+      -TIP_LENGTH * TIP_SCALE,
+      -TIP_WIDTH * TIP_SCALE * 0.9
+    );
     graphics.closePath();
     graphics.endFill();
   };
@@ -326,7 +212,6 @@ export default function TargetingArrow() {
       <pixiContainer x={tipPosition.x} y={tipPosition.y} rotation={tipRotation} eventMode="none">
         <pixiGraphics draw={drawHead} />
       </pixiContainer>
-      <pixiGraphics ref={graphicsRef} eventMode="none" />
     </pixiContainer>
   );
 }
