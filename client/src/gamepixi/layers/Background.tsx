@@ -25,7 +25,6 @@ export default function Background({ width, height }: BackgroundProps) {
 
         Assets.load('/assets/deck_template.webp').then((result) => {
             if (!cancelled) {
-                console.log("result: ", result);
                 setDeckTexture(result);
             }
         });

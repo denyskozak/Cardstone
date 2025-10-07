@@ -1,7 +1,4 @@
-import {
-  createBrowserRouter,
-  RouterProvider,
-} from 'react-router'
+import { RouterProvider } from 'react-router'
 import {Theme, ThemePanel} from '@radix-ui/themes'
 // sui
 import { createNetworkConfig, SuiClientProvider, WalletProvider } from '@mysten/dapp-kit'
