@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { sound } from '@pixi/sound';
 import type {
   CardInHand,
   CardPlacement,

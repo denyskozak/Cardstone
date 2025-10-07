@@ -1,11 +1,9 @@
 import { TabNav } from '@radix-ui/themes'
 import { useNavigate } from 'react-router'
-import { useCurrentAccount } from '@mysten/dapp-kit'
 
 
 export const Navigation = () => {
   const navigate =  useNavigate();
-  const account =  useCurrentAccount();
 
   return (
     <TabNav.Root  justify="center" className="h-[98px] bg-black" color="gold"  >

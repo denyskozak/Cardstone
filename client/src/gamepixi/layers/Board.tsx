@@ -8,7 +8,7 @@ import type {
 import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import { actionRequiresTarget, getPrimaryPlayAction } from '@cardstone/shared/effects';
 import type { FederatedPointerEvent } from 'pixi.js';
-import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture, BlurFilter, BLEND_MODES } from 'pixi.js';
+import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture, BlurFilter } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   useUiStore,
@@ -24,6 +24,7 @@ import {
   getBoardLaneGeometry,
   MINION_HORIZONTAL_GAP
 } from '../layout';
+import TargetReticle from '../effects/TargetReticle';
 
 interface BoardProps {
   state: GameState;
@@ -160,9 +161,7 @@ interface HeroAvatarProps {
   playerId: string;
   hp: number;
   targeted: boolean;
-  baseColor: number;
   targetedColor: number;
-  orientation: 'top' | 'bottom';
 }
 
 function HeroAvatar({
@@ -170,19 +169,27 @@ function HeroAvatar({
   playerId,
   hp,
   targeted,
-  baseColor,
-  targetedColor,
-  orientation
+  targetedColor
 }: HeroAvatarProps) {
   const [texture, hpTexture] = useHeroTexture(gameId, playerId);
-  const [mask, setMask] = useState<Graphics | null>(null);
 
   const avatarSize = 140;
 
-  const hpTextOffset = avatarSize / 2 + 18;
-
   return (
     <>
+      {targeted ? (
+        <TargetReticle
+          x={0}
+          y={0}
+          radius={avatarSize * 0.55}
+          color={targetedColor}
+          lineWidth={6}
+          alpha={0.9}
+          scaleX={1.1}
+          scaleY={1.1}
+          zIndex={50}
+        />
+      ) : null}
       {/*<pixiGraphics*/}
       {/*  draw={(g) => {*/}
       {/*    g.clear();*/}
@@ -198,14 +205,7 @@ function HeroAvatar({
         anchor={{ x: 0.5, y: 0.5 }}
         alpha={texture === Texture.EMPTY ? 0 : 1}
       />
-      <pixiSprite
-        texture={hpTexture}
-        width={40}
-        height={50}
-        x={40}
-        y={25}
-        // mask={mask ?? undefined}
-      />
+      <pixiSprite texture={hpTexture} width={40} height={50} x={40} y={25} />
       {/*<pixiGraphics*/}
       {/*  ref={handleMaskRef}*/}
       {/*  draw={(g) => {*/}
@@ -483,6 +483,8 @@ export default function Board({
           currentTarget.side === side &&
           currentTarget.entityId === entity.instanceId;
 
+        const reticleColor = side === playerSide ? 0x55efc4 : 0xff7675;
+
         const fillColor = isFriendly
           ? canAttackThisMinion
             ? 0x78ff5a
@@ -587,6 +589,19 @@ export default function Board({
               y={MINION_HEIGHT * 0.7}
               style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
             />
+            {isTargeted ? (
+              <TargetReticle
+                x={MINION_WIDTH / 2}
+                y={MINION_HEIGHT / 2}
+                radius={MINION_WIDTH * 0.55}
+                color={reticleColor}
+                lineWidth={5}
+                alpha={0.9}
+                scaleX={1}
+                scaleY={MINION_HEIGHT / MINION_WIDTH}
+                zIndex={200}
+              />
+            ) : null}
           </pixiContainer>
         );
       };
@@ -759,9 +774,7 @@ export default function Board({
           playerId={opponentPlayer.id}
           hp={opponentPlayer.hero.hp}
           targeted={opponentTargeted}
-          baseColor={0xd63031}
           targetedColor={0xff7675}
-          orientation="top"
         />
       </pixiContainer>
       <pixiContainer
@@ -783,9 +796,7 @@ export default function Board({
           playerId={playerPlayer.id}
           hp={playerPlayer.hero.hp}
           targeted={friendlyTargeted}
-          baseColor={0x0984e3}
           targetedColor={0x55efc4}
-          orientation="bottom"
         />
       </pixiContainer>
       {renderRow(opponentSide, boardTopY)}
