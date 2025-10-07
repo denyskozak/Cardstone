@@ -6,7 +6,7 @@ import type {
   TargetDescriptor
 } from '@cardstone/shared/types';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Assets, Texture } from 'pixi.js';
+import { Texture } from 'pixi.js';
 import TargetingArrow from '../effects/TargetingArrow';
 import { computeBoardLayout } from '../layout';
 import useMiniTicker from '../hooks/useMiniTicker';
@@ -56,6 +56,27 @@ const SIDES: PlayerSide[] = ['A', 'B'];
 const DAMAGE_DISPLAY_DURATION = 2000;
 const DAMAGE_IMPACT_THRESHOLD = 0.5;
 
+const DAMAGE_TEXTURE_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <radialGradient id="core" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#ffe5e5" stop-opacity="0.95" />
+      <stop offset="55%" stop-color="#ff4d4d" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#7a0a0a" stop-opacity="0.9" />
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#ff9a9a" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#ff9a9a" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <circle cx="64" cy="64" r="58" fill="url(#glow)" />
+  <circle cx="64" cy="64" r="46" fill="url(#core)" stroke="#ffb3b3" stroke-width="6" stroke-opacity="0.7" />
+  <circle cx="64" cy="50" r="18" fill="#ffffff" fill-opacity="0.35" />
+</svg>
+`;
+
+const DAMAGE_TEXTURE_DATA_URL = `data:image/svg+xml;utf8,${encodeURIComponent(DAMAGE_TEXTURE_SVG)}`;
+
 interface DamageIndicator {
   key: string;
   x: number;
@@ -89,7 +110,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const [burnBursts, setBurnBursts] = useState<BurnBurst[]>([]);
   const [damageIndicators, setDamageIndicators] = useState<DamageIndicator[]>([]);
   const damageSequenceRef = useRef(0);
-  const [damageTexture, setDamageTexture] = useState<Texture>(Texture.EMPTY);
+  const damageTexture = useMemo(() => Texture.from(DAMAGE_TEXTURE_DATA_URL), []);
 
   useEffect(() => {
     return () => {
@@ -105,18 +126,6 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       damageSequenceRef.current = 0;
     };
   }, [resetMinionAnimations]);
-
-  useEffect(() => {
-    let cancelled = false;
-    Assets.load('/assets/images/damage_placeholder.webp').then((texture) => {
-      if (!cancelled) {
-        setDamageTexture(texture);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     const previous = burnPrevStateRef.current;
@@ -412,7 +421,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
             width={120}
             height={120}
             anchor={{ x: 0.5, y: 0.5 }}
-            alpha={damageTexture === Texture.EMPTY ? 0 : 1}
+            alpha={damageTexture.baseTexture.valid ? 1 : 0}
           />
           <pixiText
             text={`${indicator.amount}`}
