@@ -6,6 +6,7 @@ import type {
   TargetDescriptor
 } from '@cardstone/shared/types';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Assets, Texture } from 'pixi.js';
 import TargetingArrow from '../effects/TargetingArrow';
 import { computeBoardLayout } from '../layout';
 import useMiniTicker from '../hooks/useMiniTicker';
@@ -28,12 +29,19 @@ interface AttackAnimation {
   targetPoint: { x: number; y: number };
   elapsed: number;
   duration: number;
+  damageAmount: number;
+  impactEmitted?: boolean;
+}
+
+interface DamageSummaryEntry {
+  id: string;
+  amount: number;
 }
 
 interface DamageSummary {
-  damaged: string[];
-  destroyed: string[];
-  heroDamaged: boolean;
+  damaged: DamageSummaryEntry[];
+  destroyed: DamageSummaryEntry[];
+  heroDamage: number;
 }
 
 interface BurnBurst {
@@ -45,6 +53,16 @@ const ATTACK_DURATION = 420;
 const ATTACK_ARC_HEIGHT = 36;
 const ATTACK_LUNGE_SCALE = 0.08;
 const SIDES: PlayerSide[] = ['A', 'B'];
+const DAMAGE_DISPLAY_DURATION = 2000;
+const DAMAGE_IMPACT_THRESHOLD = 0.5;
+
+interface DamageIndicator {
+  key: string;
+  x: number;
+  y: number;
+  amount: number;
+  remaining: number;
+}
 
 export default function Effects({ state, playerSide, width, height }: EffectsProps) {
   const opponentSide: PlayerSide = playerSide === 'A' ? 'B' : 'A';
@@ -69,6 +87,9 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const burnPrevStateRef = useRef<GameState | null>(null);
   const burnSequenceRef = useRef(0);
   const [burnBursts, setBurnBursts] = useState<BurnBurst[]>([]);
+  const [damageIndicators, setDamageIndicators] = useState<DamageIndicator[]>([]);
+  const damageSequenceRef = useRef(0);
+  const [damageTexture, setDamageTexture] = useState<Texture>(Texture.EMPTY);
 
   useEffect(() => {
     return () => {
@@ -80,8 +101,22 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       burnPrevStateRef.current = null;
       burnSequenceRef.current = 0;
       pendingLocalAttackersRef.current.clear();
+      setDamageIndicators([]);
+      damageSequenceRef.current = 0;
     };
   }, [resetMinionAnimations]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Assets.load('/assets/images/damage_placeholder.webp').then((texture) => {
+      if (!cancelled) {
+        setDamageTexture(texture);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const previous = burnPrevStateRef.current;
@@ -190,7 +225,9 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
           origin,
           targetPoint,
           elapsed: 0,
-          duration: ATTACK_DURATION
+          duration: ATTACK_DURATION,
+          damageAmount: event.damage,
+          impactEmitted: false
         });
       });
       return survivors;
@@ -242,7 +279,9 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
           origin,
           targetPoint,
           elapsed: 0,
-          duration: ATTACK_DURATION
+          duration: ATTACK_DURATION,
+          damageAmount: 0,
+          impactEmitted: false
         });
       });
       return survivors;
@@ -255,17 +294,54 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         if (current.length === 0) {
           return current;
         }
+        const additions: DamageIndicator[] = [];
         const next: AttackAnimation[] = [];
         current.forEach((animation) => {
           const elapsed = Math.min(animation.elapsed + deltaMS, animation.duration);
+          const progress = animation.duration === 0 ? 1 : elapsed / animation.duration;
+          const impactReady =
+            !animation.impactEmitted && progress >= DAMAGE_IMPACT_THRESHOLD && animation.damageAmount > 0;
+          if (impactReady) {
+            const key = `${animation.key}:impact:${damageSequenceRef.current}`;
+            damageSequenceRef.current += 1;
+            additions.push({
+              key,
+              x: animation.targetPoint.x,
+              y: animation.targetPoint.y,
+              amount: animation.damageAmount,
+              remaining: DAMAGE_DISPLAY_DURATION
+            });
+          }
           if (elapsed < animation.duration) {
-            next.push({ ...animation, elapsed });
+            next.push({
+              ...animation,
+              elapsed,
+              impactEmitted: animation.impactEmitted || impactReady
+            });
           }
         });
+        if (additions.length > 0) {
+          setDamageIndicators((currentIndicators) => [...currentIndicators, ...additions]);
+        }
         return next;
       });
     },
     animations.length > 0
+  );
+
+  useMiniTicker(
+    (deltaMS) => {
+      setDamageIndicators((current) => {
+        if (current.length === 0) {
+          return current;
+        }
+        const next = current
+          .map((indicator) => ({ ...indicator, remaining: indicator.remaining - deltaMS }))
+          .filter((indicator) => indicator.remaining > 0);
+        return next;
+      });
+    },
+    damageIndicators.length > 0
   );
 
   const previousAnimationIdsRef = useRef<Set<string>>(new Set());
@@ -329,6 +405,22 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
             onComplete={() => handleBurnComplete(burst.key)}
           />
         ))}
+      {damageIndicators.map((indicator) => (
+        <pixiContainer key={indicator.key} x={indicator.x} y={indicator.y}>
+          <pixiSprite
+            texture={damageTexture}
+            width={120}
+            height={120}
+            anchor={{ x: 0.5, y: 0.5 }}
+            alpha={damageTexture === Texture.EMPTY ? 0 : 1}
+          />
+          <pixiText
+            text={`${indicator.amount}`}
+            anchor={{ x: 0.5, y: 0.5 }}
+            style={{ fill: 0xffffff, fontSize: 40, fontWeight: 'bold', align: 'center' }}
+          />
+        </pixiContainer>
+      ))}
     </pixiContainer>
   );
 }
@@ -387,7 +479,12 @@ function resolveTargetPoint(
 }
 
 function detectAttackEvents(previous: GameState, next: GameState) {
-  const events: { side: PlayerSide; attackerId: string; target: TargetDescriptor }[] = [];
+  const events: {
+    side: PlayerSide;
+    attackerId: string;
+    target: TargetDescriptor;
+    damage: number;
+  }[] = [];
 
   const damageSummaries: Record<PlayerSide, DamageSummary> = {
     A: summarizeDamage(previous.board.A, next.board.A, previous.players.A.hero, next.players.A.hero),
@@ -414,12 +511,12 @@ function detectAttackEvents(previous: GameState, next: GameState) {
         return;
       }
 
-      const target = allocateAttackTarget(summary, record, opponentSide, attacked);
-      if (!target) {
+      const allocation = allocateAttackTarget(summary, record, opponentSide, attacked);
+      if (!allocation) {
         return;
       }
 
-      events.push({ side, attackerId: minion.instanceId, target });
+      events.push({ side, attackerId: minion.instanceId, target: allocation.target, damage: allocation.damage });
     });
   });
 
@@ -467,16 +564,16 @@ function summarizeDamage(
   const summary: DamageSummary = {
     damaged: [],
     destroyed: [],
-    heroDamaged: nextHero.hp < previousHero.hp
+    heroDamage: Math.max(0, previousHero.hp - nextHero.hp)
   };
 
   const nextMap = new Map(next.map((minion) => [minion.instanceId, minion]));
   previous.forEach((minion) => {
     const updated = nextMap.get(minion.instanceId);
     if (!updated) {
-      summary.destroyed.push(minion.instanceId);
+      summary.destroyed.push({ id: minion.instanceId, amount: minion.health });
     } else if (updated.health < minion.health) {
-      summary.damaged.push(minion.instanceId);
+      summary.damaged.push({ id: minion.instanceId, amount: minion.health - updated.health });
     }
   });
 
@@ -488,26 +585,32 @@ function allocateAttackTarget(
   record: { damaged: Set<string>; destroyed: Set<string>; hero: boolean },
   opponentSide: PlayerSide,
   allowFallback: boolean
-): TargetDescriptor | null {
-  const destroyed = summary.destroyed.find((id) => !record.destroyed.has(id));
+): { target: TargetDescriptor; damage: number } | null {
+  const destroyed = summary.destroyed.find((entry) => !record.destroyed.has(entry.id));
   if (destroyed) {
-    record.destroyed.add(destroyed);
-    return { type: 'minion', side: opponentSide, entityId: destroyed };
+    record.destroyed.add(destroyed.id);
+    return {
+      target: { type: 'minion', side: opponentSide, entityId: destroyed.id },
+      damage: destroyed.amount
+    };
   }
 
-  const damaged = summary.damaged.find((id) => !record.damaged.has(id));
+  const damaged = summary.damaged.find((entry) => !record.damaged.has(entry.id));
   if (damaged) {
-    record.damaged.add(damaged);
-    return { type: 'minion', side: opponentSide, entityId: damaged };
+    record.damaged.add(damaged.id);
+    return {
+      target: { type: 'minion', side: opponentSide, entityId: damaged.id },
+      damage: damaged.amount
+    };
   }
 
-  if (summary.heroDamaged && !record.hero) {
+  if (summary.heroDamage > 0 && !record.hero) {
     record.hero = true;
-    return { type: 'hero', side: opponentSide };
+    return { target: { type: 'hero', side: opponentSide }, damage: summary.heroDamage };
   }
 
   if (allowFallback) {
-    return { type: 'hero', side: opponentSide };
+    return { target: { type: 'hero', side: opponentSide }, damage: 0 };
   }
 
   return null;
