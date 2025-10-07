@@ -226,6 +226,17 @@ function HeroAvatar({
   );
 }
 
+type TargetTaggedDisplayObject = DisplayObject & {
+  cardstoneTarget?: TargetDescriptor;
+};
+
+function attachTargetDescriptor(display: DisplayObject | null, descriptor: TargetDescriptor) {
+  if (!display) {
+    return;
+  }
+  (display as TargetTaggedDisplayObject).cardstoneTarget = descriptor;
+}
+
 export default function Board({
   state,
   playerSide,
@@ -272,6 +283,20 @@ export default function Board({
     targetRef.current = currentTarget;
   }, [currentTarget]);
 
+  const targetingPredicate = useMemo(() => {
+    if (!targeting) {
+      return null;
+    }
+    if (targeting.source.kind === 'minion') {
+      return getTargetingPredicate({ kind: 'minion' }, playerSide, state);
+    }
+    const action = getPrimaryPlayAction(targeting.source.card.card);
+    if (!action || !actionRequiresTarget(action)) {
+      return null;
+    }
+    return getTargetingPredicate({ kind: 'spell', action }, playerSide, state);
+  }, [playerSide, state, targeting]);
+
   useEffect(() => {
     const cache = minionCacheRef.current;
     const activeIds = new Set<string>();
@@ -301,9 +326,28 @@ export default function Board({
       if (!targeting || event.pointerId !== targeting.pointerId) {
         return;
       }
+
       updateTargeting({ x: event.global.x, y: event.global.y });
+
+      if (!targetingPredicate) {
+        setCurrentTarget(null);
+        return;
+      }
+
+      const descriptor = resolveTargetDescriptor(event.target as DisplayObject | null);
+      if (descriptor && targetingPredicate(descriptor)) {
+        setCurrentTarget((previous) => {
+          if (previous && targetsEqual(previous, descriptor)) {
+            return previous;
+          }
+          return descriptor;
+        });
+        return;
+      }
+
+      setCurrentTarget((previous) => (previous ? null : previous));
     },
-    [targeting, updateTargeting]
+    [setCurrentTarget, targeting, targetingPredicate, updateTargeting]
   );
 
   const handlePointerUp = useCallback(
@@ -387,20 +431,6 @@ export default function Board({
     },
     [canAttack, setCurrentTarget, setTargeting, targeting]
   );
-
-  const targetingPredicate = useMemo(() => {
-    if (!targeting) {
-      return null;
-    }
-    if (targeting.source.kind === 'minion') {
-      return getTargetingPredicate({ kind: 'minion' }, playerSide, state);
-    }
-    const action = getPrimaryPlayAction(targeting.source.card.card);
-    if (!action || !actionRequiresTarget(action)) {
-      return null;
-    }
-    return getTargetingPredicate({ kind: 'spell', action }, playerSide, state);
-  }, [playerSide, state, targeting]);
 
   const handleTargetOver = useCallback(
     (target: TargetDescriptor) => {
@@ -508,6 +538,7 @@ export default function Board({
         return (
           <pixiContainer
             key={key}
+            name={`minion:${side}:${entity.instanceId}`}
             x={baseX + offsetX}
             y={baseY + offsetY}
             scale={scale}
@@ -543,6 +574,7 @@ export default function Board({
                   }
                 : undefined
             }
+            ref={(instance) => attachTargetDescriptor(instance, targetDescriptor)}
           >
             <pixiGraphics
                 blendMode={"add"}
@@ -758,6 +790,7 @@ export default function Board({
       <pixiContainer
         x={laneX + laneWidth / 2 - 10}
         y={boardTopY - 100}
+        name={`hero:${opponentSide}`}
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: opponentSide })
         )}
@@ -768,6 +801,9 @@ export default function Board({
         }
         onPointerOver={() => handleTargetOver({ type: 'hero', side: opponentSide })}
         onPointerOut={() => handleTargetOut({ type: 'hero', side: opponentSide })}
+        ref={(instance) =>
+          attachTargetDescriptor(instance, { type: 'hero', side: opponentSide })
+        }
       >
         <HeroAvatar
           gameId={state.id}
@@ -780,6 +816,7 @@ export default function Board({
       <pixiContainer
         x={laneX + laneWidth / 2 - 5}
         y={boardBottomY + MINION_HEIGHT + 70}
+        name={`hero:${playerSide}`}
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: playerSide })
         )}
@@ -790,6 +827,7 @@ export default function Board({
         }
         onPointerOver={() => handleTargetOver({ type: 'hero', side: playerSide })}
         onPointerOut={() => handleTargetOut({ type: 'hero', side: playerSide })}
+        ref={(instance) => attachTargetDescriptor(instance, { type: 'hero', side: playerSide })}
       >
         <HeroAvatar
           gameId={state.id}
@@ -816,4 +854,32 @@ export default function Board({
       ) : null}
     </pixiContainer>
   );
+}
+
+function targetsEqual(a: TargetDescriptor | null, b: TargetDescriptor) {
+  if (!a) {
+    return false;
+  }
+  if (a.type !== b.type) {
+    return false;
+  }
+  if (a.type === 'hero' && b.type === 'hero') {
+    return a.side === b.side;
+  }
+  if (a.type === 'minion' && b.type === 'minion') {
+    return a.side === b.side && a.entityId === b.entityId;
+  }
+  return false;
+}
+
+function resolveTargetDescriptor(display: DisplayObject | null): TargetDescriptor | null {
+  let current: DisplayObject | null = display;
+  while (current) {
+    const descriptor = (current as TargetTaggedDisplayObject).cardstoneTarget;
+    if (descriptor) {
+      return descriptor;
+    }
+    current = current.parent;
+  }
+  return null;
 }
