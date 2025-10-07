@@ -485,14 +485,6 @@ export default function Board({
 
         const reticleColor = side === playerSide ? 0x55efc4 : 0xff7675;
 
-        const fillColor = isFriendly
-          ? canAttackThisMinion
-            ? 0x78ff5a
-            : 0x0984e3
-          : isTargeted
-            ? 0xff7675
-            : 0xd63031;
-
         const handleDown =
           interactive && isFriendly
             ? (event: FederatedPointerEvent) => handleStartAttack(entity, event)
@@ -544,24 +536,25 @@ export default function Board({
                 : undefined
             }
           >
-            <pixiGraphics
+            {isFriendly && canAttackThisMinion ? (
+              <pixiGraphics
                 blendMode={"add"}
                 anchor={0.5}
                 alpha={0.7}
                 filters={[blurFilter]}
-              draw={(g) => {
-                g.clear();
-                  g.beginFill(fillColor,  isFriendly && !canAttackThisMinion ? 0.6 : 0.85); // зелёный
+                draw={(g) => {
+                  g.clear();
+                  g.beginFill(0x78ff5a, 0.85);
                   g.drawEllipse(
-                      MINION_WIDTH / 2,
-                      MINION_HEIGHT / 2,
-                      MINION_WIDTH / 2 + 8,
-                      MINION_HEIGHT / 2 + 8
+                    MINION_WIDTH / 2,
+                    MINION_HEIGHT / 2,
+                    MINION_WIDTH / 2 + 8,
+                    MINION_HEIGHT / 2 + 8
                   );
-                  // g.drawCircle(0, 0, 50);   // радиус ореола
                   g.endFill();
-              }}
-            />
+                }}
+              />
+            ) : null}
             {entity.divineShield ? (
               <pixiGraphics
                 draw={(g) => {
