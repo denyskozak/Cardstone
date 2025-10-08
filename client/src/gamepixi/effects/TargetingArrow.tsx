@@ -3,6 +3,7 @@ import type { PlayerSide } from '@cardstone/shared/types';
 import { useUiStore } from '../../state/store';
 import useMiniTicker from '../hooks/useMiniTicker';
 import type { Graphics } from 'pixi.js';
+import TargetReticle from './TargetReticle';
 
 // Hearthstone's targeting line looks "hand drawn" because it is smooth yet chunky;
 // 32 samples keep the line fluid while still allowing us to rebuild the geometry each frame.
@@ -10,7 +11,7 @@ const SAMPLE_COUNT = 32;
 const BASE_BODY_WIDTH = 28;
 const TIP_WIDTH = 12;
 const TIP_LENGTH = 46;
-const TIP_SCALE = 1.5;
+const TIP_SCALE = 1.8;
 const NORMALIZE_EPSILON = 1e-4;
 
 type ArrowThemeKey = 'ally' | 'enemy' | 'neutral';
@@ -347,6 +348,18 @@ export default function TargetingArrow({ playerSide }: TargetingArrowProps) {
     <pixiContainer eventMode="none">
       <pixiGraphics draw={drawGlow} alpha={pulseAlpha} blendMode="add" />
       <pixiGraphics draw={drawBody} />
+      {currentTarget ? (
+        <TargetReticle
+          x={tipPosition.x}
+          y={tipPosition.y}
+          radius={TIP_LENGTH * TIP_SCALE * 0.55}
+          color={theme.headOutline}
+          lineWidth={4.5}
+          alpha={0.92}
+          pulse
+          zIndex={120}
+        />
+      ) : null}
       <pixiContainer x={tipPosition.x} y={tipPosition.y} rotation={tipRotation} eventMode="none">
         <pixiGraphics draw={drawHeadGlow} alpha={pulseAlpha} blendMode="add" />
         <pixiGraphics draw={drawHead} />
