@@ -424,6 +424,391 @@ const minions: Record<string, MinionCard> = {
     health: 5
   },
 
+  [CARD_IDS.abomination]: {
+    id: CARD_IDS.abomination,
+    name: 'Abomination',
+    type: 'Minion',
+    cost: 6,
+    attack: 4,
+    health: 7,
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Taunt' }
+      },
+      {
+        trigger: { type: 'Deathrattle' },
+        action: { type: 'Custom', key: 'DamageAllMinions', data: { amount: 2 } }
+      }
+    ]
+  },
+  [CARD_IDS.alchimist]: {
+    id: CARD_IDS.alchimist,
+    name: 'Alchimist',
+    type: 'Minion',
+    cost: 2,
+    attack: 2,
+    health: 3,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'SwapAtkHealth', data: { target: 'AnyMinion' } }
+      }
+    ]
+  },
+  [CARD_IDS.bartender]: {
+    id: CARD_IDS.bartender,
+    name: 'Bartender',
+    type: 'Minion',
+    cost: 3,
+    attack: 3,
+    health: 4,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Heal', amount: 3, target: 'Hero' }
+      }
+    ]
+  },
+  [CARD_IDS.brainEaterZombi]: {
+    id: CARD_IDS.brainEaterZombi,
+    name: 'Brain Eater Zombi',
+    type: 'Minion',
+    cost: 3,
+    attack: 3,
+    health: 3,
+    effects: [
+      {
+        trigger: { type: 'Deathrattle' },
+        action: { type: 'Heal', amount: 3, target: 'Hero' }
+      }
+    ]
+  },
+  [CARD_IDS.bubusDog]: {
+    id: CARD_IDS.bubusDog,
+    name: "Bubu's Dog",
+    type: 'Minion',
+    cost: 1,
+    attack: 1,
+    health: 2,
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Charge' }
+      }
+    ]
+  },
+  [CARD_IDS.draeneiWarrior]: {
+    id: CARD_IDS.draeneiWarrior,
+    name: 'Draenei Warrior',
+    type: 'Minion',
+    cost: 4,
+    attack: 4,
+    health: 5,
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Taunt' }
+      }
+    ]
+  },
+  [CARD_IDS.dwarfBlacksmith]: {
+    id: CARD_IDS.dwarfBlacksmith,
+    name: 'Dwarf Blacksmith',
+    type: 'Minion',
+    cost: 4,
+    attack: 4,
+    health: 4,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'Battlecry' }
+      }
+    ]
+  },
+  [CARD_IDS.elfFireMage]: {
+    id: CARD_IDS.elfFireMage,
+    name: 'Elf Fire Mage',
+    type: 'Minion',
+    cost: 4,
+    attack: 4,
+    health: 3,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Damage', amount: 2, target: 'AnyMinion' }
+      }
+    ]
+  },
+  [CARD_IDS.frostSpirit]: {
+    id: CARD_IDS.frostSpirit,
+    name: 'Frost Spirit',
+    type: 'Minion',
+    cost: 3,
+    attack: 2,
+    health: 4,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'Freeze', data: { target: 'AnyMinion' } }
+      }
+    ]
+  },
+  [CARD_IDS.gnomeMage]: {
+    id: CARD_IDS.gnomeMage,
+    name: 'Gnome Mage',
+    type: 'Minion',
+    cost: 2,
+    attack: 2,
+    health: 3,
+    effects: [
+      {
+        trigger: { type: 'SpellCast' },
+        action: { type: 'DrawCard', amount: 1 }
+      }
+    ]
+  },
+  [CARD_IDS.goblinAuctioneer]: {
+    id: CARD_IDS.goblinAuctioneer,
+    name: 'Goblin Auctioneer',
+    type: 'Minion',
+    cost: 6,
+    attack: 4,
+    health: 4,
+    effects: [
+      {
+        trigger: { type: 'SpellCast' },
+        action: { type: 'DrawCard', amount: 1 }
+      }
+    ]
+  },
+  [CARD_IDS.hiddenMage]: {
+    id: CARD_IDS.hiddenMage,
+    name: 'Hidden Mage',
+    type: 'Minion',
+    cost: 2,
+    attack: 2,
+    health: 2,
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Stealth' }
+      }
+    ]
+  },
+  [CARD_IDS.holyElf]: {
+    id: CARD_IDS.holyElf,
+    name: 'Holy Elf',
+    type: 'Minion',
+    cost: 3,
+    attack: 3,
+    health: 4,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Heal', amount: 3, target: 'Hero' }
+      }
+    ]
+  },
+  [CARD_IDS.inferno]: {
+    id: CARD_IDS.inferno,
+    name: 'Inferno',
+    type: 'Minion',
+    cost: 7,
+    attack: 7,
+    health: 5,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Damage', amount: 3, target: 'AllEnemies' }
+      }
+    ]
+  },
+  [CARD_IDS.joker]: {
+    id: CARD_IDS.joker,
+    name: 'Joker',
+    type: 'Minion',
+    cost: 3,
+    attack: 3,
+    health: 3,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'DrawCard', amount: 2 }
+      }
+    ]
+  },
+  [CARD_IDS.kirintorMage]: {
+    id: CARD_IDS.kirintorMage,
+    name: 'Kirintor Mage',
+    type: 'Minion',
+    cost: 3,
+    attack: 4,
+    health: 3,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'Battlecry' }
+      }
+    ]
+  },
+  [CARD_IDS.knifJungler]: {
+    id: CARD_IDS.knifJungler,
+    name: 'Knif Jungler',
+    type: 'Minion',
+    cost: 2,
+    attack: 2,
+    health: 2,
+    effects: [
+      {
+        trigger: { type: 'Custom', key: 'AfterYouSummon' },
+        action: { type: 'Custom', key: 'RandomEnemyDamage', data: { amount: 1 } }
+      }
+    ]
+  },
+  [CARD_IDS.nightMorloc]: {
+    id: CARD_IDS.nightMorloc,
+    name: 'Night Morloc',
+    type: 'Minion',
+    cost: 3,
+    attack: 3,
+    health: 3
+  },
+  [CARD_IDS.pantera]: {
+    id: CARD_IDS.pantera,
+    name: 'Pantera',
+    type: 'Minion',
+    cost: 1,
+    attack: 2,
+    health: 1,
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Stealth' }
+      }
+    ]
+  },
+  [CARD_IDS.pirateGirl]: {
+    id: CARD_IDS.pirateGirl,
+    name: 'Pirate Girl',
+    type: 'Minion',
+    cost: 2,
+    attack: 2,
+    health: 2,
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Charge' }
+      }
+    ]
+  },
+  [CARD_IDS.pirateMan]: {
+    id: CARD_IDS.pirateMan,
+    name: 'Pirate Man',
+    type: 'Minion',
+    cost: 3,
+    attack: 3,
+    health: 3,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'Battlecry' }
+      }
+    ]
+  },
+  [CARD_IDS.pyromancer]: {
+    id: CARD_IDS.pyromancer,
+    name: 'Pyromancer',
+    type: 'Minion',
+    cost: 3,
+    attack: 3,
+    health: 3,
+    effects: [
+      {
+        trigger: { type: 'SpellCast' },
+        action: { type: 'Custom', key: 'DamageAllMinions', data: { amount: 1 } }
+      }
+    ]
+  },
+  [CARD_IDS.ravenholdtAssassin]: {
+    id: CARD_IDS.ravenholdtAssassin,
+    name: 'Ravenholdt Assassin',
+    type: 'Minion',
+    cost: 6,
+    attack: 7,
+    health: 5,
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Stealth' }
+      }
+    ]
+  },
+  [CARD_IDS.sandDefender]: {
+    id: CARD_IDS.sandDefender,
+    name: 'Sand Defender',
+    type: 'Minion',
+    cost: 4,
+    attack: 2,
+    health: 6,
+    effects: [
+      {
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'Taunt' }
+      }
+    ]
+  },
+  [CARD_IDS.scorpion]: {
+    id: CARD_IDS.scorpion,
+    name: 'Scorpion',
+    type: 'Minion',
+    cost: 4,
+    attack: 4,
+    health: 4
+  },
+  [CARD_IDS.shadowDrake]: {
+    id: CARD_IDS.shadowDrake,
+    name: 'Shadow Drake',
+    type: 'Minion',
+    cost: 5,
+    attack: 5,
+    health: 4,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'DrawCard', amount: 1 }
+      }
+    ]
+  },
+  [CARD_IDS.taurenPrist]: {
+    id: CARD_IDS.taurenPrist,
+    name: 'Tauren Prist',
+    type: 'Minion',
+    cost: 5,
+    attack: 4,
+    health: 6,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Heal', amount: 4, target: 'FriendlyMinion' }
+      }
+    ]
+  },
+  [CARD_IDS.waterMorlockSmall]: {
+    id: CARD_IDS.waterMorlockSmall,
+    name: 'Water Morlock',
+    type: 'Minion',
+    cost: 2,
+    attack: 2,
+    health: 3,
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Summon', cardId: CARD_IDS.wisp, count: 1, target: 'Board' }
+      }
+    ]
+  },
+
   // Classic set minions
   [CARD_IDS.abusiveSergeant]: {
     id: CARD_IDS.abusiveSergeant,
