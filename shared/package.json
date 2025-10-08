@@ -13,6 +13,8 @@
     "./constants.js": "./dist/constants.js",
     "./effects": "./dist/effects.js",
     "./effects.js": "./dist/effects.js",
+    "./decks": "./dist/decks.js",
+    "./decks.js": "./dist/decks.js",
     "./cards/*": "./dist/cards/*.js",
     "./cards/*.js": "./dist/cards/*.js"
   },
