@@ -33,6 +33,12 @@ interface AttackAnimation {
   impactEmitted?: boolean;
 }
 
+interface PendingImpactResult {
+  target: TargetDescriptor;
+  targetPoint: { x: number; y: number };
+  damage: number;
+}
+
 interface DamageSummaryEntry {
   id: string;
   amount: number;
@@ -75,6 +81,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const localAttackQueueVersion = useUiStore((s) => s.localAttackQueueVersion);
 
   const pendingLocalAttackersRef = useRef(new Map<string, number>());
+  const pendingImpactResultsRef = useRef(new Map<string, PendingImpactResult[]>());
 
   const layout = useMemo(
     () => computeBoardLayout(state, playerSide, width, height),
@@ -100,6 +107,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       burnPrevStateRef.current = null;
       burnSequenceRef.current = 0;
       pendingLocalAttackersRef.current.clear();
+      pendingImpactResultsRef.current.clear();
       setDamageIndicators([]);
       damageSequenceRef.current = 0;
     };
@@ -172,66 +180,70 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       return;
     }
 
-    const pendingLocalAttackers = pendingLocalAttackersRef.current;
     const attackEvents = detectAttackEvents(previous, state);
-    const filteredEvents = attackEvents.filter((event) => {
-      const pending = pendingLocalAttackers.get(event.attackerId);
-      if (pending && pending > 0) {
-        if (pending === 1) {
-          pendingLocalAttackers.delete(event.attackerId);
-        } else {
-          pendingLocalAttackers.set(event.attackerId, pending - 1);
-        }
-        return false;
-      }
-      return true;
-    });
 
-    if (filteredEvents.length === 0) {
+    if (attackEvents.length === 0) {
       prevStateRef.current = state;
       prevLayoutRef.current = layout;
       return;
     }
 
-    const busyAttackers = new Set(filteredEvents.map((event) => event.attackerId));
+    const pendingLocalAttackers = pendingLocalAttackersRef.current;
+    const pendingImpactResults = pendingImpactResultsRef.current;
 
-    setAnimations((current) => {
-      const survivors: AttackAnimation[] = [];
-      current.forEach((animation) => {
-        if (!busyAttackers.has(animation.attackerId)) {
-          survivors.push(animation);
+    const newAnimations: AttackAnimation[] = [];
+    const busyAttackers = new Set<string>();
+
+    attackEvents.forEach((event, index) => {
+      const origin =
+        layout.minions[event.side]?.[event.attackerId] ??
+        previousLayout?.minions[event.side]?.[event.attackerId];
+      if (!origin) {
+        return;
+      }
+
+      const targetPoint = resolveTargetPoint(event.target, layout, previousLayout);
+      if (!targetPoint) {
+        return;
+      }
+
+      const pending = pendingLocalAttackers.get(event.attackerId) ?? 0;
+      if (pending > 0) {
+        const existing = pendingImpactResults.get(event.attackerId) ?? [];
+        pendingImpactResults.set(event.attackerId, [
+          ...existing,
+          { target: event.target, targetPoint, damage: event.damage }
+        ]);
+        if (pending === 1) {
+          pendingLocalAttackers.delete(event.attackerId);
+        } else {
+          pendingLocalAttackers.set(event.attackerId, pending - 1);
         }
+        return;
+      }
+
+      busyAttackers.add(event.attackerId);
+      const key = `${state.seq}:${event.attackerId}:${index}`;
+      newAnimations.push({
+        key,
+        attackerId: event.attackerId,
+        side: event.side,
+        target: event.target,
+        origin,
+        targetPoint,
+        elapsed: 0,
+        duration: ATTACK_DURATION,
+        damageAmount: event.damage,
+        impactEmitted: false
       });
-
-      filteredEvents.forEach((event, index) => {
-        const origin =
-          layout.minions[event.side]?.[event.attackerId] ??
-          previousLayout?.minions[event.side]?.[event.attackerId];
-        if (!origin) {
-          return;
-        }
-
-        const targetPoint = resolveTargetPoint(event.target, layout, previousLayout);
-        if (!targetPoint) {
-          return;
-        }
-
-        const key = `${state.seq}:${event.attackerId}:${index}`;
-        survivors.push({
-          key,
-          attackerId: event.attackerId,
-          side: event.side,
-          target: event.target,
-          origin,
-          targetPoint,
-          elapsed: 0,
-          duration: ATTACK_DURATION,
-          damageAmount: event.damage,
-          impactEmitted: false
-        });
-      });
-      return survivors;
     });
+
+    if (newAnimations.length > 0) {
+      setAnimations((current) => {
+        const survivors = current.filter((animation) => !busyAttackers.has(animation.attackerId));
+        return [...survivors, ...newAnimations];
+      });
+    }
     prevStateRef.current = state;
     prevLayoutRef.current = layout;
   }, [layout, state]);
@@ -297,26 +309,45 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         const additions: DamageIndicator[] = [];
         const next: AttackAnimation[] = [];
         current.forEach((animation) => {
-          const elapsed = Math.min(animation.elapsed + deltaMS, animation.duration);
-          const progress = animation.duration === 0 ? 1 : elapsed / animation.duration;
+          let updated = animation;
+          if (animation.damageAmount <= 0) {
+            const pendingImpacts = pendingImpactResultsRef.current.get(animation.attackerId);
+            if (pendingImpacts && pendingImpacts.length > 0) {
+              const [result, ...rest] = pendingImpacts;
+              updated = {
+                ...animation,
+                damageAmount: result.damage,
+                target: result.target,
+                targetPoint: result.targetPoint
+              };
+              if (rest.length > 0) {
+                pendingImpactResultsRef.current.set(animation.attackerId, rest);
+              } else {
+                pendingImpactResultsRef.current.delete(animation.attackerId);
+              }
+            }
+          }
+
+          const elapsed = Math.min(updated.elapsed + deltaMS, updated.duration);
+          const progress = updated.duration === 0 ? 1 : elapsed / updated.duration;
           const impactReady =
-            !animation.impactEmitted && progress >= DAMAGE_IMPACT_THRESHOLD && animation.damageAmount > 0;
+            !updated.impactEmitted && progress >= DAMAGE_IMPACT_THRESHOLD && updated.damageAmount > 0;
           if (impactReady) {
             const key = `${animation.key}:impact:${damageSequenceRef.current}`;
             damageSequenceRef.current += 1;
             additions.push({
               key,
-              x: animation.targetPoint.x,
-              y: animation.targetPoint.y,
-              amount: animation.damageAmount,
+              x: updated.targetPoint.x,
+              y: updated.targetPoint.y,
+              amount: updated.damageAmount,
               remaining: DAMAGE_DISPLAY_DURATION
             });
           }
-          if (elapsed < animation.duration) {
+          if (elapsed < updated.duration) {
             next.push({
-              ...animation,
+              ...updated,
               elapsed,
-              impactEmitted: animation.impactEmitted || impactReady
+              impactEmitted: updated.impactEmitted || impactReady
             });
           }
         });
