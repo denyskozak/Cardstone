@@ -227,7 +227,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
   );
 
   const analytics = useMemo(() => {
-    const curve = getDeckManaCurve(deck, cards);
+    const curve = getDeckManaCurve(deck, collection);
     const maxCurve = Math.max(...curve, 1);
     const typeCounts = deck.cards.reduce(
       (acc, entry) => {
@@ -246,7 +246,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
       return acc;
     }, {} as Record<CatalogCard['rarity'], number>);
     return { curve, typeCounts, rarityCounts, maxCurve };
-  }, [deck, cards, collection]);
+  }, [deck, collection]);
 
   const groupedEntries = useMemo(() => groupDeckByMana(deck.cards, collection), [deck.cards, collection]);
 
@@ -503,9 +503,9 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                   </label>
                 </div>
 
-                <ScrollArea.Root style={{ flex: 1, minHeight: 0, borderRadius: '18px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <ScrollArea.Viewport style={{ padding: '12px', maxHeight: '100%' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px' }}>
+                <ScrollArea.Root style={catalogScrollAreaStyle}>
+                  <ScrollArea.Viewport style={{ padding: '12px', height: '100%' }}>
+                    <div style={catalogGridStyle}>
                       {filteredCards.map((card) => {
                         const inDeck = deck.cards.find((entry) => entry.cardId === card.id);
                         const disabledReason = !isCardAllowed(card, deck.heroClass)
@@ -523,14 +523,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                                   event.dataTransfer.setData('card-id', card.id);
                                 }}
                                 style={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: '8px',
-                                  padding: '12px',
-                                  borderRadius: '16px',
-                                  background: 'rgba(17,24,39,0.85)',
-                                  border: '1px solid rgba(255,255,255,0.08)',
-                                  boxShadow: '0 12px 24px rgba(0,0,0,0.25)',
+                                  ...catalogCardStyle,
                                   cursor: disabledReason ? 'not-allowed' : 'grab',
                                   opacity: disabledReason ? 0.6 : 1
                                 }}
@@ -555,9 +548,9 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                                     }}
                                   />
                                 </div>
-                                <h4 style={{ margin: 0, fontSize: '1rem', color: 'white' }}>{card.name}</h4>
+                                <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'white' }}>{card.name}</h4>
                                 {card.text && (
-                                  <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>{card.text}</p>
+                                  <p style={{ margin: 0, fontSize: '0.7rem', color: 'rgba(255,255,255,0.65)' }}>{card.text}</p>
                                 )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'auto', gap: '8px' }}>
                                   <Button
@@ -981,9 +974,37 @@ const stepperButtonStyle: CSSProperties = {
   cursor: 'pointer'
 };
 
+const catalogScrollAreaStyle: CSSProperties = {
+  flex: '0 1 auto',
+  width: '100%',
+  height: '420px',
+  minHeight: '280px',
+  maxHeight: '50vh',
+  borderRadius: '18px',
+  overflow: 'hidden',
+  border: '1px solid rgba(255,255,255,0.1)'
+};
+
+const catalogGridStyle: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gap: '10px'
+};
+
+const catalogCardStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '6px',
+  padding: '10px',
+  borderRadius: '14px',
+  background: 'rgba(17,24,39,0.85)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  boxShadow: '0 10px 20px rgba(0,0,0,0.25)'
+};
+
 const cardImageStyle: CSSProperties = {
   width: '100%',
-  borderRadius: '12px',
+  borderRadius: '10px',
   objectFit: 'cover',
   aspectRatio: '3 / 4',
   background: 'rgba(0,0,0,0.35)'

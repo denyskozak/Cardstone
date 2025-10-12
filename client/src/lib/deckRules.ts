@@ -146,15 +146,16 @@ export function curveFromDeck(deck: Deck, cards: CatalogCard[]): number[] {
   return getDeckManaCurve(deck, cards);
 }
 
-export function getDeckManaCurve(deck: Deck, cards: CatalogCard[]): number[] {
-  const collection = createCardCollection(cards);
+export function getDeckManaCurve(deck: Deck, cards: CatalogCard[] | CardCollection): number[] {
+  const collection: CardCollection = Array.isArray(cards) ? createCardCollection(cards) : cards;
   const bins = new Array(8).fill(0);
   for (const entry of deck.cards) {
     const card = collection.get(entry.cardId);
     if (!card) {
       continue;
     }
-    const bin = Math.min(card.cost, 7);
+    const cost = Number.isFinite(card.cost) ? card.cost : 0;
+    const bin = Math.min(cost, 7);
     bins[bin] += entry.count;
   }
   return bins;
