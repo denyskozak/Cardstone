@@ -33,15 +33,15 @@ export function MainRoute() {
 
   const slides = [
     {
-      titles: ['Online Digital', ' Collectible Cards Game'],
-      subtitle: ' Spell-slinging PvP with the thrill of FPS combat',
+      titles: ['Online', 'Collectible Cards Game'],
+      subtitle: 'Spell-slinging PvP with the thrill of FPS combat',
     },
     {
-      titles: ['Developed by', 'Hearthstone Classic Fan'],
+      titles: ['Built by', 'Hearthstone Fan'],
       subtitle: 'Innovative technology which opens new world of opportunities',
     },
     {
-      titles: ['Built on Sui', 'for the community'],
+      titles: ['Powered by ', 'Sui Blockchain'],
       subtitle: 'Claim $SuiWars tokens, loot, and rare gear — fully tradable',
     },
   ];
@@ -68,7 +68,7 @@ export function MainRoute() {
         <main className="z-[2] flex justify-center w-full h-full overflow-y-auto">
           <div className="flex items-center flex-col">
             {/* HeroUI-like header */}
-            <div className="text-center mt-10">
+            <div className="text-center mt-12">
               <div className="inline-block max-w-xl text-center justify-center items-center">
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -83,7 +83,7 @@ export function MainRoute() {
                 {slides[index].titles[0]}
               </span>
                     <span className="tracking-tight inline font-semibold title-text z-[2] from-[#FF705B] to-[#FFB457] text-4xl lg:text-5xl bg-clip-text text-transparent bg-gradient-to-b">
-                &nbsp;-&nbsp;{slides[index].titles[1]}
+                &nbsp;-&nbsp;<br />{slides[index].titles[1]}
               </span>
 
                     {/*<div*/}
@@ -99,23 +99,13 @@ export function MainRoute() {
           <div
             className="absolute bottom-[15vh]"
           >
-            <button
+            <Button
               onClick={() => navigate(account ? '/matches' : '/sign-in')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '12px 18px',
-                borderRadius: '16px',
-                border: 'none',
-                background: 'linear-gradient(90deg,#f97316,#facc15)',
-                color: '#0b1324',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
             >
-              <span aria-hidden style={{ fontSize: '1.1rem' }}>🎮</span> Launch Game
-            </button>
+              {/*<span className="absolute inset-0 bg-gradient-to-r from-[#1E3A8A] via-[#38BDF8] to-[#FBBF24] animate-pulse opacity-100 group-hover:opacity-100 blur-md" />*/}
+
+              <span aria-hidden style={{ fontSize: '1.1rem' }}>🔮</span> Launch Game
+            </Button>
           </div>
 
           <div className="absolute bottom-4 right-2 transform -translate-x-1/2 z-[2] flex flex-col items-center">

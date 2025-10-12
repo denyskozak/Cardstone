@@ -6,6 +6,7 @@ import type { Deck } from '@cardstone/shared/decks';
 import type { CatalogCard } from '@cardstone/shared/decks';
 import { MAX_DECK_SIZE } from '@cardstone/shared/decks';
 import { countDeckCards, getDeckManaCurve } from '../lib/deckRules';
+import { SoundButton as Button} from './SoundButton';
 
 export interface DeckCardProps {
   deck: Deck;
@@ -53,7 +54,7 @@ export function DeckCard({ deck, cards, onEdit, onDuplicate, onRename, onDelete,
           </div>
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-              <button
+              <Button
                 aria-label="Deck actions"
                 style={{
                   border: 'none',
@@ -68,7 +69,7 @@ export function DeckCard({ deck, cards, onEdit, onDuplicate, onRename, onDelete,
                 }}
               >
                 <span aria-hidden style={{ fontSize: '18px' }}>⋮</span>
-              </button>
+              </Button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content
               sideOffset={6}
@@ -168,7 +169,7 @@ export function DeckCard({ deck, cards, onEdit, onDuplicate, onRename, onDelete,
         </section>
 
         <footer style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center' }}>
-          <button
+          <Button
             onClick={onUse}
             style={{
               flex: 1,
@@ -186,8 +187,8 @@ export function DeckCard({ deck, cards, onEdit, onDuplicate, onRename, onDelete,
             }}
           >
             <span aria-hidden style={menuIconStyle}>▶</span> Use Deck
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onEdit}
             style={{
               border: '1px solid rgba(255,255,255,0.18)',
@@ -200,7 +201,7 @@ export function DeckCard({ deck, cards, onEdit, onDuplicate, onRename, onDelete,
             }}
           >
             Edit
-          </button>
+          </Button>
         </footer>
       </div>
     </Tooltip.Provider>

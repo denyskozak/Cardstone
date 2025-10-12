@@ -6,6 +6,7 @@ import type { CatalogCard, Deck, HeroClass } from '@cardstone/shared/decks';
 import { HERO_CLASSES } from '@cardstone/shared/decks';
 import { DeckBuilderDialog } from '../components/DeckBuilderDialog';
 import { DeckCard } from '../components/DeckCard';
+import { SoundButton as Button} from '../components/SoundButton';
 
 interface DeckRequestPayload {
   name: string;
@@ -211,7 +212,7 @@ export function DecksPage() {
             <h1 style={{ margin: 0, fontSize: '2rem' }}>My Decks</h1>
             <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)' }}>Manage and build decks for battle.</p>
           </div>
-          <button
+          <Button
             onClick={() => handleOpenBuilder('create')}
             style={{
               display: 'flex',
@@ -227,7 +228,7 @@ export function DecksPage() {
             }}
           >
             <span aria-hidden style={{ fontSize: '1.1rem' }}>＋</span> Create Deck
-          </button>
+          </Button>
         </header>
 
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>

@@ -11,7 +11,7 @@ export function SignIn() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (account) navigate('/game')
+    if (account) navigate('/menu')
   }, [account])
 
   return (

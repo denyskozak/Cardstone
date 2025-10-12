@@ -1,7 +1,6 @@
 import React, { useRef } from "react";
-import { Button } from '@radix-ui/themes'
 
-export function SoundButton({ onClick, ...props }) {
+export function SoundButton({ onClick, size,  ...props }) {
   const audioRef = useRef(null);
 
   const handlePress = (event) => {
@@ -22,7 +21,24 @@ export function SoundButton({ onClick, ...props }) {
       <audio ref={audioRef} hidden src="/assets/sounds/components/button_click.ogg">
         <track kind="captions" />
       </audio>
-      <Button variant="classic" {...props} onClick={handlePress} />
+      <button
+        onClick={handlePress}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '12px 18px',
+          borderRadius: '16px',
+          border: 'none',
+          background: 'linear-gradient(90deg,#f97316,#facc15)',
+          color: '#0b1324',
+          fontWeight: 700,
+          cursor: 'pointer'
+        }}
+        {...props}
+      >
+        {props.children}
+      </button>
     </>
   );
 }

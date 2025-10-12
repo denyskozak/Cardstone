@@ -29,6 +29,7 @@ import {
   validateDeck,
   type CardCollection
 } from '../lib/deckRules';
+import { SoundButton as Button } from './SoundButton';
 
 const DRAFT_STORAGE_KEY = 'cardstone.deck-builder.draft';
 
@@ -318,7 +319,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Dialog.Title style={{ fontSize: '1.4rem', fontWeight: 700 }}>Deck Builder</Dialog.Title>
               <Dialog.Close asChild>
-                <button
+                <Button
                   aria-label="Close deck builder"
                   style={{
                     border: 'none',
@@ -333,7 +334,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                   }}
                 >
                   <Icon symbol="×" size="1.1rem" />
-                </button>
+                </Button>
               </Dialog.Close>
             </header>
 
@@ -446,7 +447,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
 
                   <Popover.Root>
                     <Popover.Trigger asChild>
-                      <button
+                      <Button
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -463,7 +464,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                         <Badge variant="soft" color="amber">
                           {rarities.size || 'Any'}
                         </Badge>
-                      </button>
+                      </Button>
                     </Popover.Trigger>
                     <Popover.Content
                       sideOffset={6}
@@ -581,7 +582,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                                   <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>{card.text}</p>
                                 )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'auto', gap: '8px' }}>
-                                  <button
+                                  <Button
                                     onClick={() => onRemoveCard(card)}
                                     disabled={!inDeck}
                                     style={{
@@ -595,8 +596,8 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                                     }}
                                   >
                                     <Icon symbol="−" />
-                                  </button>
-                                  <button
+                                  </Button>
+                                  <Button
                                     onClick={() => onAddCard(card)}
                                     disabled={Boolean(disabledReason) || limitReached}
                                     style={{
@@ -610,7 +611,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                                     }}
                                   >
                                     <Icon symbol="+" />
-                                  </button>
+                                  </Button>
                                 </div>
                               </div>
                             </Tooltip.Trigger>
@@ -670,7 +671,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                   />
                   <DropdownMenu.Root>
                     <DropdownMenu.Trigger asChild>
-                      <button
+                      <Button
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -685,7 +686,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                       >
                         {deck.heroClass}
                         <Icon symbol="▾" />
-                      </button>
+                      </Button>
                     </DropdownMenu.Trigger>
                     <DropdownMenu.Content
                       sideOffset={6}
@@ -743,13 +744,13 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                                     <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>{card.type}</span>
                                   </div>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <button
+                                    <Button
                                       onClick={() => setDeck((current) => removeCard(current, card, collection))}
                                       style={stepperButtonStyle}
                                       disabled={entry.count <= 0}
                                     >
                                       <Icon symbol="−" />
-                                    </button>
+                                    </Button>
                                     <input
                                       type="number"
                                       min={0}
@@ -770,13 +771,13 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                                         padding: '4px'
                                       }}
                                     />
-                                    <button
+                                    <Button
                                       onClick={() => setDeck((current) => addCard(current, card, collection))}
                                       style={stepperButtonStyle}
                                       disabled={entry.count >= (card.rarity === 'Legendary' ? 1 : 2)}
                                     >
                                       <Icon symbol="+" />
-                                    </button>
+                                    </Button>
                                   </div>
                                 </div>
                               );
@@ -871,7 +872,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                   </div>
                 </div>
 
-                <button
+                <Button
                   onClick={() => setDeck(deckToDraft(initialDeck))}
                   style={{
                     display: 'flex',
@@ -887,7 +888,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                   }}
                 >
                   <Icon symbol="⟳" /> Reset Changes
-                </button>
+                </Button>
               </section>
             </div>
 
@@ -897,7 +898,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <Dialog.Close asChild>
-                  <button
+                  <Button
                     style={{
                       padding: '10px 16px',
                       borderRadius: '12px',
@@ -908,9 +909,9 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                     }}
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </Dialog.Close>
-                <button
+                <Button
                   onClick={() => handleSave(false)}
                   disabled={saveDisabled}
                   style={{
@@ -924,8 +925,8 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                   }}
                 >
                   Save
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => handleSave(true)}
                   disabled={saveDisabled}
                   style={{
@@ -939,7 +940,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                   }}
                 >
                   Save & Close
-                </button>
+                </Button>
               </div>
             </footer>
           </Dialog.Content>
