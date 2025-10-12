@@ -378,7 +378,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                   </label>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '0.75rem' }}>Mana Cost</span>
+                    <span style={{ fontSize: '0.75rem' }}>Mana Cost: {manaRange[0]} - {manaRange[1]}</span>
                     <Slider.Root
                       value={manaRange}
                       max={7}
@@ -426,7 +426,7 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                         }}
                       >
                         <Icon symbol="⚙" /> Rarity
-                        <Badge variant="soft" color="amber">
+                        <Badge color="orange" radius="full">
                           {rarities.size || 'Any'}
                         </Badge>
                       </Button>
@@ -441,7 +441,8 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                         gap: '8px',
                         minWidth: '200px',
                         border: '1px solid rgba(255,255,255,0.1)',
-                        color: 'white'
+                        color: 'white',
+                        zIndex: '2'
                       }}
                     >
                       {(['Common', 'Rare', 'Epic', 'Legendary'] as CatalogCard['rarity'][]).map((rarity) => {
