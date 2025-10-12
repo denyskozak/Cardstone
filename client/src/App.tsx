@@ -26,7 +26,7 @@ export function App() {
     <Theme accentColor="cyan" appearance="dark" panelBackground="translucent" className="theme-provider">
       <QueryClientProvider client={queryClient}>
         <SuiClientProvider networks={networkConfig} defaultNetwork="mainnet">
-          <WalletProvider>
+          <WalletProvider autoConnect>
             <RouterProvider router={router} />
           </WalletProvider>
         </SuiClientProvider>
