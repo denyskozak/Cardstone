@@ -31,8 +31,6 @@ import {
 } from '../lib/deckRules';
 import { SoundButton as Button } from './SoundButton';
 
-const DRAFT_STORAGE_KEY = 'cardstone.deck-builder.draft';
-
 export type DeckBuilderDialogProps = {
   open: boolean;
   onOpenChange(value: boolean): void;
@@ -44,8 +42,6 @@ export type DeckBuilderDialogProps = {
 type RarityFilter = Set<CatalogCard['rarity']>;
 
 type CatalogTab = 'All' | 'Minions' | 'Spells' | 'Weapons';
-
-type DeckDraft = Deck;
 
 const iconBaseStyle: CSSProperties = {
   display: 'inline-flex',
@@ -75,31 +71,6 @@ function createEmptyDeck(): Deck {
     createdAt: timestamp,
     updatedAt: timestamp
   };
-}
-
-function loadDraft(): DeckDraft | undefined {
-  try {
-    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
-    if (!raw) {
-      return undefined;
-    }
-    const parsed = JSON.parse(raw) as DeckDraft;
-    if (!parsed || !parsed.heroClass || !parsed.name || !Array.isArray(parsed.cards)) {
-      return undefined;
-    }
-    return cloneDeck(parsed);
-  } catch (error) {
-    console.warn('Failed to load deck draft', error);
-    return undefined;
-  }
-}
-
-function saveDraft(deck: DeckDraft): void {
-  try {
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(deck));
-  } catch (error) {
-    console.warn('Failed to persist deck draft', error);
-  }
 }
 
 function groupDeckByMana(entries: DeckCardEntry[], collection: CardCollection) {
@@ -139,6 +110,10 @@ function deckToDraft(deck?: Deck): Deck {
   return deck ? cloneDeck(deck) : createEmptyDeck();
 }
 
+function getCardImageUrl(card: CatalogCard): string {
+  return `/assets/cards/${card.id}.webp`;
+}
+
 export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSave }: DeckBuilderDialogProps) {
   const [activeTab, setActiveTab] = useState<CatalogTab>('All');
   const [manaRange, setManaRange] = useState<[number, number]>([0, 7]);
@@ -156,20 +131,10 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
       if (initialDeck) {
         setDeck(deckToDraft(initialDeck));
       } else {
-        const draft = loadDraft();
-        if (draft && window.confirm('Restore your last deck draft?')) {
-          setDeck(draft);
-        } else {
-          setDeck(deckToDraft(undefined));
-        }
+        setDeck(deckToDraft(undefined));
       }
     }
   }, [open, initialDeck]);
-
-  useEffect(() => {
-    if (!open) return;
-    saveDraft(deck);
-  }, [deck, open]);
 
   const totalCards = useMemo(() => countDeckCards(deck), [deck]);
   const validation = useMemo(() => validateDeck(deck, cards), [deck, cards]);
@@ -577,6 +542,18 @@ export function DeckBuilderDialog({ open, onOpenChange, initialDeck, cards, onSa
                                     {card.rarity}
                                   </Badge>
                                 </header>
+                                <div style={{ position: 'relative' }}>
+                                  <img
+                                    src={getCardImageUrl(card)}
+                                    alt={card.name}
+                                    style={cardImageStyle}
+                                    loading="lazy"
+                                    onError={(event) => {
+                                      event.currentTarget.onerror = null;
+                                      event.currentTarget.src = '/assets/deck_template.webp';
+                                    }}
+                                  />
+                                </div>
                                 <h4 style={{ margin: 0, fontSize: '1rem', color: 'white' }}>{card.name}</h4>
                                 {card.text && (
                                   <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>{card.text}</p>
@@ -1001,4 +978,12 @@ const stepperButtonStyle: CSSProperties = {
   display: 'grid',
   placeItems: 'center',
   cursor: 'pointer'
+};
+
+const cardImageStyle: CSSProperties = {
+  width: '100%',
+  borderRadius: '12px',
+  objectFit: 'cover',
+  aspectRatio: '3 / 4',
+  background: 'rgba(0,0,0,0.35)'
 };
