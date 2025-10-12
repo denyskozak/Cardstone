@@ -62,12 +62,12 @@ export function DecksPage() {
 
   const cardsQuery = useQuery({
     queryKey: CARDS_QUERY_KEY,
-    queryFn: () => fetchJson<CatalogCard[]>('/api/cards')
+    queryFn: () => fetchJson<CatalogCard[]>('http://localhost:8787/api/cards')
   });
 
   const decksQuery = useQuery({
     queryKey: DECKS_QUERY_KEY,
-    queryFn: () => fetchJson<Deck[]>('/api/decks')
+    queryFn: () => fetchJson<Deck[]>('http://localhost:8787/api/decks')
   });
 
   const saveDeckMutation = useMutation({
@@ -78,13 +78,13 @@ export function DecksPage() {
         cards: input.deck.cards
       };
       if (input.mode === 'create') {
-        return fetchJson<Deck>('/api/decks', {
+        return fetchJson<Deck>('http://localhost:8787/api/decks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
       }
-      return fetchJson<Deck>(`/api/decks/${input.deck.id}`, {
+      return fetchJson<Deck>(`http://localhost:8787/api/decks/${input.deck.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -98,7 +98,7 @@ export function DecksPage() {
 
   const deleteDeckMutation = useMutation({
     mutationFn: async (deckId: string) => {
-      const response = await fetch('/api/decks/' + deckId, {
+      const response = await fetch('http://localhost:8787/api/decks/' + deckId, {
         method: 'DELETE'
       });
       if (!response.ok) {
@@ -120,7 +120,7 @@ export function DecksPage() {
         heroClass: deck.heroClass,
         cards: deck.cards
       };
-      return fetchJson<Deck>('/api/decks', {
+      return fetchJson<Deck>('http://localhost:8787/api/decks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -140,7 +140,7 @@ export function DecksPage() {
         heroClass: deck.heroClass,
         cards: deck.cards
       };
-      return fetchJson<Deck>(`/api/decks/${deck.id}`, {
+      return fetchJson<Deck>(`http://localhost:8787/api/decks/${deck.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -148,6 +148,7 @@ server.on('request', async (req, res) => {
   }
 
   try {
+      console.log("url.pathname: ", url.pathname);
     if (url.pathname === '/api/cards' && req.method === 'GET') {
       sendJson(res, 200, catalogCards.map((card) => ({ ...card })));
       return;
