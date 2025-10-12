@@ -1,39 +1,20 @@
 // README: Hook up `window.startGame = ({ deckId }) => { ... }` in your host app to launch games from the deck screen.
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router';
 import * as Toast from '@radix-ui/react-toast';
 import type { CatalogCard, Deck, HeroClass } from '@cardstone/shared/decks';
 import { HERO_CLASSES } from '@cardstone/shared/decks';
-import { DeckBuilderDialog } from '../components/DeckBuilderDialog';
 import { DeckCard } from '../components/DeckCard';
 import { SoundButton as Button} from '../components/SoundButton';
+import { fetchJson } from '../lib/api';
+import { CARDS_QUERY_KEY, DECKS_QUERY_KEY } from '../lib/queryKeys';
 
 interface DeckRequestPayload {
   name: string;
   heroClass: HeroClass;
   cards: Deck['cards'];
 }
-
-async function fetchJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const response = await fetch(input, init);
-  if (!response.ok) {
-    const text = await response.text();
-    let message = text || 'Request failed';
-    try {
-      const parsed = JSON.parse(text) as { message?: string };
-      if (parsed.message) {
-        message = parsed.message;
-      }
-    } catch {
-      // ignore parse error
-    }
-    throw new Error(message);
-  }
-  return (await response.json()) as T;
-}
-
-const CARDS_QUERY_KEY = ['cards'];
-const DECKS_QUERY_KEY = ['decks'];
 
 type BuilderMode = 'create' | 'edit';
 
@@ -48,9 +29,7 @@ export function onUseDeck(deckId: string): void {
 
 export function DecksPage() {
   const queryClient = useQueryClient();
-  const [builderOpen, setBuilderOpen] = useState(false);
-  const [builderDeck, setBuilderDeck] = useState<Deck | undefined>(undefined);
-  const [builderMode, setBuilderMode] = useState<BuilderMode>('create');
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState<'All' | HeroClass>('All');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -68,32 +47,6 @@ export function DecksPage() {
   const decksQuery = useQuery({
     queryKey: DECKS_QUERY_KEY,
     queryFn: () => fetchJson<Deck[]>('http://localhost:8787/api/decks')
-  });
-
-  const saveDeckMutation = useMutation({
-    mutationFn: async (input: { mode: BuilderMode; deck: Deck }) => {
-      const payload: DeckRequestPayload = {
-        name: input.deck.name,
-        heroClass: input.deck.heroClass,
-        cards: input.deck.cards
-      };
-      if (input.mode === 'create') {
-        return fetchJson<Deck>('http://localhost:8787/api/decks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      }
-      return fetchJson<Deck>(`http://localhost:8787/api/decks/${input.deck.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: DECKS_QUERY_KEY });
-    },
-    onError: handleError
   });
 
   const deleteDeckMutation = useMutation({
@@ -169,21 +122,6 @@ export function DecksPage() {
     });
   }, [decks, search, classFilter]);
 
-  const handleOpenBuilder = (mode: BuilderMode, deck?: Deck) => {
-    setBuilderMode(mode);
-    setBuilderDeck(deck);
-    setBuilderOpen(true);
-  };
-
-  const handleSaveDeck = async (deckToSave: Deck) => {
-    const result = await saveDeckMutation.mutateAsync({ mode: builderMode, deck: deckToSave });
-    setBuilderDeck(result);
-    if (builderMode === 'create') {
-      setBuilderMode('edit');
-    }
-    setToastMessage('Deck saved.');
-  };
-
   const handleDeleteDeck = async (deck: Deck) => {
     if (window.confirm(`Delete deck "${deck.name}"?`)) {
       await deleteDeckMutation.mutateAsync(deck.id);
@@ -213,7 +151,7 @@ export function DecksPage() {
             <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)' }}>Manage and build decks for battle.</p>
           </div>
           <Button
-            onClick={() => handleOpenBuilder('create')}
+            onClick={() => navigate('/decks/build')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -295,7 +233,7 @@ export function DecksPage() {
             <h2 style={{ marginTop: 0 }}>No decks yet</h2>
             <p style={{ color: 'rgba(255,255,255,0.7)' }}>Create your first deck to start playing.</p>
             <button
-              onClick={() => handleOpenBuilder('create')}
+              onClick={() => navigate('/decks/build')}
               style={{
                 marginTop: '16px',
                 padding: '12px 18px',
@@ -325,7 +263,11 @@ export function DecksPage() {
                 key={deck.id}
                 deck={deck}
                 cards={cards}
-                onEdit={() => handleOpenBuilder('edit', deck)}
+                onEdit={() =>
+                  navigate(`/decks/build?deckId=${deck.id}`, {
+                    state: { deck, mode: 'edit' as BuilderMode }
+                  })
+                }
                 onDuplicate={() => handleDuplicateDeck(deck)}
                 onRename={() => handleRenameDeck(deck)}
                 onDelete={() => handleDeleteDeck(deck)}
@@ -335,14 +277,6 @@ export function DecksPage() {
           </div>
         )}
       </div>
-
-      <DeckBuilderDialog
-        open={builderOpen}
-        onOpenChange={setBuilderOpen}
-        initialDeck={builderDeck}
-        cards={cards}
-        onSave={handleSaveDeck}
-      />
 
       <Toast.Root open={Boolean(toastMessage)} onOpenChange={(openState) => !openState && setToastMessage(null)} duration={3000}>
         <Toast.Title>{toastMessage}</Toast.Title>

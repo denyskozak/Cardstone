@@ -8,7 +8,6 @@ import { Lobby } from './lobby/Lobby.js';
 import { RateLimiter } from './util/rateLimit.js';
 import { Match } from './match/Match.js';
 import {
-  type CatalogCard,
   type CreateDeckPayload,
   type Deck,
   type DeckCardEntry,
@@ -148,7 +147,6 @@ server.on('request', async (req, res) => {
   }
 
   try {
-      console.log("url.pathname: ", url.pathname);
     if (url.pathname === '/api/cards' && req.method === 'GET') {
       sendJson(res, 200, catalogCards.map((card) => ({ ...card })));
       return;
@@ -205,6 +203,10 @@ server.on('request', async (req, res) => {
       const existing = deckStore.get(deckId);
       if (!existing) {
         sendJson(res, 404, { message: 'Deck not found.' });
+        return;
+      }
+      if (req.method === 'GET') {
+        sendJson(res, 200, serializeDeck(existing));
         return;
       }
       if (req.method === 'PUT') {
