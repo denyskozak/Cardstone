@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@cardstone/shared': path.resolve(__dirname, '../shared')
+      '@cardstone/shared': path.resolve(__dirname, '../shared'),
+      '@radax/ui': path.resolve(__dirname, 'src/lib/radax-ui.ts')
     }
   },
   server: {
