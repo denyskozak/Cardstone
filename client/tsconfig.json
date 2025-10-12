@@ -6,7 +6,8 @@
     "types": ["vite/client"],
     "baseUrl": "./src",
     "paths": {
-      "@cardstone/shared/*": ["../../shared/*"]
+      "@cardstone/shared/*": ["../../shared/*"],
+      "@radax/ui": ["./src/lib/radax-ui.ts"]
     }
   },
   "include": ["src"],
