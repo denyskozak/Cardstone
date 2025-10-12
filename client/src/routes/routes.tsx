@@ -4,6 +4,7 @@ import { SignIn } from './sign-in'
 import { PlayPage } from './play'
 import { Game } from '../components/Game';
 import { DecksPage } from './decks';
+import { DeckBuilderPage } from './deck-builder';
 import { MenuPage } from './menu';
 
 export const router = createBrowserRouter([
@@ -26,6 +27,10 @@ export const router = createBrowserRouter([
   {
     path: '/decks',
     element: <DecksPage />,
+  },
+  {
+    path: '/decks/build',
+    element: <DeckBuilderPage />,
   },
   {
     path: '/menu',
