@@ -14,7 +14,8 @@
     "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w shared && npm run build -w server && npm run build -w client",
     "lint": "npm run lint -w shared && npm run lint -w server && npm run lint -w client",
-    "test": "npm run test -w tests"
+    "test": "npm run test -w tests",
+    "build::shared": "cd ./shared && npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

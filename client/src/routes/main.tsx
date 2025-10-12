@@ -68,7 +68,7 @@ export function MainRoute() {
         <main className="z-[2] flex justify-center w-full h-full overflow-y-auto">
           <div className="flex items-center flex-col">
             {/* HeroUI-like header */}
-            <div className="text-center">
+            <div className="text-center mt-10">
               <div className="inline-block max-w-xl text-center justify-center items-center">
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -99,13 +99,23 @@ export function MainRoute() {
           <div
             className="absolute bottom-[15vh]"
           >
-            <Button
-              size="4"
+            <button
               onClick={() => navigate(account ? '/matches' : '/sign-in')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 18px',
+                borderRadius: '16px',
+                border: 'none',
+                background: 'linear-gradient(90deg,#f97316,#facc15)',
+                color: '#0b1324',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
             >
-              {/*<span className="absolute inset-0 bg-gradient-to-r from-[#1E3A8A] via-[#38BDF8] to-[#FBBF24] animate-pulse opacity-100 group-hover:opacity-100 blur-md" />*/}
-              Launch Game
-            </Button>
+              <span aria-hidden style={{ fontSize: '1.1rem' }}>🎮</span> Launch Game
+            </button>
           </div>
 
           <div className="absolute bottom-4 right-2 transform -translate-x-1/2 z-[2] flex flex-col items-center">
