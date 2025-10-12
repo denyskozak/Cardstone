@@ -1,10 +1,11 @@
 import type { CardInHand } from '@cardstone/shared/types';
-import { Assets, Texture, type FederatedPointerEvent } from 'pixi.js';
+import { Assets, BlurFilter, Texture, type FederatedPointerEvent } from 'pixi.js';
 import { useEffect, useState } from 'react';
 
 
 const CARD_WIDTH = 160;
 const CARD_HEIGHT = 220;
+const PLAYABLE_GLOW_FILTER = new BlurFilter(6);
 
 
 interface CardProps {
@@ -113,6 +114,25 @@ export function Card({
         }
       }}
     >
+      {!disabled ? (
+        <pixiGraphics
+          blendMode="add"
+          anchor={0.5}
+          alpha={0.7}
+          filters={[PLAYABLE_GLOW_FILTER]}
+          draw={(g) => {
+            g.clear();
+            g.beginFill(0x78ff5a, 0.85);
+            g.drawEllipse(
+              CARD_WIDTH / 2,
+              CARD_HEIGHT / 2,
+              CARD_WIDTH / 2 + 8,
+              CARD_HEIGHT / 2 + 8
+            );
+            g.endFill();
+          }}
+        />
+      ) : null}
       <pixiSprite
         texture={innerTexture}
         width={CARD_WIDTH * 0.6}
