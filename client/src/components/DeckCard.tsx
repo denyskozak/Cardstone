@@ -1,7 +1,7 @@
 import { useMemo, type CSSProperties } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { Badge } from '@radix-ui/themes';
+import { Badge } from './Badge';
 import type { Deck } from '@cardstone/shared/decks';
 import type { CatalogCard } from '@cardstone/shared/decks';
 import { MAX_DECK_SIZE } from '@cardstone/shared/decks';

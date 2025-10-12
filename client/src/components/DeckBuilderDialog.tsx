@@ -8,7 +8,7 @@ import * as Slider from '@radix-ui/react-slider';
 import * as Toast from '@radix-ui/react-toast';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
-import { Badge } from '@radix-ui/themes';
+import { Badge } from './Badge';
 import {
   HERO_CLASSES,
   MAX_DECK_SIZE,
