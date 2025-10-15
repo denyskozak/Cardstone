@@ -2,7 +2,7 @@ import { createBrowserRouter } from 'react-router'
 import { MainRoute } from './main'
 import { SignIn } from './sign-in'
 import { PlayPage } from './play'
-import { Game } from '../components/Game';
+import { GameRoute } from './game';
 import { DecksPage } from './decks';
 import { DeckBuilderPage } from './deck-builder';
 import { MenuPage } from './menu';
@@ -22,7 +22,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/game',
-    element: <Game />,
+    element: <GameRoute />,
   },
   {
     path: '/decks',
