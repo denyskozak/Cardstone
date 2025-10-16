@@ -1,5 +1,5 @@
 import { DEMO_CARD_POOL } from '@cardstone/shared/cards/demo.js';
-import type { CatalogCard, HeroClass } from '@cardstone/shared/decks.js';
+import type { CatalogCard } from '@cardstone/shared/decks.js';
 import type { CardDefinition } from '@cardstone/shared/types.js';
 
 const rarityCycle: NonNullable<CardDefinition['rarity']>[] = [
@@ -9,24 +9,10 @@ const rarityCycle: NonNullable<CardDefinition['rarity']>[] = [
   'Legendary'
 ];
 
-const heroCycle: (HeroClass | 'Neutral')[] = [
-  'Neutral',
-  'Neutral',
-  'Mage',
-  'Warrior',
-  'Hunter',
-  'Priest',
-  'Rogue',
-  'Paladin',
-  'Shaman',
-  'Warlock',
-  'Druid'
-];
-
 export const catalogCards: CatalogCard[] = DEMO_CARD_POOL.map((card, index) => ({
   ...card,
   rarity: (card.rarity ?? rarityCycle[index % rarityCycle.length]) as NonNullable<CardDefinition['rarity']>,
-  heroClass: heroCycle[index % heroCycle.length],
+  heroClass: 'Neutral',
   collectible: true
 }));
 
