@@ -205,8 +205,8 @@ export function DeckBuilderPage() {
 
   const collection = useMemo(() => createCardCollection(cards), [cards]);
 
-  const totalCards = useMemo(() => countDeckCards(deck), [deck]);
-  const validation = useMemo(() => validateDeck(deck, cards), [deck, cards]);
+  const totalCards = useMemo(() => countDeckCards(deck), [deck.cards]);
+  const validation = useMemo(() => validateDeck(deck, cards), [deck.cards, deck.heroClass, cards]);
 
   const filteredCards = useMemo(() => {
     return cards.filter((card) => {
@@ -235,7 +235,13 @@ export function DeckBuilderPage() {
         setToastMessage(`${card.name} cannot be added to a ${deck.heroClass} deck.`);
         return;
       }
-      setDeck((current) => addCard(current, card, collection));
+      setDeck((current) => {
+        if (countDeckCards(current) >= MAX_DECK_SIZE) {
+          setToastMessage(`Deck is already at the ${MAX_DECK_SIZE}-card limit.`);
+          return current;
+        }
+        return addCard(current, card, collection);
+      });
     },
     [collection, deck.heroClass]
   );
@@ -322,9 +328,10 @@ export function DeckBuilderPage() {
     [deck, mode, navigate, saveDeckMutation]
   );
 
+  const manaCurve = useMemo(() => getDeckManaCurve(deck, collection), [deck.cards, collection]);
+  const maxManaCurve = useMemo(() => Math.max(...manaCurve, 1), [manaCurve]);
+
   const analytics = useMemo(() => {
-    const curve = getDeckManaCurve(deck, collection);
-    const maxCurve = Math.max(...curve, 1);
     const typeCounts = deck.cards.reduce(
       (acc, entry) => {
         const card = collection.get(entry.cardId);
@@ -341,8 +348,8 @@ export function DeckBuilderPage() {
       acc[card.rarity] = (acc[card.rarity] ?? 0) + entry.count;
       return acc;
     }, {} as Record<CatalogCard['rarity'], number>);
-    return { curve, typeCounts, rarityCounts, maxCurve };
-  }, [deck, collection]);
+    return { typeCounts, rarityCounts };
+  }, [deck.cards, collection]);
 
   const groupedEntries = useMemo(() => groupDeckByMana(deck.cards, collection), [deck.cards, collection]);
 
@@ -634,9 +641,10 @@ export function DeckBuilderPage() {
                     <div style={catalogGridStyle}>
                       {filteredCards.map((card) => {
                         const inDeck = deck.cards.find((entry) => entry.cardId === card.id);
+                        const deckIsFull = totalCards >= MAX_DECK_SIZE;
                         const disabledReason = !isCardAllowed(card, deck.heroClass)
                           ? `Only ${deck.heroClass} & Neutral cards allowed.`
-                          : totalCards >= MAX_DECK_SIZE && !inDeck
+                          : deckIsFull
                           ? 'Deck is full.'
                           : undefined;
                         const limitReached = inDeck && inDeck.count >= (card.rarity === 'Legendary' ? 1 : 2);
@@ -645,7 +653,7 @@ export function DeckBuilderPage() {
                           <Tooltip.Root key={card.id} delayDuration={100}>
                             <Tooltip.Trigger asChild>
                               <div
-                                draggable
+                                draggable={!disabledReason}
                                 onDragStart={(event) => {
                                   event.dataTransfer.setData('card-id', card.id);
                                   event.dataTransfer.effectAllowed = 'copy';
@@ -881,9 +889,11 @@ export function DeckBuilderPage() {
                                         }}
                                       />
                                       <Button
-                                        onClick={() => setDeck((current) => addCard(current, card, collection))}
+                                        onClick={() => onAddCard(card)}
                                         style={stepperButtonStyle}
-                                        disabled={entry.count >= (card.rarity === 'Legendary' ? 1 : 2)}
+                                        disabled={
+                                          entry.count >= (card.rarity === 'Legendary' ? 1 : 2) || totalCards >= MAX_DECK_SIZE
+                                        }
                                       >
                                         <Icon symbol="+" />
                                       </Button>
@@ -942,14 +952,14 @@ export function DeckBuilderPage() {
                   <div>
                     <h4 style={{ margin: 0, marginBottom: '8px' }}>Mana Curve</h4>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', height: '140px' }}>
-                      {analytics.curve.map((value, index) => (
+                      {manaCurve.map((value, index) => (
                         <div key={index} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                           <div
                             style={{
                               width: '100%',
                               borderRadius: '8px 8px 2px 2px',
                               background: 'linear-gradient(180deg,#93c5fd,#2563eb)',
-                              height: `${(value / analytics.maxCurve) * 100 || 4}%`,
+                              height: `${(value / maxManaCurve) * 100 || 4}%`,
                               minHeight: '4px'
                             }}
                           />
