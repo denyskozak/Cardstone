@@ -31,8 +31,6 @@ import {
   createCardCollection,
   getDeckManaCurve,
   isCardAllowed,
-  removeCard,
-  setCardCount,
   sortDeckEntries,
   validateDeck,
   type CardCollection
@@ -851,7 +849,6 @@ export function DeckBuilderPage() {
                               {entries.map((entry) => {
                                 const card = collection.get(entry.cardId);
                                 if (!card) return null;
-                                const entryHasStats = 'attack' in card && 'health' in card;
                                 return (
                                   <div
                                     key={entry.cardId}
@@ -859,67 +856,13 @@ export function DeckBuilderPage() {
                                     onMouseMove={(event) => updateHoverTooltip(event, card.text)}
                                     onMouseLeave={clearHoverTooltip}
                                     style={{
-                                      display: 'grid',
-                                      gridTemplateColumns: '1fr auto',
-                                      gap: '8px',
                                       padding: '10px 12px',
                                       borderRadius: '12px',
                                       background: 'rgba(10,14,23,0.6)',
                                       border: '1px solid rgba(255,255,255,0.08)'
                                     }}
                                   >
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: entryHasStats ? '6px' : '0' }}>
-                                      <div>
-                                        <strong>{card.name}</strong>
-                                        <span style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>
-                                          {card.type}
-                                        </span>
-                                      </div>
-                                      {entryHasStats && (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: '120px' }}>
-                                          <span style={deckEntryStatBadgeStyle.attack}>{card.attack} 🗡️</span>
-                                          <span style={deckEntryStatBadgeStyle.health}>{card.health}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                      <Button
-                                        onClick={() => setDeck((current) => removeCard(current, card, collection))}
-                                        style={stepperButtonStyle}
-                                        disabled={entry.count <= 0}
-                                      >
-                                        <Icon symbol="−" />
-                                      </Button>
-                                      <input
-                                        type="number"
-                                        min={0}
-                                        max={card.rarity === 'Legendary' ? 1 : 2}
-                                        value={entry.count}
-                                        onChange={(event) =>
-                                          setDeck((current) =>
-                                            setCardCount(current, card, Number(event.target.value), collection)
-                                          )
-                                        }
-                                        style={{
-                                          width: '48px',
-                                          textAlign: 'center',
-                                          borderRadius: '8px',
-                                          border: '1px solid rgba(255,255,255,0.2)',
-                                          background: 'rgba(255,255,255,0.08)',
-                                          color: 'white',
-                                          padding: '4px'
-                                        }}
-                                      />
-                                      <Button
-                                        onClick={() => onAddCard(card)}
-                                        style={stepperButtonStyle}
-                                        disabled={
-                                          entry.count >= (card.rarity === 'Legendary' ? 1 : 2) || totalCards >= MAX_DECK_SIZE
-                                        }
-                                      >
-                                        <Icon symbol="+" />
-                                      </Button>
-                                    </div>
+                                    <strong>{card.name}</strong>
                                   </div>
                                 );
                               })}
@@ -1079,18 +1022,6 @@ const sliderThumbStyle: CSSProperties = {
   border: '2px solid #1f2937'
 };
 
-const stepperButtonStyle: CSSProperties = {
-  width: '32px',
-  height: '32px',
-  borderRadius: '8px',
-  border: '1px solid rgba(255,255,255,0.25)',
-  background: 'rgba(255,255,255,0.08)',
-  color: 'white',
-  display: 'grid',
-  placeItems: 'center',
-  cursor: 'pointer'
-};
-
 const deckDetailsScrollableStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
@@ -1171,32 +1102,6 @@ const cardStatBadgeStyle: Record<'attack' | 'health' | 'rarity', CSSProperties> 
     bottom: '8px',
 
     background: 'linear-gradient(135deg,#34d399,#22d3ee)'
-  }
-};
-
-const deckEntryStatBadgeBaseStyle: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minWidth: '36px',
-  padding: '4px 10px',
-  borderRadius: '999px',
-  fontWeight: 700,
-  fontSize: '0.75rem'
-};
-
-const deckEntryStatBadgeStyle: Record<'attack' | 'health', CSSProperties> = {
-  attack: {
-    ...deckEntryStatBadgeBaseStyle,
-    background: 'rgba(248,113,113,0.16)',
-    border: '1px solid rgba(248,113,113,0.35)',
-    color: 'rgba(248,113,113,1)'
-  },
-  health: {
-    ...deckEntryStatBadgeBaseStyle,
-    background: 'rgba(134,239,172,0.18)',
-    border: '1px solid rgba(110,231,183,0.35)',
-    color: 'rgba(16,185,129,1)'
   }
 };
 
