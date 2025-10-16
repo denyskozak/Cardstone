@@ -331,7 +331,7 @@ export function DeckBuilderPage() {
   const manaCurve = useMemo(() => getDeckManaCurve(deck, collection), [deck.cards, collection]);
   const maxManaCurve = useMemo(() => Math.max(...manaCurve, 1), [manaCurve]);
 
-  const analytics = useMemo(() => {
+    const analytics = useMemo(() => {
     const typeCounts = deck.cards.reduce(
       (acc, entry) => {
         const card = collection.get(entry.cardId);
@@ -559,9 +559,9 @@ export function DeckBuilderPage() {
                         }}
                       >
                         <Icon symbol="⚙" /> Rarity
-                        <Badge color="orange" radius="full">
-                          {rarities.size || 'Any'}
-                        </Badge>
+                        {/*<Badge color="orange" radius="full">*/}
+                        {/*  {rarities.size || 'Any'}*/}
+                        {/*</Badge>*/}
                       </Button>
                     </Popover.Trigger>
                     <Popover.Content
@@ -672,8 +672,9 @@ export function DeckBuilderPage() {
                                   <img src={getCardImageUrl(card)} alt="" style={cardImageStyle} />
                                   {cardHasStats && (
                                     <>
-                                      <span style={cardStatBadgeStyle.attack}>{card.attack}</span>
-                                      <span style={cardStatBadgeStyle.health}>{card.health}</span>
+                                      <span style={cardStatBadgeStyle.rarity}>{card.rarity}</span>
+                                      <span style={cardStatBadgeStyle.attack}>{card.attack} 🗡</span>
+                                      <span style={cardStatBadgeStyle.health}>{card.health} ❤️</span>
                                     </>
                                   )}
                                 </div>
@@ -681,13 +682,14 @@ export function DeckBuilderPage() {
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <strong>{card.name}</strong>
                                     <Badge variant="surface" color="blue">
-                                      {card.cost}
+                                      {card.cost} 🪙
                                     </Badge>
                                   </div>
                                   <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)' }}>{card.type}</span>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
-                                    <span>{card.rarity}</span>
                                     <span>{card.heroClass}</span>
+                                    <span>{card.text}</span>
+
                                   </div>
                                   {inDeck && (
                                     <span style={{ fontSize: '0.8rem', color: 'rgba(16,185,129,0.85)' }}>In deck: {inDeck.count}</span>
@@ -714,7 +716,7 @@ export function DeckBuilderPage() {
                 </ScrollArea.Root>
               </section>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minHeight: 0 }}>
+              <div style={{ display: 'flex',  flexDirection: 'column', gap: '16px', minHeight: 0 }}>
                 <section
                   style={{
                     display: 'flex',
@@ -747,7 +749,7 @@ export function DeckBuilderPage() {
                     </div>
                     <DropdownMenu.Root>
                       <DropdownMenu.Trigger asChild>
-                        <Button style={{ padding: '8px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: 'white', cursor: 'pointer' }}>
+                        <Button style={{ padding: '4px 6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: 'white', cursor: 'pointer' }}>
                           <Icon symbol="☰" /> Options
                         </Button>
                       </DropdownMenu.Trigger>
@@ -799,7 +801,7 @@ export function DeckBuilderPage() {
                     <Button
                       onClick={() => setDeck(deckToDraft(deckData))}
                       style={{
-                        padding: '8px 12px',
+                        padding: '4px 6px',
                         borderRadius: '10px',
                         border: '1px solid rgba(255,255,255,0.12)',
                         background: 'rgba(255,255,255,0.06)',
@@ -810,6 +812,26 @@ export function DeckBuilderPage() {
                       <Icon symbol="↺" /> Revert changes
                     </Button>
                   </div>
+                    <div>
+                      <h4 style={{ margin: 0, marginBottom: '8px' }}>Mana Curve</h4>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', height: '140px' }}>
+                        {manaCurve.map((value, index) => (
+                          <div key={`${index}-${value}`} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                            <div
+                              style={{
+                                width: '100%',
+                                borderRadius: '8px 8px 2px 2px',
+                                background: 'linear-gradient(180deg,#93c5fd,#2563eb)',
+                                height: `${(value / maxManaCurve) * 100 || 4}px`,
+                                textAlign: 'center',
+                                minHeight: '4px'
+                              }}
+                            > <span style={{ fontSize: '0.75rem', color: 'black' }}>{value > 0 ? value : ''}</span></div>
+                            <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>{index === 7 ? '7+' : index}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <strong>{totalCards} / {MAX_DECK_SIZE}</strong>
@@ -818,7 +840,7 @@ export function DeckBuilderPage() {
 
                   <ScrollArea.Root style={{ flex: 1, minHeight: 0 }}>
                     <ScrollArea.Viewport style={{ paddingRight: '8px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 300, gap: '10px' }}>
                         {groupedEntries.map(({ mana, entries }) => (
                           <div key={mana} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -855,7 +877,7 @@ export function DeckBuilderPage() {
                                       </div>
                                       {entryHasStats && (
                                         <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: '120px' }}>
-                                          <span style={deckEntryStatBadgeStyle.attack}>{card.attack}</span>
+                                          <span style={deckEntryStatBadgeStyle.attack}>{card.attack} 🗡️</span>
                                           <span style={deckEntryStatBadgeStyle.health}>{card.health}</span>
                                         </div>
                                       )}
@@ -936,79 +958,6 @@ export function DeckBuilderPage() {
                     )}
                   </div>
                   </div>
-                </section>
-
-                <section
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '16px',
-                    borderRadius: '20px',
-                    padding: '16px',
-                    background: 'rgba(9,13,20,0.8)',
-                    border: '1px solid rgba(255,255,255,0.08)'
-                  }}
-                >
-                  <div>
-                    <h4 style={{ margin: 0, marginBottom: '8px' }}>Mana Curve</h4>
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', height: '140px' }}>
-                      {manaCurve.map((value, index) => (
-                        <div key={index} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                          <div
-                            style={{
-                              width: '100%',
-                              borderRadius: '8px 8px 2px 2px',
-                              background: 'linear-gradient(180deg,#93c5fd,#2563eb)',
-                              height: `${(value / maxManaCurve) * 100 || 4}%`,
-                              minHeight: '4px'
-                            }}
-                          />
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)' }}>{index === 7 ? '7+' : index}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 style={{ margin: 0, marginBottom: '8px' }}>Type Breakdown</h4>
-                    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '6px' }}>
-                      {['Minion', 'Spell', 'Weapon'].map((type) => (
-                        <li key={type} style={{ display: 'flex', justifyContent: 'space-between', color: 'rgba(255,255,255,0.8)' }}>
-                          <span>{type}</span>
-                          <span>{analytics.typeCounts[type] ?? 0}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 style={{ margin: 0, marginBottom: '8px' }}>Rarity</h4>
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                      {(['Common', 'Rare', 'Epic', 'Legendary'] as CatalogCard['rarity'][]).map((rarity) => (
-                        <Badge key={rarity} variant="surface" color="amber">
-                          {rarity}: {analytics.rarityCounts[rarity] ?? 0}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={() => setDeck(deckToDraft(deckData))}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      padding: '10px',
-                      borderRadius: '12px',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      background: 'rgba(255,255,255,0.06)',
-                      color: 'white',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <Icon symbol="⟳" /> Reset Changes
-                  </Button>
                 </section>
               </div>
             </div>
@@ -1155,7 +1104,7 @@ const deckDetailsScrollableStyle: CSSProperties = {
 const catalogScrollAreaStyle: CSSProperties = {
   flex: '0 1 auto',
   width: '100%',
-  height: '520px',
+  height: '650px',
   minHeight: '320px',
   borderRadius: '18px',
   overflow: 'hidden',
@@ -1194,24 +1143,33 @@ const cardImageStyle: CSSProperties = {
 
 const cardStatBadgeBaseStyle: CSSProperties = {
   position: 'absolute',
-  bottom: '8px',
   padding: '4px 10px',
   borderRadius: '999px',
   fontWeight: 700,
-  fontSize: '0.75rem',
+  fontSize: '1rem',
   color: '#0f172a',
   boxShadow: '0 10px 20px rgba(15, 23, 42, 0.35)'
 };
 
-const cardStatBadgeStyle: Record<'attack' | 'health', CSSProperties> = {
+const cardStatBadgeStyle: Record<'attack' | 'health' | 'rarity', CSSProperties> = {
   attack: {
     ...cardStatBadgeBaseStyle,
+    left: '8px',
+    bottom: '8px',
+
+    background: 'linear-gradient(135deg,#fb923c,#f97316)'
+  },
+  rarity: {
+    ...cardStatBadgeBaseStyle,
+    top: '8px',
     left: '8px',
     background: 'linear-gradient(135deg,#fb923c,#f97316)'
   },
   health: {
     ...cardStatBadgeBaseStyle,
     right: '8px',
+    bottom: '8px',
+
     background: 'linear-gradient(135deg,#34d399,#22d3ee)'
   }
 };

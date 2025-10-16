@@ -37,13 +37,13 @@ export default function Background({ width, height }: BackgroundProps) {
   return (
     <>
       <pixiSprite texture={boardTexture} width={width} height={height} />
-      <pixiSprite
-          texture={deckTexture}
-        width={deckWidth}
-        height={deckHeight}
-        x={deckX}
-        y={deckY}
-      />
+      {/*<pixiSprite*/}
+      {/*    texture={deckTexture}*/}
+      {/*  width={deckWidth}*/}
+      {/*  height={deckHeight}*/}
+      {/*  x={deckX}*/}
+      {/*  y={deckY}*/}
+      {/*/>*/}
     </>
   );
 }
