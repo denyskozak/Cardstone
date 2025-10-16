@@ -275,6 +275,11 @@ export default function Board({
   const enqueueLocalAttackAnimation = useUiStore((s) => s.enqueueLocalAttackAnimation);
   const heroRefs = useRef<Record<PlayerSide, Container | null>>({ A: null, B: null });
 
+  const { boardTopY, boardBottomY, laneWidth, laneX } = useMemo(
+    () => getBoardLaneGeometry(width, height),
+    [width, height]
+  );
+
   const updateHeroPosition = useCallback(
     (side: PlayerSide) => {
       const instance = heroRefs.current[side];
@@ -504,11 +509,6 @@ export default function Board({
       });
     },
     [setCurrentTarget, targetingPredicate]
-  );
-
-  const { boardTopY, boardBottomY, laneWidth, laneX } = useMemo(
-    () => getBoardLaneGeometry(width, height),
-    [width, height]
   );
 
   const opponentSide: PlayerSide = playerSide === 'A' ? 'B' : 'A';
