@@ -51,7 +51,20 @@ const minions: Record<string, MinionCard> = {
     type: 'Minion',
     cost: 1,
     attack: 1,
-    health: 2
+    health: 2,
+    text: 'Battlecry: Add a random Heal or Firebolt to your hand.',
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: {
+          type: 'Custom',
+          key: 'CunningPeopleBattlecry',
+          data: {
+            options: [CARD_IDS.heal, CARD_IDS.firebolt]
+          }
+        }
+      }
+    ]
   },
   [CARD_IDS.delivarer]: {
     id: CARD_IDS.delivarer,

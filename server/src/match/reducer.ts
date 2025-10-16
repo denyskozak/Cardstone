@@ -193,10 +193,52 @@ function executeEffectAction(
       }
       return;
     case 'Custom':
+      executeCustomEffectAction(state, side, action, target);
       return;
     default:
       throw new Error('Unhandled effect action');
   }
+}
+
+function executeCustomEffectAction(
+  state: GameState,
+  side: PlayerSide,
+  action: Extract<EffectAction, { type: 'Custom' }> ,
+  target?: TargetDescriptor
+): void {
+  switch (action.key) {
+    case 'CunningPeopleBattlecry': {
+      if (!action.data || typeof action.data !== 'object') {
+        return;
+      }
+      const { options } = action.data as { options?: string[] };
+      if (!Array.isArray(options) || options.length === 0) {
+        return;
+      }
+      const index = Math.floor(Math.random() * options.length);
+      const cardId = options[index];
+      if (typeof cardId !== 'string') {
+        return;
+      }
+      addCardToHand(state, side, cardId);
+      return;
+    }
+    default:
+      return;
+  }
+}
+
+function addCardToHand(state: GameState, side: PlayerSide, cardId: string): void {
+  const player = state.players[side];
+  if (player.hand.length >= MATCH_CONFIG.handLimit) {
+    player.graveyard.push(cardId);
+    return;
+  }
+  const definition = getCardDefinition(cardId);
+  player.hand.push({
+    instanceId: randomUUID(),
+    card: definition
+  });
 }
 
 function applyBuff(
