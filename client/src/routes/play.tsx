@@ -12,7 +12,7 @@ export function PlayPage() {
       <div className="relative justify-center align-middle items-center flex  w-full h-[calc(100%-98px)] ">
 
         <Card
-          className="w-2/4 h-[320px] cursor-pointer"
+          className="w-[320px] h-[380px] cursor-pointer"
           onClick={() => navigate('/matches')}
         >
           <div className="pb-0 pt-2 px-4 flex-col items-start">
@@ -20,10 +20,10 @@ export function PlayPage() {
           </div>
           <img
             alt="Arena Match"
-            className="w-full h-full object-cover rounded-t-lg"
-            height={1200}
+            className="w-full h-full object-contain rounded-t-lg"
+            height={2000}
             src={'/assets/logo.webp'}
-            width={2000}
+            width={1400}
           />
         </Card>
       </div>

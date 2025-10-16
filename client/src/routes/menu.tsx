@@ -2,27 +2,27 @@ import { Button, Card, Flex, Grid, Heading, Text } from '@radax/ui'
 import { Link } from 'react-router'
 
 const menuItems = [
+  // {
+  //   title: 'Quick Match',
+  //   description: 'Jump straight into a live battle and test your deck against players from around the realm.',
+  //   href: '/play',
+  //   cta: 'Enter Arena',
+  //   accent: 'rgba(34, 197, 254, 0.45)'
+  // },
   {
-    title: 'Quick Match',
-    description: 'Jump straight into a live battle and test your deck against players from around the realm.',
-    href: '/play',
-    cta: 'Enter Arena',
-    accent: 'rgba(34, 197, 254, 0.45)'
-  },
-  {
-    title: 'Deck Workshop',
-    description: 'Craft, tune, and polish every card in your arsenal before facing your rivals.',
+    title: 'Play',
+    description: 'Craft your deck and play.',
     href: '/decks',
-    cta: 'Manage Decks',
+    cta: 'Quick Start',
     accent: 'rgba(192, 132, 252, 0.45)'
   },
-  {
-    title: 'Spectate Match',
-    description: 'Watch ongoing matches to study strategies and stay ahead of the evolving meta.',
-    href: '/game',
-    cta: 'Spectate',
-    accent: 'rgba(74, 222, 128, 0.45)'
-  },
+  // {
+  //   title: 'Spectate Match',
+  //   description: 'Watch ongoing matches to study strategies and stay ahead of the evolving meta.',
+  //   href: '/game',
+  //   cta: 'Spectate',
+  //   accent: 'rgba(74, 222, 128, 0.45)'
+  // },
   {
     title: 'Account Settings',
     description: 'Securely connect your wallet to sync progress and unlock personalized rewards.',
@@ -46,16 +46,15 @@ export function MenuPage() {
       </Flex>
 
       <Grid
-        columns={{ initial: '1', sm: '2' }}
+        columns={{ initial: '1', sm: '1' }}
         gap="5"
-        width="100%"
-        className="menu-grid"
+        className="menu-grid  items-center"
       >
         {menuItems.map((item) => (
           <Card
             key={item.title}
             size="5"
-            className="menu-card"
+            className="menu-card max-w-[320px]"
             style={{
               border: `1px solid ${item.accent}`,
               boxShadow: `0 0 28px ${item.accent}`,
