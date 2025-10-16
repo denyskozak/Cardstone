@@ -4,7 +4,8 @@ import {
   useMemo,
   useState,
   type CSSProperties,
-  type DragEvent
+  type DragEvent,
+  type MouseEvent as ReactMouseEvent
 } from 'react';
 import { useLocation, useNavigate, type Location } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -135,6 +136,23 @@ export function DeckBuilderPage() {
   const location = useLocation() as Location & { state?: DeckBuilderLocationState };
   const queryClient = useQueryClient();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [hoverTooltip, setHoverTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
+
+  const updateHoverTooltip = useCallback(
+    (event: ReactMouseEvent<HTMLElement>, text?: string | null) => {
+      const trimmed = text?.trim();
+      if (!trimmed) {
+        setHoverTooltip(null);
+        return;
+      }
+      setHoverTooltip({ text: trimmed, x: event.clientX + 16, y: event.clientY + 16 });
+    },
+    [setHoverTooltip]
+  );
+
+  const clearHoverTooltip = useCallback(() => {
+    setHoverTooltip(null);
+  }, []);
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const deckId = searchParams.get('deckId');
@@ -622,6 +640,7 @@ export function DeckBuilderPage() {
                           ? 'Deck is full.'
                           : undefined;
                         const limitReached = inDeck && inDeck.count >= (card.rarity === 'Legendary' ? 1 : 2);
+                        const cardHasStats = 'attack' in card && 'health' in card;
                         return (
                           <Tooltip.Root key={card.id} delayDuration={100}>
                             <Tooltip.Trigger asChild>
@@ -632,13 +651,24 @@ export function DeckBuilderPage() {
                                   event.dataTransfer.effectAllowed = 'copy';
                                 }}
                                 onClick={() => onAddCard(card)}
+                                onMouseEnter={(event) => updateHoverTooltip(event, card.text)}
+                                onMouseMove={(event) => updateHoverTooltip(event, card.text)}
+                                onMouseLeave={clearHoverTooltip}
                                 style={{
                                   ...catalogCardStyle,
                                   opacity: disabledReason ? 0.6 : 1,
                                   cursor: disabledReason ? 'not-allowed' : 'grab'
                                 }}
                               >
-                                <img src={getCardImageUrl(card)} alt="" style={cardImageStyle} />
+                                <div style={cardImageWrapperStyle}>
+                                  <img src={getCardImageUrl(card)} alt="" style={cardImageStyle} />
+                                  {cardHasStats && (
+                                    <>
+                                      <span style={cardStatBadgeStyle.attack}>{card.attack}</span>
+                                      <span style={cardStatBadgeStyle.health}>{card.health}</span>
+                                    </>
+                                  )}
+                                </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <strong>{card.name}</strong>
@@ -687,10 +717,12 @@ export function DeckBuilderPage() {
                     background: 'rgba(9,13,20,0.8)',
                     border: '1px solid rgba(255,255,255,0.08)',
                     flex: 1,
-                    minHeight: 0
+                    minHeight: 0,
+                    overflow: 'hidden'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                  <div style={deckDetailsScrollableStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <strong>Deck Name</strong>
                       <input
@@ -789,9 +821,13 @@ export function DeckBuilderPage() {
                               {entries.map((entry) => {
                                 const card = collection.get(entry.cardId);
                                 if (!card) return null;
+                                const entryHasStats = 'attack' in card && 'health' in card;
                                 return (
                                   <div
                                     key={entry.cardId}
+                                    onMouseEnter={(event) => updateHoverTooltip(event, card.text)}
+                                    onMouseMove={(event) => updateHoverTooltip(event, card.text)}
+                                    onMouseLeave={clearHoverTooltip}
                                     style={{
                                       display: 'grid',
                                       gridTemplateColumns: '1fr auto',
@@ -802,9 +838,19 @@ export function DeckBuilderPage() {
                                       border: '1px solid rgba(255,255,255,0.08)'
                                     }}
                                   >
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                      <strong>{card.name}</strong>
-                                      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>{card.type}</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: entryHasStats ? '6px' : '0' }}>
+                                      <div>
+                                        <strong>{card.name}</strong>
+                                        <span style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>
+                                          {card.type}
+                                        </span>
+                                      </div>
+                                      {entryHasStats && (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: '120px' }}>
+                                          <span style={deckEntryStatBadgeStyle.attack}>{card.attack}</span>
+                                          <span style={deckEntryStatBadgeStyle.health}>{card.health}</span>
+                                        </div>
+                                      )}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                       <Button
@@ -878,6 +924,7 @@ export function DeckBuilderPage() {
                         Deck is valid. Add cards until you reach exactly {MAX_DECK_SIZE}.
                       </span>
                     )}
+                  </div>
                   </div>
                 </section>
 
@@ -1014,6 +1061,12 @@ export function DeckBuilderPage() {
         </div>
       </div>
 
+      {hoverTooltip && (
+        <div style={{ ...hoverTooltipStyle, top: hoverTooltip.y, left: hoverTooltip.x }}>
+          {hoverTooltip.text}
+        </div>
+      )}
+
       <Toast.Root open={Boolean(toastMessage)} onOpenChange={(openState) => !openState && setToastMessage(null)} duration={3000}>
         <Toast.Title>{toastMessage}</Toast.Title>
       </Toast.Root>
@@ -1079,6 +1132,16 @@ const stepperButtonStyle: CSSProperties = {
   cursor: 'pointer'
 };
 
+const deckDetailsScrollableStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '16px',
+  overflowY: 'auto',
+  paddingRight: '8px',
+  flex: 1,
+  minHeight: 0
+};
+
 const catalogScrollAreaStyle: CSSProperties = {
   flex: '0 1 auto',
   width: '100%',
@@ -1106,10 +1169,81 @@ const catalogCardStyle: CSSProperties = {
   boxShadow: '0 10px 20px rgba(0,0,0,0.25)'
 };
 
+const cardImageWrapperStyle: CSSProperties = {
+  position: 'relative'
+};
+
 const cardImageStyle: CSSProperties = {
   width: '100%',
   borderRadius: '10px',
   objectFit: 'cover',
   aspectRatio: '3 / 4',
-  background: 'rgba(0,0,0,0.35)'
+  background: 'rgba(0,0,0,0.35)',
+  display: 'block'
+};
+
+const cardStatBadgeBaseStyle: CSSProperties = {
+  position: 'absolute',
+  bottom: '8px',
+  padding: '4px 10px',
+  borderRadius: '999px',
+  fontWeight: 700,
+  fontSize: '0.75rem',
+  color: '#0f172a',
+  boxShadow: '0 10px 20px rgba(15, 23, 42, 0.35)'
+};
+
+const cardStatBadgeStyle: Record<'attack' | 'health', CSSProperties> = {
+  attack: {
+    ...cardStatBadgeBaseStyle,
+    left: '8px',
+    background: 'linear-gradient(135deg,#fb923c,#f97316)'
+  },
+  health: {
+    ...cardStatBadgeBaseStyle,
+    right: '8px',
+    background: 'linear-gradient(135deg,#34d399,#22d3ee)'
+  }
+};
+
+const deckEntryStatBadgeBaseStyle: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: '36px',
+  padding: '4px 10px',
+  borderRadius: '999px',
+  fontWeight: 700,
+  fontSize: '0.75rem'
+};
+
+const deckEntryStatBadgeStyle: Record<'attack' | 'health', CSSProperties> = {
+  attack: {
+    ...deckEntryStatBadgeBaseStyle,
+    background: 'rgba(248,113,113,0.16)',
+    border: '1px solid rgba(248,113,113,0.35)',
+    color: 'rgba(248,113,113,1)'
+  },
+  health: {
+    ...deckEntryStatBadgeBaseStyle,
+    background: 'rgba(134,239,172,0.18)',
+    border: '1px solid rgba(110,231,183,0.35)',
+    color: 'rgba(16,185,129,1)'
+  }
+};
+
+const hoverTooltipStyle: CSSProperties = {
+  position: 'fixed',
+  zIndex: 1000,
+  maxWidth: '320px',
+  padding: '10px 12px',
+  borderRadius: '12px',
+  border: '1px solid rgba(255,255,255,0.12)',
+  background: 'rgba(8,12,20,0.95)',
+  color: 'white',
+  fontSize: '0.85rem',
+  lineHeight: 1.4,
+  pointerEvents: 'none',
+  boxShadow: '0 20px 35px rgba(0,0,0,0.45)',
+  whiteSpace: 'pre-wrap'
 };
