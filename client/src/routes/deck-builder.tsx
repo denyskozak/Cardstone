@@ -33,6 +33,7 @@ import {
   isCardAllowed,
   sortDeckEntries,
   validateDeck,
+  removeCard,
   type CardCollection
 } from '../lib/deckRules';
 import { SoundButton as Button } from '../components/SoundButton';
@@ -670,24 +671,21 @@ export function DeckBuilderPage() {
                                   <img src={getCardImageUrl(card)} alt="" style={cardImageStyle} />
                                   {cardHasStats && (
                                     <>
-                                      <span style={cardStatBadgeStyle.rarity}>{card.rarity}</span>
-                                      <span style={cardStatBadgeStyle.attack}>{card.attack} 🗡</span>
-                                      <span style={cardStatBadgeStyle.health}>{card.health} ❤️</span>
+                                      <span style={cardStatBadgeStyle.rarity}>Mana: {card.cost}</span>
+                                      <span style={cardStatBadgeStyle.attack}>Attack: {card.attack}</span>
+                                      <span style={cardStatBadgeStyle.health}>HP: {card.health}</span>
                                     </>
                                   )}
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <strong>{card.name}</strong>
-                                    <Badge variant="surface" color="blue">
-                                      {card.cost} 🪙
-                                    </Badge>
+                                    <span>{card.rarity}</span>
                                   </div>
                                   <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)' }}>{card.type}</span>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
                                     <span>{card.heroClass}</span>
                                     <span>{card.text}</span>
-
                                   </div>
                                   {inDeck && (
                                     <span style={{ fontSize: '0.8rem', color: 'rgba(16,185,129,0.85)' }}>In deck: {inDeck.count}</span>
@@ -859,10 +857,30 @@ export function DeckBuilderPage() {
                                       padding: '10px 12px',
                                       borderRadius: '12px',
                                       background: 'rgba(10,14,23,0.6)',
-                                      border: '1px solid rgba(255,255,255,0.08)'
+                                      border: '1px solid rgba(255,255,255,0.08)',
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
                                     }}
                                   >
                                     <strong>{card.name}</strong>
+                                    <Button
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '4px 4px',
+                                        borderRadius: '16px',
+                                        border: 'none',
+                                        background: 'linear-gradient(90deg,#f97316,#facc15)',
+                                        color: '#0b1324',
+                                        fontWeight: 700,
+                                        cursor: 'pointer'
+                                      }}
+                                      onClick={() => setDeck((current) => removeCard(current, card, collection))}
+                                      disabled={entry.count <= 0}
+                                    >
+                                      <Icon symbol="x" />
+                                    </Button>
                                   </div>
                                 );
                               })}

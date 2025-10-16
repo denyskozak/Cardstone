@@ -55,7 +55,7 @@ const minions: Record<string, MinionCard> = {
   },
   [CARD_IDS.delivarer]: {
     id: CARD_IDS.delivarer,
-    name: 'Delivarer',
+    name: 'T.F.',
     type: 'Minion',
     cost: 2,
     attack: 2,
