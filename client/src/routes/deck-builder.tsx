@@ -693,6 +693,30 @@ export function DeckBuilderPage() {
                                   {limitReached && (
                                     <span style={{ fontSize: '0.75rem', color: 'rgba(250,204,21,0.9)' }}>Limit reached</span>
                                   )}
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      onAddCard(card);
+                                    }}
+                                    disabled={Boolean(disabledReason) || Boolean(limitReached)}
+                                    style={{
+                                      marginTop: '8px',
+                                      padding: '6px 10px',
+                                      borderRadius: '6px',
+                                      border: '1px solid rgba(255,255,255,0.3)',
+                                      backgroundColor: 'rgba(59,130,246,0.15)',
+                                      color: 'white',
+                                      fontSize: '0.8rem',
+                                      cursor:
+                                        Boolean(disabledReason) || Boolean(limitReached)
+                                          ? 'not-allowed'
+                                          : 'pointer',
+                                      opacity: Boolean(disabledReason) || Boolean(limitReached) ? 0.6 : 1
+                                    }}
+                                  >
+                                    Добавить в колоду
+                                  </button>
                                 </div>
                               </div>
                             </Tooltip.Trigger>
