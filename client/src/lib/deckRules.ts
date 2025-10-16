@@ -80,7 +80,11 @@ export function setCardCount(
   collection: CardCollection
 ): Deck {
   const clamped = clampCardCount(card, count);
-  const entries = upsertEntry(deck.cards, card, clamped);
+  const existing = deck.cards.find((entry) => entry.cardId === card.id);
+  const totalExcludingCard = countDeckCards(deck) - (existing?.count ?? 0);
+  const remainingSlots = Math.max(0, MAX_DECK_SIZE - totalExcludingCard);
+  const allowedCount = Math.min(clamped, remainingSlots);
+  const entries = upsertEntry(deck.cards, card, allowedCount);
   return {
     ...deck,
     cards: sortDeckEntries(entries, collection)
