@@ -79,6 +79,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const resetMinionAnimations = useUiStore((s) => s.resetMinionAnimations);
   const consumeLocalAttackQueue = useUiStore((s) => s.consumeLocalAttackQueue);
   const localAttackQueueVersion = useUiStore((s) => s.localAttackQueueVersion);
+  const heroPositions = useUiStore((s) => s.heroPositions);
 
   const pendingLocalAttackersRef = useRef(new Map<string, number>());
   const pendingImpactResultsRef = useRef(new Map<string, PendingImpactResult[]>());
@@ -91,12 +92,17 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const [animations, setAnimations] = useState<AttackAnimation[]>([]);
   const prevStateRef = useRef<GameState | null>(null);
   const prevLayoutRef = useRef<ReturnType<typeof computeBoardLayout> | null>(null);
+  const prevHeroPositionsRef = useRef(heroPositions);
   const burnPrevStateRef = useRef<GameState | null>(null);
   const burnSequenceRef = useRef(0);
   const [burnBursts, setBurnBursts] = useState<BurnBurst[]>([]);
   const [damageIndicators, setDamageIndicators] = useState<DamageIndicator[]>([]);
   const damageSequenceRef = useRef(0);
   const [damageTexture, setDamageTexture] = useState<Texture>(Texture.EMPTY);
+  useEffect(() => {
+    prevHeroPositionsRef.current = heroPositions;
+  }, [heroPositions]);
+
   useEffect(() => {
     return () => {
       resetMinionAnimations();
@@ -202,7 +208,13 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         return;
       }
 
-      const targetPoint = resolveTargetPoint(event.target, layout, previousLayout);
+      const targetPoint = resolveTargetPoint(
+        event.target,
+        layout,
+        previousLayout,
+        heroPositions,
+        prevHeroPositionsRef.current
+      );
       if (!targetPoint) {
         return;
       }
@@ -278,7 +290,13 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         if (!origin) {
           return;
         }
-        const targetPoint = resolveTargetPoint(event.target, layout, previousLayout);
+        const targetPoint = resolveTargetPoint(
+          event.target,
+          layout,
+          previousLayout,
+          heroPositions,
+          prevHeroPositionsRef.current
+        );
         if (!targetPoint) {
           return;
         }
@@ -497,10 +515,18 @@ function easeInCubic(t: number) {
 function resolveTargetPoint(
   target: TargetDescriptor,
   layout: ReturnType<typeof computeBoardLayout>,
-  previousLayout: ReturnType<typeof computeBoardLayout> | null
+  previousLayout: ReturnType<typeof computeBoardLayout> | null,
+  heroPositions: Record<PlayerSide, { x: number; y: number } | null>,
+  previousHeroPositions: Record<PlayerSide, { x: number; y: number } | null>
 ) {
   if (target.type === 'hero') {
-    return layout.heroes[target.side];
+    return (
+      heroPositions[target.side] ??
+      previousHeroPositions[target.side] ??
+      layout.heroes[target.side] ??
+      previousLayout?.heroes[target.side] ??
+      null
+    );
   }
   return (
     layout.minions[target.side]?.[target.entityId] ??

@@ -26,6 +26,8 @@ interface LocalAttackAnimation {
   target: TargetDescriptor;
 }
 
+type HeroPositions = Record<PlayerSide, { x: number; y: number } | null>;
+
 interface UiState {
   hoveredCard?: string;
   selectedCard?: string;
@@ -34,6 +36,7 @@ interface UiState {
   minionAnimations: Record<string, MinionAnimationTransform>;
   localAttackQueue: LocalAttackAnimation[];
   localAttackQueueVersion: number;
+  heroPositions: HeroPositions;
   setHovered: (id?: string) => void;
   setSelected: (id?: string) => void;
   setTargeting: (targeting?: TargetingState) => void;
@@ -49,6 +52,8 @@ interface UiState {
   resetMinionAnimations: () => void;
   enqueueLocalAttackAnimation: (animation: LocalAttackAnimation) => void;
   consumeLocalAttackQueue: () => LocalAttackAnimation[];
+  setHeroPosition: (side: PlayerSide, position: { x: number; y: number }) => void;
+  clearHeroPosition: (side: PlayerSide) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -59,6 +64,7 @@ export const useUiStore = create<UiState>((set) => ({
   minionAnimations: {},
   localAttackQueue: [],
   localAttackQueueVersion: 0,
+  heroPositions: { A: null, B: null },
   setHovered: (id) => set({ hoveredCard: id }),
   setSelected: (id) => set({ selectedCard: id }),
   setTargeting: (targeting) => set({ targeting }),
@@ -109,5 +115,24 @@ export const useUiStore = create<UiState>((set) => ({
       return { localAttackQueue: [] };
     });
     return queue;
-  }
+  },
+  setHeroPosition: (side, position) =>
+    set((state) => {
+      const current = state.heroPositions[side];
+      if (current && current.x === position.x && current.y === position.y) {
+        return state;
+      }
+      return {
+        heroPositions: { ...state.heroPositions, [side]: position }
+      };
+    }),
+  clearHeroPosition: (side) =>
+    set((state) => {
+      if (!state.heroPositions[side]) {
+        return state;
+      }
+      return {
+        heroPositions: { ...state.heroPositions, [side]: null }
+      };
+    })
 }));
