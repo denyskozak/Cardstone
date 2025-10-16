@@ -173,7 +173,7 @@ function HeroAvatar({
 }: HeroAvatarProps) {
   const [texture, hpTexture] = useHeroTexture(gameId, playerId);
 
-  const avatarSize = 140;
+  const avatarSize = 220;
 
   return (
     <>
@@ -205,7 +205,7 @@ function HeroAvatar({
         anchor={{ x: 0.5, y: 0.5 }}
         alpha={texture === Texture.EMPTY ? 0 : 1}
       />
-      <pixiSprite texture={hpTexture} width={40} height={50} x={40} y={25} />
+      <pixiSprite texture={hpTexture} width={60} height={80} x={50} y={40} />
       {/*<pixiGraphics*/}
       {/*  ref={handleMaskRef}*/}
       {/*  draw={(g) => {*/}
@@ -217,8 +217,8 @@ function HeroAvatar({
       {/*/>*/}
       <pixiText
         text={hp}
-        x={60}
-        y={55}
+        x={80}
+        y={90}
         anchor={{ x: 0.5, y: 0.5 }}
         style={{ fill: 0xffffff, fontSize: 24, align: 'center', fontWeight: 'bold' }}
       />
@@ -523,7 +523,7 @@ export default function Board({
         const animation: MinionAnimationTransform | undefined = minionAnimations[entity.instanceId];
         const offsetX = animation?.offsetX ?? 0;
         const offsetY = animation?.offsetY ?? 0;
-        const scale = animation?.scale ?? 1;
+        const scale = animation?.scale ?? 1.3;
         const rotation = animation?.rotation ?? 0;
         const zIndex = animation?.zIndex ?? defaultZIndex;
 
@@ -781,7 +781,7 @@ export default function Board({
       />
       {/*Opponent*/}
       <pixiContainer
-        x={laneX + laneWidth / 2 - 10}
+        x={laneX + laneWidth * 0.1}
         y={boardTopY - 100}
         name={`hero:${opponentSide}`}
         interactive={Boolean(
@@ -807,7 +807,7 @@ export default function Board({
         />
       </pixiContainer>
       <pixiContainer
-        x={laneX + laneWidth / 2 - 5}
+        x={laneX + laneWidth * 0.1}
         y={boardBottomY + MINION_HEIGHT + 70}
         name={`hero:${playerSide}`}
         interactive={Boolean(

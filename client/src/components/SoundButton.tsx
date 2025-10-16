@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 
-export function SoundButton({ onClick, size: _size, ...props }) {
+export function SoundButton({ onClick,  ...props }) {
   const audioRef = useRef(null);
 
   const handlePress = (event) => {

@@ -68,7 +68,7 @@ export function MainRoute() {
         <main className="z-[2] flex justify-center w-full h-full overflow-y-auto">
           <div className="flex items-center flex-col">
             {/* HeroUI-like header */}
-            <div className="text-center mt-12">
+            <div className="text-center mt-4">
               <div className="inline-block max-w-xl text-center justify-center items-center">
                 <AnimatePresence mode="wait">
                   <motion.div

@@ -8,6 +8,7 @@ const minions: Record<string, MinionCard> = {
     cost: 1,
     attack: 1,
     health: 1,
+    text: 'Divine Shield',
     effects: [
       {
         trigger: { type: 'Aura' },
@@ -31,11 +32,12 @@ const minions: Record<string, MinionCard> = {
   },
   [CARD_IDS.bullguard]: {
     id: CARD_IDS.bullguard,
-    name: 'Bullguard',
+    name: 'Ice-Guard Faunus',
     type: 'Minion',
     cost: 1,
     attack: 0,
     health: 4,
+    text: 'Taunt',
     effects: [
       {
         trigger: { type: 'Aura' },
@@ -45,11 +47,11 @@ const minions: Record<string, MinionCard> = {
   },
   [CARD_IDS.cunningPeople]: {
     id: CARD_IDS.cunningPeople,
-    name: 'Cunning People',
+    name: 'Crook',
     type: 'Minion',
     cost: 1,
     attack: 1,
-    health: 2,
+    health: 2
   },
   [CARD_IDS.delivarer]: {
     id: CARD_IDS.delivarer,
@@ -63,7 +65,7 @@ const minions: Record<string, MinionCard> = {
         trigger: { type: 'Battlecry' },
         action: { type: 'Custom', key: 'Battlecry' }
       }
-    ],
+    ]
   },
   [CARD_IDS.draugr]: {
     id: CARD_IDS.draugr,
@@ -785,8 +787,7 @@ const minions: Record<string, MinionCard> = {
         action: { type: 'Summon', cardId: CARD_IDS.wisp, count: 1, target: 'Board' }
       }
     ]
-  },
-
+  }
 };
 const spells: Record<string, SpellCard> = {
   [CARD_IDS.firebolt]: {

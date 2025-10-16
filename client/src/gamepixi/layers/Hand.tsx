@@ -10,14 +10,14 @@ import { getBoardLaneGeometry } from '../layout';
 const MAX_FAN_DEG = 50;
 const FAN_MIX_WEIGHT = 0.72;
 const CARD_OVERLAP = 0.42;
-const BASE_CARD_SCALE = 0.8;
+const BASE_CARD_SCALE = 1;
 export const HAND_BASE_SCALE = BASE_CARD_SCALE;
 export const HAND_CARD_DIMENSIONS = {
   width: CARD_SIZE.width * BASE_CARD_SCALE,
   height: CARD_SIZE.height * BASE_CARD_SCALE
 };
 const MIN_RADIUS = HAND_CARD_DIMENSIONS.height * 2.6;
-const HAND_MARGIN_BOTTOM = -10;
+const HAND_MARGIN_BOTTOM = 30;
 const HAND_MARGIN_LEFT = 50;
 const HOVER_LIFT = 80;
 const HOVER_SCALE = 1.7;
