@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import type {
   ActionResultPayload,
+  ChatMessagePayload,
+  ChatVisibilityPayload,
   ClientToServer,
   MatchJoinInfo,
   PlayerSide,
@@ -63,6 +65,14 @@ export const clientMessageSchema = z.discriminatedUnion('t', [
     payload: z.object({ type: z.enum(['Hello', 'WellPlayed', 'Oops']) }),
     seq: seq().optional(),
     nonce: nonce().optional()
+  }),
+  z.object({
+    t: z.literal('ChatMessage'),
+    payload: z.object({ text: z.string().min(1).max(500) })
+  }),
+  z.object({
+    t: z.literal('SetChatCollapsed'),
+    payload: z.object({ collapsed: z.boolean() })
   })
 ]) as unknown as z.ZodType<ClientToServer>;
 
@@ -98,7 +108,20 @@ export const serverMessageSchema = z.discriminatedUnion('t', [
   ),
   baseServerMessage('Toast', z.object({ message: z.string() })),
   baseServerMessage('OpponentLeft', z.object({ playerId: z.string() })),
-  baseServerMessage('GameOver', z.object({ winner: sideSchema as z.ZodType<PlayerSide> }))
+  baseServerMessage('GameOver', z.object({ winner: sideSchema as z.ZodType<PlayerSide> })),
+  baseServerMessage('ChatMessage', z.object({
+    from: z.string(),
+    side: sideSchema.optional(),
+    text: z.string(),
+    timestamp: z.number().int().nonnegative()
+  }) as z.ZodType<ChatMessagePayload>),
+  baseServerMessage(
+    'ChatVisibility',
+    z.object({
+      collapsed: z.boolean(),
+      reason: z.string().optional()
+    }) as z.ZodType<ChatVisibilityPayload>
+  )
 ]) as unknown as z.ZodType<ServerToClient>;
 
 export type ValidatedClientMessage = z.infer<typeof clientMessageSchema>;

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   CardInHand,
   CardPlacement,
+  ChatMessagePayload,
+  ChatVisibilityPayload,
   GameState,
   MinionEntity,
   PlayerSide,
@@ -17,6 +19,7 @@ import {
 import StageRoot from '../gamepixi/StageRoot';
 import { GameSocket } from '../net/ws';
 import styles from './Game.module.css';
+import { MatchChat, type MatchChatEntry } from './MatchChat';
 
 import {
   Container,
@@ -69,6 +72,9 @@ export function Game() {
   const [side, setSide] = useState<PlayerSide | null>(null);
   const [state, setState] = useState<GameState | null>(null);
   const [log, setLog] = useState<string[]>([]);
+  const [chatMessages, setChatMessages] = useState<MatchChatEntry[]>([]);
+  const [chatCollapsed, setChatCollapsed] = useState(false);
+  const [chatCollapseReason, setChatCollapseReason] = useState<string | undefined>();
   const [stageBounds, setStageBounds] = useState({ width: 0, height: 0 });
   const playerIdRef = useRef<string | undefined>(playerId);
 
@@ -100,6 +106,9 @@ export function Game() {
           setSide(message.payload.side);
           appendLog(`Joined match ${message.payload.matchId} as ${message.payload.side}`);
           socket.send('Ready', { playerId: message.payload.playerId });
+          setChatMessages([]);
+          setChatCollapsed(false);
+          setChatCollapseReason(undefined);
           break;
         }
         case 'StateSync': {
@@ -122,6 +131,27 @@ export function Game() {
         }
         case 'GameOver': {
           appendLog(`Game over! Winner: ${message.payload.winner}`);
+          break;
+        }
+        case 'ChatMessage': {
+          setChatMessages((prev) => {
+            const payload: ChatMessagePayload = message.payload;
+            const entry: MatchChatEntry = {
+              id: `${payload.timestamp}-${payload.from}-${Math.random().toString(16).slice(2, 8)}`,
+              from: payload.from,
+              side: payload.side,
+              text: payload.text,
+              timestamp: payload.timestamp,
+              self: payload.from === playerIdRef.current
+            };
+            return [...prev.slice(-99), entry];
+          });
+          break;
+        }
+        case 'ChatVisibility': {
+          const payload: ChatVisibilityPayload = message.payload;
+          setChatCollapsed(payload.collapsed);
+          setChatCollapseReason(payload.reason);
           break;
         }
         default:
@@ -258,6 +288,25 @@ export function Game() {
   const opponent = side && state ? state.players[side === 'A' ? 'B' : 'A'] : null;
   const canEndTurn = Boolean(state && side && state.turn.current === side && state.turn.phase === 'Main');
 
+  const handleSendChat = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) {
+        return;
+      }
+      socket.send('ChatMessage', { text: trimmed });
+    },
+    [socket]
+  );
+
+  const handleToggleChatCollapse = useCallback(
+    (nextCollapsed: boolean) => {
+      socket.send('SetChatCollapsed', { collapsed: nextCollapsed });
+      setChatCollapsed(nextCollapsed);
+    },
+    [socket]
+  );
+
   return (
     <div className={styles.container}>
       <div ref={stageContainerRef} className={styles.stageWrapper}>
@@ -300,6 +349,14 @@ export function Game() {
           </ul>
         </div>
       </div>
+      <MatchChat
+        messages={chatMessages}
+        collapsed={chatCollapsed}
+        collapseReason={chatCollapseReason}
+        onSend={handleSendChat}
+        onToggleCollapse={handleToggleChatCollapse}
+        playerId={playerIdRef.current}
+      />
     </div>
   );
 }

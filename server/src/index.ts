@@ -36,6 +36,7 @@ const lobby = new Lobby();
 
 const playerConnections = new Map<string, ConnectionContext>();
 const matchConnections = new Map<string, Set<ConnectionContext>>();
+const chatVisibilityByMatch = new Map<string, boolean>();
 const deckStore = new Map<string, Deck>();
 
 function sendJson(res: ServerResponse, status: number, data: unknown): void {
@@ -268,18 +269,33 @@ function attachToMatch(context: ConnectionContext, match: Match, side: PlayerSid
     matchConnections.set(match.id, new Set());
   }
   matchConnections.get(match.id)!.add(context);
+  if (!chatVisibilityByMatch.has(match.id)) {
+    chatVisibilityByMatch.set(match.id, false);
+  }
   const payload: MatchJoinInfo = {
     playerId: context.playerId!,
     matchId: match.id,
     side
   };
   sendMessage(context, { t: 'MatchJoined', payload });
+  const collapsed = chatVisibilityByMatch.get(match.id) ?? false;
+  sendMessage(context, { t: 'ChatVisibility', payload: { collapsed } });
   sendStateSync(match);
 }
 
 function sendMessage(context: ConnectionContext, message: unknown): void {
   if (context.alive) {
     context.ws.send(JSON.stringify(message));
+  }
+}
+
+function broadcastToMatch(matchId: string, message: unknown): void {
+  const connections = matchConnections.get(matchId);
+  if (!connections) {
+    return;
+  }
+  for (const conn of connections) {
+    sendMessage(conn, message);
   }
 }
 
@@ -357,6 +373,7 @@ wss.on('connection', (ws) => {
         peers.delete(context);
         if (peers.size === 0) {
           matchConnections.delete(context.match.id);
+          chatVisibilityByMatch.delete(context.match.id);
         }
       }
       for (const peer of peers ?? []) {
@@ -494,6 +511,38 @@ async function handleClientMessage(
           });
         }
       }
+      break;
+    }
+    case 'ChatMessage': {
+      if (!context.match || !context.playerId) {
+        return;
+      }
+      const trimmed = message.payload.text.trim();
+      if (!trimmed) {
+        return;
+      }
+      const payload = {
+        from: context.playerId,
+        side: context.side,
+        text: trimmed.slice(0, 500),
+        timestamp: Date.now()
+      };
+      broadcastToMatch(context.match.id, { t: 'ChatMessage', payload });
+      break;
+    }
+    case 'SetChatCollapsed': {
+      if (!context.match) {
+        return;
+      }
+      const collapsed = Boolean(message.payload.collapsed);
+      chatVisibilityByMatch.set(context.match.id, collapsed);
+      const reason = context.playerId
+        ? `${collapsed ? 'Collapsed' : 'Expanded'} by ${context.playerId}`
+        : undefined;
+      broadcastToMatch(context.match.id, {
+        t: 'ChatVisibility',
+        payload: { collapsed, reason }
+      });
       break;
     }
     default:
