@@ -9,7 +9,7 @@ import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import { actionRequiresTarget, getPrimaryPlayAction } from '@cardstone/shared/effects';
 import type { FederatedPointerEvent } from 'pixi.js';
 import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture, BlurFilter } from 'pixi.js';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   useUiStore,
   type MinionAnimationTransform,
@@ -268,9 +268,47 @@ export default function Board({
   const minionAnimations = useUiStore((s) => s.minionAnimations);
   const hoveredCardId = useUiStore((s) => s.hoveredCard);
   const setHovered = useUiStore((s) => s.setHovered);
+  const setHeroPosition = useUiStore((s) => s.setHeroPosition);
+  const clearHeroPosition = useUiStore((s) => s.clearHeroPosition);
   const targetRef = useRef<TargetDescriptor | null>(null);
   const pendingAttackTimeoutsRef = useRef<Array<ReturnType<typeof window.setTimeout>>>([]);
   const enqueueLocalAttackAnimation = useUiStore((s) => s.enqueueLocalAttackAnimation);
+  const heroRefs = useRef<Record<PlayerSide, Container | null>>({ A: null, B: null });
+
+  const updateHeroPosition = useCallback(
+    (side: PlayerSide) => {
+      const instance = heroRefs.current[side];
+      if (!instance) {
+        clearHeroPosition(side);
+        return;
+      }
+      const bounds = instance.getBounds();
+      setHeroPosition(side, {
+        x: bounds.x + bounds.width / 2,
+        y: bounds.y + bounds.height / 2
+      });
+    },
+    [clearHeroPosition, setHeroPosition]
+  );
+
+  const handleHeroContainerRef = useCallback(
+    (side: PlayerSide) =>
+      (instance: Container | null) => {
+        attachTargetDescriptor(instance, { type: 'hero', side });
+        heroRefs.current[side] = instance;
+        if (instance) {
+          updateHeroPosition(side);
+        } else {
+          clearHeroPosition(side);
+        }
+      },
+    [clearHeroPosition, updateHeroPosition]
+  );
+
+  useLayoutEffect(() => {
+    updateHeroPosition('A');
+    updateHeroPosition('B');
+  }, [boardBottomY, boardTopY, laneWidth, laneX, updateHeroPosition]);
 
   useEffect(() => {
     return () => {
@@ -477,6 +515,14 @@ export default function Board({
   const opponentPlayer = state.players[opponentSide];
   const playerPlayer = state.players[playerSide];
   const boardHitArea = useMemo(() => new Rectangle(0, 0, width, height), [height, width]);
+  const opponentHeroRef = useMemo(
+    () => handleHeroContainerRef(opponentSide),
+    [handleHeroContainerRef, opponentSide]
+  );
+  const friendlyHeroRef = useMemo(
+    () => handleHeroContainerRef(playerSide),
+    [handleHeroContainerRef, playerSide]
+  );
 
   const renderRow = useCallback(
     (side: PlayerSide, y: number) => {
@@ -794,9 +840,7 @@ export default function Board({
         }
         onPointerOver={() => handleTargetOver({ type: 'hero', side: opponentSide })}
         onPointerOut={() => handleTargetOut({ type: 'hero', side: opponentSide })}
-        ref={(instance) =>
-          attachTargetDescriptor(instance, { type: 'hero', side: opponentSide })
-        }
+        ref={opponentHeroRef}
       >
         <HeroAvatar
           gameId={state.id}
@@ -820,7 +864,7 @@ export default function Board({
         }
         onPointerOver={() => handleTargetOver({ type: 'hero', side: playerSide })}
         onPointerOut={() => handleTargetOut({ type: 'hero', side: playerSide })}
-        ref={(instance) => attachTargetDescriptor(instance, { type: 'hero', side: playerSide })}
+        ref={friendlyHeroRef}
       >
         <HeroAvatar
           gameId={state.id}

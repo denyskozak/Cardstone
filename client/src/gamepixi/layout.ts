@@ -4,7 +4,7 @@ export const MINION_WIDTH = 96;
 export const MINION_HEIGHT = 112;
 export const MINION_ART_INSET_X = 2;
 export const MINION_ART_INSET_Y = 6;
-export const MINION_HORIZONTAL_GAP = 20;
+export const MINION_HORIZONTAL_GAP = 24;
 
 export interface BoardLaneGeometry {
   boardTopY: number;
@@ -24,8 +24,11 @@ export interface BoardEntityLayout {
 }
 
 export function getBoardLaneGeometry(width: number, height: number): BoardLaneGeometry {
-  const boardTopY = height * 0.35;
-  const boardBottomY = height * 0.5;
+  const centerY = height * 0.425;
+  const topOffset = (centerY - height * 0.35) * 1.2;
+  const bottomOffset = (height * 0.5 - centerY) * 1.2;
+  const boardTopY = centerY - topOffset;
+  const boardBottomY = centerY + bottomOffset;
   const laneWidth = width - 200;
   const laneX = (width - laneWidth) / 2;
 

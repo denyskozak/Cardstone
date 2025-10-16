@@ -45,6 +45,10 @@ export function drawCard(state: GameState, side: PlayerSide): void {
 }
 
 export function startTurn(state: GameState, side: PlayerSide): void {
+  determineMatchWinner(state);
+  if (state.winner) {
+    return;
+  }
   gainMana(state, side);
   for (let i = 0; i < DRAW_PER_TURN; i += 1) {
     drawCard(state, side);
@@ -56,6 +60,10 @@ export function startTurn(state: GameState, side: PlayerSide): void {
 }
 
 export function endTurn(state: GameState, side: PlayerSide): void {
+  determineMatchWinner(state);
+  if (state.winner) {
+    return;
+  }
   const player = state.players[side];
   const temporary = player.mana.temporary ?? 0;
   if (temporary > 0) {
@@ -75,6 +83,10 @@ export function applyPlayCard(
   target?: TargetDescriptor,
   placement?: CardPlacement
 ): void {
+  determineMatchWinner(state);
+  if (state.winner) {
+    return;
+  }
   const player = state.players[side];
   const handIndex = player.hand.findIndex((card) => card.instanceId === cardInstanceId);
   if (handIndex === -1) {
@@ -266,10 +278,11 @@ function assertSpellTargetAllowed(
 function applyDamage(state: GameState, target: TargetDescriptor, amount: number, source: PlayerSide): void {
   if (target.type === 'hero') {
     const hero = state.players[target.side].hero;
-    hero.hp -= amount;
-    if (hero.hp <= 0) {
+    hero.hp = Math.max(0, hero.hp - amount);
+    if (hero.hp <= 0 && !state.winner) {
       state.winner = source;
     }
+    determineMatchWinner(state);
     return;
   }
 
@@ -288,6 +301,19 @@ function applyDamage(state: GameState, target: TargetDescriptor, amount: number,
     return;
   }
   updateBerserkState(entity);
+}
+
+function determineMatchWinner(state: GameState): void {
+  if (state.winner) {
+    return;
+  }
+  const heroADead = state.players.A.hero.hp <= 0;
+  const heroBDead = state.players.B.hero.hp <= 0;
+  if (heroADead && !heroBDead) {
+    state.winner = 'B';
+  } else if (heroBDead && !heroADead) {
+    state.winner = 'A';
+  }
 }
 
 function applyHeal(state: GameState, target: TargetDescriptor, amount: number): void {
@@ -332,6 +358,10 @@ export function applyAttack(
   attackerId: string,
   target: TargetDescriptor
 ): void {
+  determineMatchWinner(state);
+  if (state.winner) {
+    return;
+  }
   const attackers = state.board[side];
   const attacker = attackers.find((entity) => entity.instanceId === attackerId);
   if (!attacker) {
