@@ -11,6 +11,7 @@ import type {
   TargetDescriptor,
   TargetSelector
 } from '@cardstone/shared/types';
+import { CARD_IDS } from '@cardstone/shared/constants';
 import {
   actionRequiresTarget,
   getActionTargetSelector,
@@ -76,6 +77,7 @@ export function Game() {
   const [chatCollapsed, setChatCollapsed] = useState(false);
   const [chatCollapseReason, setChatCollapseReason] = useState<string | undefined>();
   const [stageBounds, setStageBounds] = useState({ width: 0, height: 0 });
+  const [now, setNow] = useState(() => Date.now());
   const playerIdRef = useRef<string | undefined>(playerId);
 
   const appendLog = useCallback((entry: string) => {
@@ -92,6 +94,15 @@ export function Game() {
     // }
     // console.log('1: ', 1);
     // sound.play('taverna-1');
+  }, []);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setNow(Date.now());
+    }, 500);
+    return () => {
+      window.clearInterval(id);
+    };
   }, []);
 
   useEffect(() => {
@@ -207,6 +218,9 @@ export function Game() {
       if (!state || !side) {
         return false;
       }
+      if (state.stage !== 'Play') {
+        return false;
+      }
       if (state.turn.current !== side || state.turn.phase !== 'Main') {
         return false;
       }
@@ -250,6 +264,9 @@ export function Game() {
       if (!state || !side) {
         return false;
       }
+      if (state.stage !== 'Play') {
+        return false;
+      }
       if (state.turn.current !== side || state.turn.phase !== 'Main') {
         return false;
       }
@@ -266,6 +283,9 @@ export function Game() {
       if (!side || !state) {
         return;
       }
+      if (state.stage !== 'Play') {
+        return;
+      }
       if (state.turn.current !== side || state.turn.phase !== 'Main') {
         return;
       }
@@ -278,15 +298,29 @@ export function Game() {
     if (!state || !side) {
       return;
     }
+    if (state.stage !== 'Play') {
+      return;
+    }
     if (state.turn.current !== side || state.turn.phase !== 'Main') {
       return;
     }
     socket.sendWithAck('EndTurn', {});
   }, [side, socket, state]);
 
+  const isMulligan = state?.stage === 'Mulligan';
   const player = side && state ? state.players[side] : null;
   const opponent = side && state ? state.players[side === 'A' ? 'B' : 'A'] : null;
-  const canEndTurn = Boolean(state && side && state.turn.current === side && state.turn.phase === 'Main');
+  const mulliganEndsAt = isMulligan ? state?.timers.mulliganEndsAt ?? null : null;
+  const mulliganSecondsLeft =
+    mulliganEndsAt != null ? Math.max(0, Math.ceil((mulliganEndsAt - now) / 1000)) : null;
+  const turnEndsAt = state?.timers.turnEndsAt ?? null;
+  const turnSecondsLeft =
+    state?.stage === 'Play' && turnEndsAt != null
+      ? Math.max(0, Math.ceil((turnEndsAt - now) / 1000))
+      : null;
+  const canEndTurn = Boolean(
+    state && side && state.stage === 'Play' && state.turn.current === side && state.turn.phase === 'Main'
+  );
 
   const handleSendChat = useCallback(
     (text: string) => {
@@ -307,6 +341,41 @@ export function Game() {
     [socket]
   );
 
+  const handleMulliganReplace = useCallback(
+    (card: CardInHand) => {
+      if (!state || !side) {
+        return;
+      }
+      if (state.stage !== 'Mulligan') {
+        return;
+      }
+      if (state.mulligan.applied[side]) {
+        return;
+      }
+      if (card.mulliganReplaced) {
+        return;
+      }
+      if (card.card.id === CARD_IDS.coin) {
+        return;
+      }
+      socket.sendWithAck('MulliganReplace', { cardId: card.instanceId });
+    },
+    [side, socket, state]
+  );
+
+  const handleMulliganApply = useCallback(() => {
+    if (!state || !side) {
+      return;
+    }
+    if (state.stage !== 'Mulligan') {
+      return;
+    }
+    if (state.mulligan.applied[side]) {
+      return;
+    }
+    socket.sendWithAck('MulliganApply', {});
+  }, [side, socket, state]);
+
   return (
     <div className={styles.container}>
       <div ref={stageContainerRef} className={styles.stageWrapper}>
@@ -322,6 +391,56 @@ export function Game() {
             height={stageBounds.height}
           />
         </Application>
+        {isMulligan && side && state ? (
+          <div className={styles.mulliganOverlay}>
+            <div className={styles.mulliganHeader}>
+              <h2>Mulligan</h2>
+              <span className={styles.mulliganTimer}>
+                {mulliganSecondsLeft !== null ? `${mulliganSecondsLeft}s` : '—'}
+              </span>
+            </div>
+            <div className={styles.mulliganStatus}>
+              {state.mulligan.applied[side]
+                ? 'Waiting for opponent to finish...'
+                : 'Click a card to replace it and press Apply'}
+            </div>
+            <div className={styles.mulliganCards}>
+              {player?.hand.map((card) => {
+                const disabled =
+                  Boolean(card.mulliganReplaced) ||
+                  card.card.id === CARD_IDS.coin ||
+                  state.mulligan.applied[side];
+                return (
+                  <button
+                    key={card.instanceId}
+                    type="button"
+                    className={styles.mulliganCard}
+                    onClick={() => handleMulliganReplace(card)}
+                    disabled={disabled}
+                  >
+                    <img
+                      src={`/assets/cards/${card.card.id}.webp`}
+                      alt={card.card.name}
+                      className={styles.mulliganCardArt}
+                    />
+                    <span className={styles.mulliganCardName}>{card.card.name}</span>
+                    {card.mulliganReplaced ? (
+                      <span className={styles.mulliganCardReplaced}>✖</span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className={styles.mulliganApply}
+              onClick={handleMulliganApply}
+              disabled={state.mulligan.applied[side]}
+            >
+              Apply
+            </button>
+          </div>
+        ) : null}
       </div>
       <div className={styles.overlay}>
         <div className={styles.statBlock}>
@@ -330,7 +449,14 @@ export function Game() {
           <div>
             Turn: {state?.turn.turnNumber ?? 0} ({state?.turn.current ?? '-'})
           </div>
+          <div>Stage: {state?.stage ?? '-'}</div>
           <div>Phase: {state?.turn.phase ?? '-'}</div>
+          {isMulligan && mulliganSecondsLeft !== null ? (
+            <div>Mulligan timer: {mulliganSecondsLeft}s</div>
+          ) : null}
+          {state?.stage === 'Play' && turnSecondsLeft !== null ? (
+            <div>Turn timer: {turnSecondsLeft}s</div>
+          ) : null}
         </div>
         <div className={styles.controls}>
           <button className={styles.endTurnButton} onClick={handleEndTurn} disabled={!canEndTurn}>

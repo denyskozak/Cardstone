@@ -1,5 +1,7 @@
 export type PlayerSide = 'A' | 'B';
-export type Phase = 'Start' | 'Main' | 'End';
+export type Phase = 'Mulligan' | 'Start' | 'Main' | 'End';
+
+export type MatchStage = 'Mulligan' | 'Play';
 
 export type EntityId = string;
 export type CardId = string;
@@ -88,6 +90,7 @@ export type CardDefinition = MinionCard | SpellCard | WeaponCard | HeroCard;
 export interface CardInHand {
   instanceId: EntityId;
   card: CardDefinition;
+  mulliganReplaced?: boolean;
 }
 
 export interface MinionEntity {
@@ -123,6 +126,17 @@ export interface PlayerState {
   ready: boolean;
 }
 
+export interface MulliganState {
+  applied: Record<PlayerSide, boolean>;
+  deadline: number | null;
+  replacements: Record<PlayerSide, string[]>;
+}
+
+export interface TimerState {
+  mulliganEndsAt: number | null;
+  turnEndsAt: number | null;
+}
+
 export interface TurnState {
   current: PlayerSide;
   phase: Phase;
@@ -133,9 +147,12 @@ export interface GameState {
   id: string;
   seed: string;
   seq: number;
+  stage: MatchStage;
   players: Record<PlayerSide, PlayerState>;
   board: Record<PlayerSide, MinionEntity[]>;
   turn: TurnState;
+  mulligan: MulliganState;
+  timers: TimerState;
   winner?: PlayerSide;
 }
 
@@ -151,6 +168,8 @@ export type Command =
   | CommandBase<'PlayCard', { cardId: EntityId; target?: TargetDescriptor; placement?: CardPlacement }>
   | CommandBase<'EndTurn', Record<string, never>>
   | CommandBase<'Attack', { attackerId: EntityId; target: TargetDescriptor }>
+  | CommandBase<'MulliganReplace', { cardId: EntityId }>
+  | CommandBase<'MulliganApply', Record<string, never>>
   | CommandBase<'Ready', object>;
 
 export type TargetDescriptor =
@@ -200,6 +219,8 @@ export type ClientToServer =
   | ClientMessageBase<'PlayCard', { cardId: EntityId; target?: TargetDescriptor; placement?: CardPlacement }>
   | ClientMessageBase<'EndTurn', Record<string, never>>
   | ClientMessageBase<'Attack', { attackerId: EntityId; target: TargetDescriptor }>
+  | ClientMessageBase<'MulliganReplace', { cardId: EntityId }>
+  | ClientMessageBase<'MulliganApply', Record<string, never>>
   | ClientMessageBase<'Emote', { type: 'Hello' | 'WellPlayed' | 'Oops' }>
   | ClientMessageBase<'ChatMessage', { text: string }>
   | ClientMessageBase<'SetChatCollapsed', { collapsed: boolean }>;
@@ -238,4 +259,6 @@ export interface MatchConfig {
   maxMana: number;
   heroHp: number;
   handLimit: number;
+  mulliganDurationMs: number;
+  turnDurationMs: number;
 }

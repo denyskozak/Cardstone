@@ -5,8 +5,13 @@ export const MATCH_CONFIG: MatchConfig = {
   startingMana: 1,
   maxMana: 10,
   heroHp: 30,
-  handLimit: 10
+  handLimit: 10,
+  mulliganDurationMs: 45_000,
+  turnDurationMs: 75_000
 };
+
+export const MULLIGAN_DURATION_MS = MATCH_CONFIG.mulliganDurationMs;
+export const TURN_DURATION_MS = MATCH_CONFIG.turnDurationMs;
 
 export const DRAW_PER_TURN = 1;
 export const MAX_DECK_SIZE = 30;
