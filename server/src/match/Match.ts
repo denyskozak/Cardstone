@@ -1,9 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import type { CardPlacement, GameState, PlayerSide, TargetDescriptor } from '@cardstone/shared/types';
+import type {
+  CardInHand,
+  CardPlacement,
+  GameState,
+  PlayerSide,
+  TargetDescriptor
+} from '@cardstone/shared/types';
 import { CARD_IDS, DEFAULT_DECK, MATCH_CONFIG, STARTING_SEQ } from '@cardstone/shared/constants';
 import { getCardDefinition } from '@cardstone/shared/cards/demo';
 import { createRng, createSeed, shuffleInPlace, type RNG } from '../util/rng.js';
-import { applyAttack, applyPlayCard, drawCard, endTurn, startTurn } from './reducer.js';
+import { applyAttack, applyPlayCard, drawCard, endTurn, startTurn, isCoin } from './reducer.js';
 import { ValidationError, validateAttack, validateEndTurn, validatePlayCard } from './validate.js';
 
 interface MatchPlayerMeta {
@@ -28,6 +34,7 @@ export class Match {
   private readonly rng: RNG;
   private state: GameState;
   private started = false;
+  private mulliganCountdownStarted = false;
 
   private constructor(id: string, playerA: string, playerB: string) {
     this.id = id;
@@ -55,6 +62,7 @@ export class Match {
       id: this.id,
       seed: this.seed,
       seq: STARTING_SEQ,
+      stage: 'Mulligan',
       players: {
         A: {
           id: this.players.A.id,
@@ -83,8 +91,17 @@ export class Match {
       },
       turn: {
         current: 'A',
-        phase: 'Start',
+        phase: 'Mulligan',
         turnNumber: 1
+      },
+      mulligan: {
+        applied: { A: false, B: false },
+        deadline: null,
+        replacements: { A: [], B: [] }
+      },
+      timers: {
+        mulliganEndsAt: null,
+        turnEndsAt: null
       }
     };
   }
@@ -96,6 +113,16 @@ export class Match {
     }
     const coinCard = getCardDefinition(CARD_IDS.coin);
     this.state.players.B.hand.push({ instanceId: randomUUID(), card: coinCard });
+  }
+
+  private startMulliganCountdown(): void {
+    if (this.mulliganCountdownStarted) {
+      return;
+    }
+    this.mulliganCountdownStarted = true;
+    const deadline = Date.now() + MATCH_CONFIG.mulliganDurationMs;
+    this.state.mulligan.deadline = deadline;
+    this.state.timers.mulliganEndsAt = deadline;
   }
 
   getState(): GameState {
@@ -117,8 +144,7 @@ export class Match {
     this.state.players[side].ready = true;
     if (!this.started && this.players.A.ready && this.players.B.ready) {
       this.started = true;
-      startTurn(this.state, 'A');
-      this.bumpSeq();
+      this.startMulliganCountdown();
     }
   }
 
@@ -160,6 +186,7 @@ export class Match {
       validateEndTurn(this.state, side);
       endTurn(this.state, side);
       startTurn(this.state, this.state.turn.current);
+      this.setTurnDeadline();
       this.bumpSeq();
       return { ok: true, stateChanged: true };
     } catch (error) {
@@ -194,6 +221,147 @@ export class Match {
       }
       throw error;
     }
+  }
+
+  handleMulliganReplace(
+    playerId: string,
+    seq: number,
+    nonce: string,
+    cardInstanceId: string
+  ): CommandResult {
+    const side = this.requireSide(playerId);
+    const meta = this.players[side];
+    try {
+      const { duplicate } = this.ensureSequence(meta, seq, nonce);
+      if (duplicate) {
+        return { ok: true, stateChanged: false, duplicate: true };
+      }
+      if (this.state.stage !== 'Mulligan') {
+        throw new ValidationError('Mulligan stage is over');
+      }
+      if (this.state.mulligan.applied[side]) {
+        throw new ValidationError('Mulligan already applied');
+      }
+      const player = this.state.players[side];
+      const index = player.hand.findIndex((card) => card.instanceId === cardInstanceId);
+      if (index === -1) {
+        throw new ValidationError('Card not found in hand');
+      }
+      const current = player.hand[index];
+      if (current.mulliganReplaced) {
+        throw new ValidationError('Card already replaced');
+      }
+      if (isCoin(current.card.id)) {
+        throw new ValidationError('The Coin cannot be replaced');
+      }
+      player.deck.push(current.card.id);
+      shuffleInPlace(player.deck, this.rng);
+      const nextCardId = player.deck.shift();
+      if (!nextCardId) {
+        throw new ValidationError('No cards available for mulligan');
+      }
+      const definition = getCardDefinition(nextCardId);
+      const replacement: CardInHand = {
+        instanceId: randomUUID(),
+        card: definition,
+        mulliganReplaced: true
+      };
+      player.hand.splice(index, 1, replacement);
+      this.state.mulligan.replacements[side].push(replacement.instanceId);
+      this.bumpSeq();
+      return { ok: true, stateChanged: true };
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return { ok: false, error: error.message, stateChanged: false };
+      }
+      throw error;
+    }
+  }
+
+  handleMulliganApply(playerId: string, seq: number, nonce: string): CommandResult {
+    const side = this.requireSide(playerId);
+    const meta = this.players[side];
+    try {
+      const { duplicate } = this.ensureSequence(meta, seq, nonce);
+      if (duplicate) {
+        return { ok: true, stateChanged: false, duplicate: true };
+      }
+      if (this.state.stage !== 'Mulligan') {
+        throw new ValidationError('Mulligan stage is over');
+      }
+      if (this.state.mulligan.applied[side]) {
+        throw new ValidationError('Mulligan already applied');
+      }
+      this.state.mulligan.applied[side] = true;
+      if (this.state.mulligan.applied.A && this.state.mulligan.applied.B) {
+        this.finalizeMulligan();
+      }
+      this.bumpSeq();
+      return { ok: true, stateChanged: true };
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return { ok: false, error: error.message, stateChanged: false };
+      }
+      throw error;
+    }
+  }
+
+  forceCompleteMulligan(): boolean {
+    if (this.state.stage !== 'Mulligan') {
+      return false;
+    }
+    this.state.mulligan.applied.A = true;
+    this.state.mulligan.applied.B = true;
+    this.finalizeMulligan();
+    this.bumpSeq();
+    return true;
+  }
+
+  handleTurnTimeout(): boolean {
+    if (this.state.stage !== 'Play' || this.state.winner) {
+      return false;
+    }
+    if (this.state.turn.phase !== 'Main') {
+      return false;
+    }
+    const side = this.state.turn.current;
+    endTurn(this.state, side);
+    startTurn(this.state, this.state.turn.current);
+    this.setTurnDeadline();
+    this.bumpSeq();
+    return true;
+  }
+
+  private finalizeMulligan(): void {
+    if (this.state.stage !== 'Mulligan') {
+      return;
+    }
+    this.state.stage = 'Play';
+    this.state.mulligan.deadline = null;
+    this.state.timers.mulliganEndsAt = null;
+    this.state.timers.turnEndsAt = null;
+    const sides: PlayerSide[] = ['A', 'B'];
+    for (const side of sides) {
+      this.state.mulligan.replacements[side] = [];
+      const hand = this.state.players[side].hand;
+      for (const card of hand) {
+        if (card.mulliganReplaced) {
+          delete card.mulliganReplaced;
+        }
+      }
+    }
+    this.state.turn.phase = 'Start';
+    startTurn(this.state, 'A');
+    this.setTurnDeadline();
+  }
+
+  private setTurnDeadline(): void {
+    if (this.state.stage !== 'Play' || this.state.winner) {
+      this.state.timers.turnEndsAt = null;
+      return;
+    }
+    const deadline = Date.now() + MATCH_CONFIG.turnDurationMs;
+    this.state.timers.turnEndsAt = deadline;
   }
 
   private bumpSeq(): void {

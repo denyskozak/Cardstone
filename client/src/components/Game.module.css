@@ -69,3 +69,125 @@
     flex-direction: column;
     gap: 6px;
 }
+
+.mulliganOverlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(20, 18, 24, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+    padding: 24px 32px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: min(90%, 720px);
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.mulliganHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.mulliganTimer {
+    font-size: 24px;
+    color: #ffb347;
+    text-shadow: 0 0 12px rgba(255, 179, 71, 0.6);
+}
+
+.mulliganStatus {
+    font-size: 14px;
+    text-align: center;
+    opacity: 0.85;
+}
+
+.mulliganCards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.mulliganCard {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 10px;
+    width: 150px;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+}
+
+.mulliganCard:not(:disabled):hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
+
+.mulliganCard:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.mulliganCardArt {
+    width: 100%;
+    border-radius: 10px;
+    pointer-events: none;
+}
+
+.mulliganCardName {
+    font-weight: 600;
+    font-size: 15px;
+    text-align: center;
+}
+
+.mulliganCardReplaced {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    color: #ff5c5c;
+    font-size: 26px;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+}
+
+.mulliganApply {
+    padding: 10px 36px;
+    border-radius: 999px;
+    border: none;
+    font-size: 16px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    letter-spacing: 0.6px;
+}
+
+.mulliganApply:not(:disabled):hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 24px rgba(0, 114, 255, 0.35);
+}
+
+.mulliganApply:disabled {
+    background: #555;
+    cursor: not-allowed;
+    box-shadow: none;
+}

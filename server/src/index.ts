@@ -39,6 +39,15 @@ const matchConnections = new Map<string, Set<ConnectionContext>>();
 const chatVisibilityByMatch = new Map<string, boolean>();
 const deckStore = new Map<string, Deck>();
 
+interface MatchTimerEntry {
+  mulligan?: NodeJS.Timeout;
+  turn?: NodeJS.Timeout;
+  mulliganDeadline?: number | null;
+  turnDeadline?: number | null;
+}
+
+const matchTimers = new Map<string, MatchTimerEntry>();
+
 function sendJson(res: ServerResponse, status: number, data: unknown): void {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json');
@@ -263,6 +272,7 @@ server.on('request', async (req, res) => {
 });
 
 function attachToMatch(context: ConnectionContext, match: Match, side: PlayerSide): void {
+  ensureMatchTimer(match);
   context.match = match;
   context.side = side;
   if (!matchConnections.has(match.id)) {
@@ -299,9 +309,90 @@ function broadcastToMatch(matchId: string, message: unknown): void {
   }
 }
 
+function ensureMatchTimer(match: Match): MatchTimerEntry {
+  let entry = matchTimers.get(match.id);
+  if (!entry) {
+    entry = {};
+    matchTimers.set(match.id, entry);
+  }
+  return entry;
+}
+
+function clearTimer(entry: MatchTimerEntry, key: 'mulligan' | 'turn'): void {
+  const handle = entry[key];
+  if (handle) {
+    clearTimeout(handle);
+    delete entry[key];
+  }
+}
+
+function updateMatchTimers(match: Match): void {
+  const entry = ensureMatchTimer(match);
+  const state = match.getState();
+  const now = Date.now();
+
+  if (state.winner) {
+    clearTimer(entry, 'mulligan');
+    clearTimer(entry, 'turn');
+    entry.mulliganDeadline = null;
+    entry.turnDeadline = null;
+    return;
+  }
+
+  const mulliganDeadline = state.stage === 'Mulligan' ? state.timers.mulliganEndsAt : null;
+  if (mulliganDeadline && entry.mulliganDeadline !== mulliganDeadline) {
+    clearTimer(entry, 'mulligan');
+    const delay = Math.max(0, mulliganDeadline - now);
+    entry.mulligan = setTimeout(() => handleMulliganTimeout(match.id), delay);
+    entry.mulliganDeadline = mulliganDeadline;
+  } else if (!mulliganDeadline) {
+    clearTimer(entry, 'mulligan');
+    entry.mulliganDeadline = null;
+  }
+
+  const turnDeadline =
+    state.stage === 'Play' && state.turn.phase === 'Main' ? state.timers.turnEndsAt : null;
+  if (turnDeadline && entry.turnDeadline !== turnDeadline) {
+    clearTimer(entry, 'turn');
+    const delay = Math.max(0, turnDeadline - now);
+    entry.turn = setTimeout(() => handleTurnTimeout(match.id), delay);
+    entry.turnDeadline = turnDeadline;
+  } else if (!turnDeadline) {
+    clearTimer(entry, 'turn');
+    entry.turnDeadline = null;
+  }
+}
+
+function handleMulliganTimeout(matchId: string): void {
+  const match = lobby.getMatch(matchId);
+  if (!match) {
+    return;
+  }
+  const changed = match.forceCompleteMulligan();
+  if (changed) {
+    sendStateSync(match);
+  } else {
+    updateMatchTimers(match);
+  }
+}
+
+function handleTurnTimeout(matchId: string): void {
+  const match = lobby.getMatch(matchId);
+  if (!match) {
+    return;
+  }
+  const changed = match.handleTurnTimeout();
+  if (changed) {
+    sendStateSync(match);
+  } else {
+    updateMatchTimers(match);
+  }
+}
+
 function sendStateSync(match: Match): void {
   const state = match.getState();
   const connections = matchConnections.get(match.id);
+  updateMatchTimers(match);
   if (!connections) {
     return;
   }
@@ -438,6 +529,45 @@ async function handleClientMessage(
       context.match.markReady(context.playerId);
       sendMessage(context, { t: 'ActionResult', payload: { ok: true } });
       sendStateSync(context.match);
+      break;
+    }
+    case 'MulliganReplace': {
+      if (!context.match || !context.playerId || !context.side) {
+        sendToast(context, 'Join a match first');
+        return;
+      }
+      const result = context.match.handleMulliganReplace(
+        context.playerId,
+        message.seq!,
+        message.nonce!,
+        message.payload.cardId
+      );
+      sendMessage(context, { t: 'ActionResult', seq: message.seq, payload: result });
+      if (result.stateChanged) {
+        sendStateSync(context.match);
+      }
+      if (!result.ok && result.error) {
+        sendToast(context, result.error);
+      }
+      break;
+    }
+    case 'MulliganApply': {
+      if (!context.match || !context.playerId || !context.side) {
+        sendToast(context, 'Join a match first');
+        return;
+      }
+      const result = context.match.handleMulliganApply(
+        context.playerId,
+        message.seq!,
+        message.nonce!
+      );
+      sendMessage(context, { t: 'ActionResult', seq: message.seq, payload: result });
+      if (result.stateChanged) {
+        sendStateSync(context.match);
+      }
+      if (!result.ok && result.error) {
+        sendToast(context, result.error);
+      }
       break;
     }
     case 'PlayCard': {

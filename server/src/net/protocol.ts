@@ -39,6 +39,18 @@ export const clientMessageSchema = z.discriminatedUnion('t', [
     payload: z.object({ playerId: z.string().optional() })
   }),
   z.object({
+    t: z.literal('MulliganReplace'),
+    payload: z.object({ cardId: z.string() }),
+    seq: seq(),
+    nonce: nonce()
+  }),
+  z.object({
+    t: z.literal('MulliganApply'),
+    payload: z.object({}).default({}),
+    seq: seq(),
+    nonce: nonce()
+  }),
+  z.object({
     t: z.literal('PlayCard'),
     payload: z.object({
       cardId: z.string(),
