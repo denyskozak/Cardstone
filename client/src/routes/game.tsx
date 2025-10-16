@@ -3,6 +3,7 @@ import { Navigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import type { Deck } from '@cardstone/shared/decks';
 import { Game } from '../components/Game';
+import { apiPath } from '../config';
 import { fetchJson } from '../lib/api';
 import { deckByIdQueryKey } from '../lib/queryKeys';
 import { useDeckSelectionStore } from '../state/deck-selection';
@@ -14,7 +15,7 @@ export function GameRoute() {
 
   const deckQuery = useQuery({
     queryKey: selectedDeckId ? deckByIdQueryKey(selectedDeckId) : ['selected-deck'],
-    queryFn: () => fetchJson<Deck>(`http://localhost:8787/api/decks/${selectedDeckId}`),
+    queryFn: () => fetchJson<Deck>(apiPath(`/api/decks/${selectedDeckId}`)),
     enabled: Boolean(selectedDeckId),
     staleTime: 60_000
   });
