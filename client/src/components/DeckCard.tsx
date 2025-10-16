@@ -16,6 +16,7 @@ export interface DeckCardProps {
   onRename(): void;
   onDelete(): void;
   onUse(): void;
+  isSelected?: boolean;
 }
 
 const containerStyle: CSSProperties = {
@@ -30,16 +31,22 @@ const containerStyle: CSSProperties = {
   minHeight: '220px'
 };
 
-export function DeckCard({ deck, cards, onEdit, onDuplicate, onRename, onDelete, onUse }: DeckCardProps) {
+export function DeckCard({ deck, cards, onEdit, onDuplicate, onRename, onDelete, onUse, isSelected = false }: DeckCardProps) {
   const totalCards = countDeckCards(deck);
   const manaCurve = useMemo(() => getDeckManaCurve(deck, cards), [deck, cards]);
   const manaBins = ['0', '1', '2', '3', '4', '5', '6', '7+'];
   const formattedDate = new Date(deck.updatedAt).toLocaleString();
   const maxBin = Math.max(...manaCurve, 1);
+  const selectedStyles: CSSProperties = isSelected
+    ? {
+        border: '1px solid rgba(34,197,94,0.75)',
+        boxShadow: '0 12px 36px rgba(34,197,94,0.25)'
+      }
+    : {};
 
   return (
     <Tooltip.Provider>
-      <div style={containerStyle}>
+      <div style={{ ...containerStyle, ...selectedStyles }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -49,6 +56,11 @@ export function DeckCard({ deck, cards, onEdit, onDuplicate, onRename, onDelete,
               <Badge color="amber" variant="solid">
                 {deck.heroClass}
               </Badge>
+              {isSelected && (
+                <Badge color="emerald" variant="soft">
+                  Selected
+                </Badge>
+              )}
             </div>
             <small style={{ color: 'rgba(255,255,255,0.6)' }}>Updated {formattedDate}</small>
           </div>

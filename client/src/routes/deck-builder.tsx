@@ -38,6 +38,7 @@ import {
 } from '../lib/deckRules';
 import { SoundButton as Button } from '../components/SoundButton';
 import { Badge } from '../components/Badge';
+import { apiPath } from '../config';
 import { fetchJson } from '../lib/api';
 import { CARDS_QUERY_KEY, DECKS_QUERY_KEY, deckByIdQueryKey } from '../lib/queryKeys';
 
@@ -153,12 +154,12 @@ export function DeckBuilderPage() {
 
   const cardsQuery = useQuery({
     queryKey: CARDS_QUERY_KEY,
-    queryFn: () => fetchJson<CatalogCard[]>('http://localhost:8787/api/cards')
+    queryFn: () => fetchJson<CatalogCard[]>(apiPath('/api/cards'))
   });
 
   const deckQuery = useQuery({
     queryKey: deckId ? deckByIdQueryKey(deckId) : ['deck', 'new'],
-    queryFn: () => fetchJson<Deck>(`http://localhost:8787/api/decks/${deckId}`),
+    queryFn: () => fetchJson<Deck>(apiPath(`/api/decks/${deckId}`)),
     enabled: Boolean(deckId),
     initialData: deckId ? locationState?.deck : undefined
   });
@@ -267,13 +268,13 @@ export function DeckBuilderPage() {
         cards: input.deck.cards
       };
       if (input.mode === 'create') {
-        return fetchJson<Deck>('http://localhost:8787/api/decks', {
+        return fetchJson<Deck>(apiPath('/api/decks'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
       }
-      return fetchJson<Deck>(`http://localhost:8787/api/decks/${input.deck.id}`, {
+      return fetchJson<Deck>(apiPath(`/api/decks/${input.deck.id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

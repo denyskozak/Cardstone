@@ -1,14 +1,16 @@
 // README: Hook up `window.startGame = ({ deckId }) => { ... }` in your host app to launch games from the deck screen.
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import * as Toast from '@radix-ui/react-toast';
 import type { CatalogCard, Deck, HeroClass } from '@cardstone/shared/decks';
 import { HERO_CLASSES } from '@cardstone/shared/decks';
 import { DeckCard } from '../components/DeckCard';
-import { SoundButton as Button} from '../components/SoundButton';
+import { SoundButton as Button } from '../components/SoundButton';
+import { apiPath } from '../config';
 import { fetchJson } from '../lib/api';
 import { CARDS_QUERY_KEY, DECKS_QUERY_KEY } from '../lib/queryKeys';
+import { useDeckSelectionStore } from '../state/deck-selection';
 
 interface DeckRequestPayload {
   name: string;
@@ -18,7 +20,7 @@ interface DeckRequestPayload {
 
 type BuilderMode = 'create' | 'edit';
 
-export function onUseDeck(deckId: string): void {
+function notifyHostOfDeckSelection(deckId: string): void {
   const startGame = (window as unknown as { startGame?: (payload: { deckId: string }) => void }).startGame;
   if (typeof startGame === 'function') {
     startGame({ deckId });
@@ -30,28 +32,44 @@ export function onUseDeck(deckId: string): void {
 export function DecksPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState<'All' | HeroClass>('All');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const selectDeck = useDeckSelectionStore((state) => state.selectDeck);
+  const selectedDeckId = useDeckSelectionStore((state) => state.selectedDeckId);
 
   const handleError = (error: unknown) => {
     const message = error instanceof Error ? error.message : 'Something went wrong.';
     setToastMessage(message);
   };
 
+  useEffect(() => {
+    const navigationState = location.state as { reason?: string } | null;
+    if (!navigationState?.reason) {
+      return;
+    }
+    if (navigationState.reason === 'deck-required') {
+      setToastMessage('Create and select a deck before entering the arena.');
+    } else if (navigationState.reason === 'deck-missing') {
+      setToastMessage('Selected deck could not be found. Please build a new one.');
+    }
+    navigate(location.pathname, { replace: true });
+  }, [location, navigate]);
+
   const cardsQuery = useQuery({
     queryKey: CARDS_QUERY_KEY,
-    queryFn: () => fetchJson<CatalogCard[]>('http://localhost:8787/api/cards')
+    queryFn: () => fetchJson<CatalogCard[]>(apiPath('/api/cards'))
   });
 
   const decksQuery = useQuery({
     queryKey: DECKS_QUERY_KEY,
-    queryFn: () => fetchJson<Deck[]>('http://localhost:8787/api/decks')
+    queryFn: () => fetchJson<Deck[]>(apiPath('/api/decks'))
   });
 
   const deleteDeckMutation = useMutation({
     mutationFn: async (deckId: string) => {
-      const response = await fetch('http://localhost:8787/api/decks/' + deckId, {
+      const response = await fetch(apiPath(`/api/decks/${deckId}`), {
         method: 'DELETE'
       });
       if (!response.ok) {
@@ -73,7 +91,7 @@ export function DecksPage() {
         heroClass: deck.heroClass,
         cards: deck.cards
       };
-      return fetchJson<Deck>('http://localhost:8787/api/decks', {
+      return fetchJson<Deck>(apiPath('/api/decks'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -93,7 +111,7 @@ export function DecksPage() {
         heroClass: deck.heroClass,
         cards: deck.cards
       };
-      return fetchJson<Deck>(`http://localhost:8787/api/decks/${deck.id}`, {
+      return fetchJson<Deck>(apiPath(`/api/decks/${deck.id}`), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -139,6 +157,15 @@ export function DecksPage() {
     }
     await renameDeckMutation.mutateAsync({ deck, name: nextName.trim() });
   };
+
+  const handleUseDeck = useCallback(
+    (deck: Deck) => {
+      selectDeck(deck);
+      notifyHostOfDeckSelection(deck.id);
+      navigate('/game');
+    },
+    [navigate, selectDeck]
+  );
 
   const isLoading = cardsQuery.isLoading || decksQuery.isLoading;
 
@@ -271,7 +298,8 @@ export function DecksPage() {
                 onDuplicate={() => handleDuplicateDeck(deck)}
                 onRename={() => handleRenameDeck(deck)}
                 onDelete={() => handleDeleteDeck(deck)}
-                onUse={() => onUseDeck(deck.id)}
+                onUse={() => handleUseDeck(deck)}
+                isSelected={selectedDeckId === deck.id}
               />
             ))}
           </div>
