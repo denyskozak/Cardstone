@@ -65,10 +65,10 @@ export function MainRoute() {
           src="/assets/images/background.webp"
         />
 
-        <main className="z-[2] flex justify-center w-full h-full overflow-y-auto">
+        <main className="z-[2] gap-10 flex  items-center flex-col w-full h-full overflow-y-auto">
           <div className="flex items-center flex-col">
             {/* HeroUI-like header */}
-            <div className="text-center mt-4">
+            <div  className="text-center mt-4">
               <div className="inline-block max-w-xl text-center justify-center items-center">
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -97,7 +97,7 @@ export function MainRoute() {
             </div>
           </div>
           <div
-            className="absolute bottom-[15vh]"
+
           >
             <Button
               onClick={() => navigate(account ? '/matches' : '/sign-in')}

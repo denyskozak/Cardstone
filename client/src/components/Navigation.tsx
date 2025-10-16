@@ -11,12 +11,12 @@ export const Navigation = () => {
         <a href="/">
           <img src="/assets/logo.webp" alt="Mw-logo" className="w-16 h-16" />
         </a>
-        <TabNav.Link href="#" active >
-          Ranked
+        <TabNav.Link href="#">
+          <span className="text-lg">Card Market</span>
         </TabNav.Link>
-        <TabNav.Link href="#" >FAQ</TabNav.Link>
-        <TabNav.Link href="#" onClick={() => navigate('/profile')}>Profile</TabNav.Link>
-        <TabNav.Link href="#" onClick={() => navigate('/dashboard')}>Dashboard</TabNav.Link>
+        {/*<TabNav.Link href="#" >FAQ</TabNav.Link>*/}
+        {/*<TabNav.Link href="#" onClick={() => navigate('/profile')}>Profile</TabNav.Link>*/}
+        {/*<TabNav.Link href="#" onClick={() => navigate('/dashboard')}>Dashboard</TabNav.Link>*/}
         <a href="#">
           <img src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/discord-white-icon.png" alt="Discord" className="w-6 h-6" />
         </a>
