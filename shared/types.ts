@@ -182,13 +182,27 @@ export interface ClientMessageBase<T extends string, P> {
   nonce?: string;
 }
 
+export type ChatMessagePayload = {
+  from: string;
+  side?: PlayerSide;
+  text: string;
+  timestamp: number;
+};
+
+export type ChatVisibilityPayload = {
+  collapsed: boolean;
+  reason?: string;
+};
+
 export type ClientToServer =
   | ClientMessageBase<'JoinMatch', { matchId: 'auto' | string; playerId?: string }>
   | ClientMessageBase<'Ready', { playerId?: string }>
   | ClientMessageBase<'PlayCard', { cardId: EntityId; target?: TargetDescriptor; placement?: CardPlacement }>
   | ClientMessageBase<'EndTurn', Record<string, never>>
   | ClientMessageBase<'Attack', { attackerId: EntityId; target: TargetDescriptor }>
-  | ClientMessageBase<'Emote', { type: 'Hello' | 'WellPlayed' | 'Oops' }>;
+  | ClientMessageBase<'Emote', { type: 'Hello' | 'WellPlayed' | 'Oops' }>
+  | ClientMessageBase<'ChatMessage', { text: string }>
+  | ClientMessageBase<'SetChatCollapsed', { collapsed: boolean }>;
 
 export interface ServerMessageBase<T extends string, P> {
   t: T;
@@ -214,7 +228,9 @@ export type ServerToClient =
   | ServerMessageBase<'ActionResult', ActionResultPayload>
   | ServerMessageBase<'Toast', { message: string }>
   | ServerMessageBase<'OpponentLeft', { playerId: string }>
-  | ServerMessageBase<'GameOver', { winner: PlayerSide }>;
+  | ServerMessageBase<'GameOver', { winner: PlayerSide }>
+  | ServerMessageBase<'ChatMessage', ChatMessagePayload>
+  | ServerMessageBase<'ChatVisibility', ChatVisibilityPayload>;
 
 export interface MatchConfig {
   startingHandSize: number;
