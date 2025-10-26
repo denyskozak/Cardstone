@@ -4,18 +4,22 @@ import { useNavigate } from "react-router";
 
 import { SoundButton as Button } from "./SoundButton";
 
+interface ConnectionButtonProps {
+  className?: string;
+  text?: string;
+}
 
 export function ConnectionButton({
-                                   className,
-                                   text = "Connect",
-                                 }) {
+  className,
+  text = "Connect",
+}: ConnectionButtonProps) {
   const currentAccount = useCurrentAccount();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
   if (currentAccount) {
     return (
-      <Button  onPress={() => navigate("/loot")}>
+      <Button onClick={() => navigate("/loot")}>
         Your bag
       </Button>
     );
@@ -25,7 +29,7 @@ export function ConnectionButton({
     <ConnectModal
       open={open}
       trigger={
-        <Button className={className} size="4">
+        <Button className={className}>
           {/*<span className="absolute inset-0 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 animate-pulse opacity-100 group-hover:opacity-100 blur-md" />*/}
           {text}
         </Button>

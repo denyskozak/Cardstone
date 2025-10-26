@@ -405,7 +405,7 @@ export function Game() {
                 : 'Click a card to replace it and press Apply'}
             </div>
             <div className={styles.mulliganCards}>
-              {player?.hand.map((card) => {
+              {player?.hand.map((card: CardInHand) => {
                 const disabled =
                   Boolean(card.mulliganReplaced) ||
                   card.card.id === CARD_IDS.coin ||

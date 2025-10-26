@@ -1,7 +1,17 @@
 import React, { useEffect, useRef } from "react";
 
-export const MagicCanvas = () => {
-  const canvasRef = useRef(null);
+type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  alpha: number;
+  size: number;
+  color: string;
+};
+
+export const MagicCanvas: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -9,7 +19,7 @@ export const MagicCanvas = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const particles = [];
+    const particles: Particle[] = [];
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -19,14 +29,14 @@ export const MagicCanvas = () => {
     resize();
     window.addEventListener("resize", resize);
 
-    const createParticles = (e) => {
+    const createParticles = (event: MouseEvent) => {
       const hue = 201; // approx #299ad8
       for (let i = 0; i < 5; i++) {
         const saturation = 70 + Math.random() * 10;
         const lightness = 55 + Math.random() * 10;
         particles.push({
-          x: e.clientX,
-          y: e.clientY,
+          x: event.clientX,
+          y: event.clientY,
           vx: (Math.random() - 0.5) * 2,
           vy: (Math.random() - 0.5) * 2,
           alpha: 1,
@@ -38,14 +48,15 @@ export const MagicCanvas = () => {
 
     window.addEventListener("mousemove", createParticles);
 
+    let frameId: number;
     let last = performance.now();
-    const frame = (time) => {
+    const frame = (time: number) => {
       const dt = (time - last) / 1000;
       last = time;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      for (let i = particles.length - 1; i >= 0; i--) {
+      for (let i = particles.length - 1; i >= 0; i -= 1) {
         const p = particles[i];
         p.x += p.vx * 60 * dt;
         p.y += p.vy * 60 * dt;
@@ -61,14 +72,15 @@ export const MagicCanvas = () => {
         ctx.fill();
       }
 
-      requestAnimationFrame(frame);
+      frameId = requestAnimationFrame(frame);
     };
 
-    requestAnimationFrame(frame);
+    frameId = requestAnimationFrame(frame);
 
     return () => {
       window.removeEventListener("mousemove", createParticles);
       window.removeEventListener("resize", resize);
+      cancelAnimationFrame(frameId);
     };
   }, []);
 

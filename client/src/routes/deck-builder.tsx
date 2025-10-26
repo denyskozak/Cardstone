@@ -23,6 +23,7 @@ import {
   type CatalogCard,
   type Deck,
   type DeckCardEntry,
+  type DeckValidationIssue,
   type HeroClass
 } from '@cardstone/shared/decks';
 import {
@@ -234,12 +235,12 @@ export function DeckBuilderPage() {
         setToastMessage(`${card.name} cannot be added to a ${deck.heroClass} deck.`);
         return;
       }
-      setDeck((current) => {
-        if (countDeckCards(current) >= MAX_DECK_SIZE) {
+      setDeck((currentDeck) => {
+        if (countDeckCards(currentDeck) >= MAX_DECK_SIZE) {
           setToastMessage(`Deck is already at the ${MAX_DECK_SIZE}-card limit.`);
-          return current;
+          return currentDeck;
         }
-        return addCard(current, card, collection);
+        return addCard(currentDeck, card, collection);
       });
     },
     [collection, deck.heroClass]
@@ -247,22 +248,22 @@ export function DeckBuilderPage() {
 
   const handleHeroClassChange = useCallback(
     (nextClass: HeroClass) => {
-      setDeck((current) => {
-        if (current.heroClass === nextClass) {
-          return current;
+      setDeck((currentDeck) => {
+        if (currentDeck.heroClass === nextClass) {
+          return currentDeck;
         }
         const nextCollection = createCardCollection(cards);
-        const allowed = current.cards.filter((entry) => {
+        const allowed = currentDeck.cards.filter((entry) => {
           const card = nextCollection.get(entry.cardId);
           if (!card) return false;
           return card.heroClass === 'Neutral' || card.heroClass === nextClass;
         });
-        const removed = current.cards.length - allowed.length;
+        const removed = currentDeck.cards.length - allowed.length;
         if (removed > 0) {
           setToastMessage(`Removed ${removed} card${removed === 1 ? '' : 's'} not matching ${nextClass}.`);
         }
         return {
-          ...current,
+          ...currentDeck,
           heroClass: nextClass,
           cards: sortDeckEntries(allowed, nextCollection)
         };
@@ -330,23 +331,31 @@ export function DeckBuilderPage() {
   const manaCurve = useMemo(() => getDeckManaCurve(deck, collection), [deck.cards, collection]);
   const maxManaCurve = useMemo(() => Math.max(...manaCurve, 1), [manaCurve]);
 
-    const analytics = useMemo(() => {
-    const typeCounts = deck.cards.reduce(
-      (acc, entry) => {
-        const card = collection.get(entry.cardId);
-        if (!card) return acc;
-        acc[card.type] = (acc[card.type] ?? 0) + entry.count;
-        acc.total += entry.count;
-        return acc;
-      },
-      { Minion: 0, Spell: 0, Weapon: 0, total: 0 } as Record<string, number>
-    );
-    const rarityCounts = deck.cards.reduce((acc, entry) => {
+  type TypeCounts = { Minion: number; Spell: number; Weapon: number; total: number };
+  type RarityCounts = Partial<Record<CatalogCard['rarity'], number>>;
+
+  const analytics = useMemo(() => {
+    const typeCounts = deck.cards.reduce<TypeCounts>((acc, entry) => {
       const card = collection.get(entry.cardId);
-      if (!card) return acc;
+      if (!card) {
+        return acc;
+      }
+      if (card.type === 'Minion' || card.type === 'Spell' || card.type === 'Weapon') {
+        acc[card.type] += entry.count;
+      }
+      acc.total += entry.count;
+      return acc;
+    }, { Minion: 0, Spell: 0, Weapon: 0, total: 0 });
+
+    const rarityCounts = deck.cards.reduce<RarityCounts>((acc, entry) => {
+      const card = collection.get(entry.cardId);
+      if (!card) {
+        return acc;
+      }
       acc[card.rarity] = (acc[card.rarity] ?? 0) + entry.count;
       return acc;
-    }, {} as Record<CatalogCard['rarity'], number>);
+    }, {});
+
     return { typeCounts, rarityCounts };
   }, [deck.cards, collection]);
 
@@ -501,7 +510,7 @@ export function DeckBuilderPage() {
                       }}
                     >
                       <option value="All">All</option>
-                      {HERO_CLASSES.map((hero) => (
+                      {HERO_CLASSES.map((hero: HeroClass) => (
                         <option key={hero} value={hero}>
                           {hero}
                         </option>
@@ -757,7 +766,9 @@ export function DeckBuilderPage() {
                       <strong>Deck Name</strong>
                       <input
                         value={deck.name}
-                        onChange={(event) => setDeck((current) => ({ ...current, name: event.target.value }))}
+                        onChange={(event) =>
+                          setDeck((currentDeck) => ({ ...currentDeck, name: event.target.value }))
+                        }
                         style={{
                           padding: '8px 10px',
                           borderRadius: '10px',
@@ -811,7 +822,7 @@ export function DeckBuilderPage() {
                           color: 'white'
                         }}
                       >
-                        {HERO_CLASSES.map((hero) => (
+                        {HERO_CLASSES.map((hero: HeroClass) => (
                           <option key={hero} value={hero}>
                             {hero}
                           </option>
@@ -900,7 +911,9 @@ export function DeckBuilderPage() {
                                         fontWeight: 700,
                                         cursor: 'pointer'
                                       }}
-                                      onClick={() => setDeck((current) => removeCard(current, card, collection))}
+                                      onClick={() =>
+                                        setDeck((currentDeck) => removeCard(currentDeck, card, collection))
+                                      }
                                       disabled={entry.count <= 0}
                                     >
                                       <Icon symbol="x" />
@@ -919,7 +932,7 @@ export function DeckBuilderPage() {
                   </ScrollArea.Root>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {validation.errors.map((error) => (
+                    {validation.errors.map((error: DeckValidationIssue) => (
                       <div
                         key={`${error.code}-${error.cardId ?? ''}`}
                         style={{

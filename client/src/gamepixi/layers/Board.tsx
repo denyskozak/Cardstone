@@ -3,12 +3,13 @@ import type {
   GameState,
   MinionEntity,
   PlayerSide,
-  TargetDescriptor
+  TargetDescriptor,
+  SpellCard
 } from '@cardstone/shared/types';
 import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import { actionRequiresTarget, getPrimaryPlayAction } from '@cardstone/shared/effects';
 import type { FederatedPointerEvent } from 'pixi.js';
-import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture, BlurFilter } from 'pixi.js';
+import { Assets, Container, Graphics, Point, Rectangle, Texture, BlurFilter } from 'pixi.js';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   useUiStore,
@@ -88,7 +89,7 @@ function MinionCardArt({ cardId }: { cardId: string }) {
                   y={0} texture={texture} width={MINION_WIDTH + (MINION_ART_INSET_X * 5)} height={MINION_HEIGHT} />
       <pixiGraphics
         ref={handleMaskRef}
-        draw={(g) => {
+        draw={(g: Graphics) => {
           g.clear();
           g.beginFill(0xffffff, 1);
           g.drawEllipse(MINION_WIDTH / 2, MINION_HEIGHT / 2, artWidth / 2, (artHeight + 8) / 2);
@@ -226,15 +227,23 @@ function HeroAvatar({
   );
 }
 
-type TargetTaggedDisplayObject = DisplayObject & {
+type TargetTaggable = {
+  parent?: TargetTaggable | null;
   cardstoneTarget?: TargetDescriptor;
 };
 
-function attachTargetDescriptor(display: DisplayObject | null, descriptor: TargetDescriptor) {
-  if (!display) {
-    return;
+function toTargetTaggable(display: unknown): TargetTaggable | null {
+  if (display && typeof display === 'object') {
+    return display as TargetTaggable;
   }
-  (display as TargetTaggedDisplayObject).cardstoneTarget = descriptor;
+  return null;
+}
+
+function attachTargetDescriptor(display: unknown, descriptor: TargetDescriptor) {
+  const target = toTargetTaggable(display);
+  if (target) {
+    target.cardstoneTarget = descriptor;
+  }
 }
 
 export default function Board({
@@ -333,7 +342,10 @@ export default function Board({
     if (targeting.source.kind === 'minion') {
       return getTargetingPredicate({ kind: 'minion' }, playerSide, state);
     }
-    const action = getPrimaryPlayAction(targeting.source.card.card);
+    if (targeting.source.card.card.type !== 'Spell') {
+      return null;
+    }
+    const action = getPrimaryPlayAction(targeting.source.card.card as SpellCard);
     if (!action || !actionRequiresTarget(action)) {
       return null;
     }
@@ -377,7 +389,7 @@ export default function Board({
         return;
       }
 
-      const descriptor = resolveTargetDescriptor(event.target as DisplayObject | null);
+      const descriptor = resolveTargetDescriptor(event.target);
       if (descriptor && targetingPredicate(descriptor)) {
         setCurrentTarget((previous) => {
           if (previous && targetsEqual(previous, descriptor)) {
@@ -398,36 +410,35 @@ export default function Board({
       if (!targeting || event.pointerId !== targeting.pointerId) {
         return;
       }
-      const action: TargetingState | undefined = targeting;
+      const currentTargeting = targeting;
       const target = targetRef.current;
       setTargeting(undefined);
       setCurrentTarget(null);
-      if (!target || !action) {
+      if (!target) {
         return;
       }
 
-      if (action.source.kind === 'minion') {
+      if (currentTargeting.source.kind === 'minion') {
+        const { entityId } = currentTargeting.source;
         const queuedTarget: TargetDescriptor =
           target.type === 'hero'
             ? { type: 'hero', side: target.side }
             : { type: 'minion', side: target.side, entityId: target.entityId };
-        // Kick off the local strike animation immediately so the attacker
-        // lunges before the server confirms the combat result.
         enqueueLocalAttackAnimation({
-          attackerId: action.source.entityId,
+          attackerId: entityId,
           side: playerSide,
           target: queuedTarget
         });
         const timeout = window.setTimeout(() => {
-          onAttack(action.source.entityId, target);
+          onAttack(entityId, target);
           pendingAttackTimeoutsRef.current = pendingAttackTimeoutsRef.current.filter(
             (value) => value !== timeout
           );
         }, 420);
         pendingAttackTimeoutsRef.current.push(timeout);
-      } else if (action.source.kind === 'spell') {
+      } else if (currentTargeting.source.kind === 'spell') {
         setSelected(undefined);
-        onCastSpell(action.source.card, target);
+        onCastSpell(currentTargeting.source.card, target);
       }
     },
     [
@@ -457,7 +468,7 @@ export default function Board({
       if (!container) {
         return;
       }
-      const display = event.currentTarget as DisplayObject | null;
+      const display = event.currentTarget as Container | null;
       let centerGlobal = event.global as Point;
       if (display) {
         const bounds = display.getBounds();
@@ -612,7 +623,7 @@ export default function Board({
                   }
                 : undefined
             }
-            ref={(instance) => attachTargetDescriptor(instance, targetDescriptor)}
+            ref={(instance: unknown) => attachTargetDescriptor(instance, targetDescriptor)}
           >
             {isFriendly && canAttackThisMinion ? (
               <pixiGraphics
@@ -620,7 +631,7 @@ export default function Board({
                 anchor={0.5}
                 alpha={0.7}
                 filters={[blurFilter]}
-                draw={(g) => {
+                draw={(g: Graphics) => {
                   g.clear();
                   g.beginFill(0x78ff5a, 0.85);
                   g.drawEllipse(
@@ -635,7 +646,7 @@ export default function Board({
             ) : null}
             {entity.divineShield ? (
               <pixiGraphics
-                draw={(g) => {
+                draw={(g: Graphics) => {
                   g.clear();
                   g.lineStyle(4, 0xfff4aa, 0.9);
                   g.drawEllipse(
@@ -818,7 +829,7 @@ export default function Board({
       onPointerCancel={handlePointerUp}
     >
       <pixiGraphics
-        draw={(g) => {
+        draw={(g: Graphics) => {
           g.clear();
           g.lineStyle(2, 0xffffff, 0.2);
           g.drawRoundedRect(laneX, boardTopY - 20, laneWidth, MINION_HEIGHT + 40, 20);
@@ -909,14 +920,13 @@ function targetsEqual(a: TargetDescriptor | null, b: TargetDescriptor) {
   return false;
 }
 
-function resolveTargetDescriptor(display: DisplayObject | null): TargetDescriptor | null {
-  let current: DisplayObject | null = display;
+function resolveTargetDescriptor(display: unknown): TargetDescriptor | null {
+  let current = toTargetTaggable(display);
   while (current) {
-    const descriptor = (current as TargetTaggedDisplayObject).cardstoneTarget;
-    if (descriptor) {
-      return descriptor;
+    if (current.cardstoneTarget) {
+      return current.cardstoneTarget;
     }
-    current = current.parent;
+    current = toTargetTaggable(current.parent ?? null);
   }
   return null;
 }

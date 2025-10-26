@@ -31,9 +31,9 @@ export default function TargetReticle({
   zIndex = 0
 }: TargetReticleProps) {
   const containerRef = useRef<Container | null>(null);
-  const phaseRef = useRef(0);
+  const phaseRef = useRef<number>(0);
 
-  useTick((delta) => {
+  useTick((ticker) => {
     const container = containerRef.current;
     if (!container) {
       return;
@@ -44,7 +44,7 @@ export default function TargetReticle({
       }
       return;
     }
-    phaseRef.current += delta * DEFAULT_PULSE_SPEED;
+    phaseRef.current += ticker.deltaTime * DEFAULT_PULSE_SPEED;
     const wave = Math.sin(phaseRef.current);
     const scale = 1 + wave * DEFAULT_PULSE_AMPLITUDE;
     container.scale.set(scaleX * scale, scaleY * scale);

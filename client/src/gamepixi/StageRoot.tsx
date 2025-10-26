@@ -13,6 +13,15 @@ import OpponentHandLayer from './layers/OpponentHand';
 import Effects from './layers/Effects';
 import { useApplication } from '@pixi/react';
 import { useEffect, useMemo } from 'react';
+import type { Application as PixiApplication } from 'pixi.js';
+
+declare global {
+  interface Window {
+    __PIXI_DEVTOOLS__?: {
+      app: PixiApplication;
+    };
+  }
+}
 
 interface StageRootProps {
   state: GameState | null;
@@ -81,9 +90,11 @@ export default function StageRoot({
     app.renderer?.resize(targetWidth, targetHeight);
   }, [app, targetHeight, targetWidth]);
 
-  window.__PIXI_DEVTOOLS__ = {
-    app: app,
-  };
+  if (typeof window !== 'undefined') {
+    window.__PIXI_DEVTOOLS__ = {
+      app
+    };
+  }
   if (!state || !playerSide) {
     return (
       <pixiContainer width={targetWidth} height={targetHeight} options={{ backgroundAlpha: 0 }}>
