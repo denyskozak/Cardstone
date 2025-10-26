@@ -4,6 +4,7 @@
     "jsx": "react-jsx",
     "moduleResolution": "Bundler",
     "types": ["vite/client"],
+    "noEmit": true,
     "baseUrl": "./src",
     "paths": {
       "@cardstone/shared/*": ["../../shared/*"],

@@ -168,7 +168,7 @@ export default function TargetingArrow({ playerSide }: TargetingArrowProps) {
   const targeting = useUiStore((state) => state.targeting);
   const currentTarget = useUiStore((state) => state.currentTarget ?? null);
   const smoothedCurrent = useSmoothedPoint(targeting ? targeting.current : null);
-  const cacheRef = useRef<CurveCache>();
+  const cacheRef = useRef<CurveCache | null>(null);
   const lastCurveRef = useRef<CurveGeometry | null>(null);
   const hasTarget = Boolean(targeting && smoothedCurrent);
   const origin = targeting?.origin ?? null;
@@ -181,6 +181,9 @@ export default function TargetingArrow({ playerSide }: TargetingArrowProps) {
       };
     }
     const cache = cacheRef.current;
+    if (!cache) {
+      throw new Error('Failed to initialize curve cache');
+    }
     if (hasTarget && origin && smoothedCurrent) {
       const curve = computeCurve(cache, origin, smoothedCurrent);
       lastCurveRef.current = curve;

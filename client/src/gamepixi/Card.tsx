@@ -1,6 +1,6 @@
-import type { CardInHand } from '@cardstone/shared/types';
-import { Assets, BlurFilter, Texture, type FederatedPointerEvent } from 'pixi.js';
+import { Assets, BlurFilter, Graphics, Texture, type FederatedPointerEvent } from 'pixi.js';
 import { useEffect, useState } from 'react';
+import type { CardInHand, CardDefinition } from '@cardstone/shared/types';
 
 
 const CARD_WIDTH = 160;
@@ -72,6 +72,16 @@ export function Card({
     }
   }, [card.card.id]);
 
+  const cardDefinition = card.card;
+  const isMinionCard = cardDefinition.type === 'Minion';
+  const isWeaponCard = cardDefinition.type === 'Weapon';
+  const attackValue = isMinionCard || isWeaponCard
+    ? (cardDefinition as Extract<CardDefinition, { attack: number }>).attack
+    : undefined;
+  const healthValue = isMinionCard
+    ? (cardDefinition as Extract<CardDefinition, { health: number }>).health
+    : undefined;
+
   return (
     <pixiContainer
       x={x}
@@ -93,22 +103,22 @@ export function Card({
       onPointerOut={() => {
         onHover?.(undefined);
       }}
-      onPointerDown={(event) => {
+      onPointerDown={(event: FederatedPointerEvent) => {
         if (!disabled) {
           onDragStart?.(card, event);
         }
       }}
-      onPointerMove={(event) => {
+      onPointerMove={(event: FederatedPointerEvent) => {
         if (!disabled) {
           onDragMove?.(card, event);
         }
       }}
-      onPointerUp={(event) => {
+      onPointerUp={(event: FederatedPointerEvent) => {
         if (!disabled) {
           onDragEnd?.(card, event);
         }
       }}
-      onPointerUpOutside={(event) => {
+      onPointerUpOutside={(event: FederatedPointerEvent) => {
         if (!disabled) {
           onDragEnd?.(card, event);
         }
@@ -120,7 +130,7 @@ export function Card({
           anchor={0.5}
           alpha={0.7}
           filters={[PLAYABLE_GLOW_FILTER]}
-          draw={(g) => {
+          draw={(g: Graphics) => {
             g.clear();
             g.beginFill(0x78ff5a, 0.85);
             g.drawEllipse(
@@ -146,7 +156,7 @@ export function Card({
         height={CARD_HEIGHT}
       />
       <pixiText
-        text={card.card.name}
+        text={cardDefinition.name}
         x={CARD_WIDTH * 0.2}
         y={CARD_HEIGHT * 0.50}
         style={{
@@ -157,25 +167,25 @@ export function Card({
         }}
       />
       <pixiText
-        text={card.card.cost}
+        text={cardDefinition.cost}
         x={CARD_WIDTH * 0.12}
         y={CARD_HEIGHT * 0.04}
         style={{ fill: 0xffffff, fontSize: 24, fontWeight: 'bold' }}
       />
-      {card.card.text ? (<pixiText
-        text={card.card.text}
+      {cardDefinition.text ? (<pixiText
+        text={cardDefinition.text}
         x={CARD_WIDTH * 0.25}
         y={CARD_HEIGHT * 0.7}
         style={{ fill: 0x000000, fontSize: CARD_WIDTH * 0.1, fontWeight: 'bold' }}
       />) : null}
-      {card.card.attack ? (<pixiText
-        text={card.card.attack}
+      {typeof attackValue === 'number' ? (<pixiText
+        text={attackValue}
         x={CARD_WIDTH * 0.11}
         y={CARD_HEIGHT * 0.85}
         style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
       />) : null}
-      {card.card?.health ? (<pixiText
-        text={card.card?.health}
+      {typeof healthValue === 'number' ? (<pixiText
+        text={healthValue}
         x={CARD_WIDTH * 0.87}
         y={CARD_HEIGHT * 0.85}
         style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}

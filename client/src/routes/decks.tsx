@@ -232,7 +232,7 @@ export function DecksPage() {
               }}
             >
               <option value="All">All</option>
-              {HERO_CLASSES.map((hero) => (
+              {HERO_CLASSES.map((hero: HeroClass) => (
                 <option key={hero} value={hero}>
                   {hero}
                 </option>

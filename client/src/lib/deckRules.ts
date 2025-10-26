@@ -165,18 +165,38 @@ export function getDeckManaCurve(deck: Deck, cards: CatalogCard[] | CardCollecti
   return bins;
 }
 
-function toBase64(value: string): string {
-  if (typeof window === 'undefined') {
-    return Buffer.from(value, 'utf-8').toString('base64');
+type NodeBufferModule = {
+  from(value: string, encoding: 'utf-8' | 'base64'): { toString(encoding: 'base64' | 'utf-8'): string };
+};
+
+function getNodeBuffer(): NodeBufferModule | undefined {
+  if (typeof globalThis === 'undefined') {
+    return undefined;
   }
-  return window.btoa(value);
+  const maybeBuffer = (globalThis as { Buffer?: NodeBufferModule }).Buffer;
+  return typeof maybeBuffer === 'object' ? maybeBuffer : undefined;
+}
+
+function toBase64(value: string): string {
+  if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+    return window.btoa(value);
+  }
+  const nodeBuffer = getNodeBuffer();
+  if (nodeBuffer) {
+    return nodeBuffer.from(value, 'utf-8').toString('base64');
+  }
+  throw new Error('Base64 encoding is not supported in this environment');
 }
 
 function fromBase64(value: string): string {
-  if (typeof window === 'undefined') {
-    return Buffer.from(value, 'base64').toString('utf-8');
+  if (typeof window !== 'undefined' && typeof window.atob === 'function') {
+    return window.atob(value);
   }
-  return window.atob(value);
+  const nodeBuffer = getNodeBuffer();
+  if (nodeBuffer) {
+    return nodeBuffer.from(value, 'base64').toString('utf-8');
+  }
+  throw new Error('Base64 decoding is not supported in this environment');
 }
 
 export function serializeDeckCode(deck: Deck): string {

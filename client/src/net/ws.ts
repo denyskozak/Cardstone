@@ -99,7 +99,7 @@ export class GameSocket {
 
   send<T extends CommandName>(t: T, payload: CommandPayload<T>, options: CommandOptions = {}): void {
     const expectAck = options.expectAck ?? false;
-    const message: Partial<ClientToServer> & { t: T; payload: CommandPayload<T> } = { t, payload };
+    const message = { t, payload } as Extract<ClientToServer, { t: T }>;
     if (expectAck) {
       message.seq = this.seq++;
       message.nonce = randomNonce();
