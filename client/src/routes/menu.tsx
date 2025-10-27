@@ -1,4 +1,4 @@
-import { Button, Card, Flex, Grid, Heading, Text } from '@radax/ui'
+import { Button, Card, Flex, Grid, Heading, Text } from '@radix-ui/themes'
 import { Link } from 'react-router'
 
 const menuItems = [

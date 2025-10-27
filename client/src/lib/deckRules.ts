@@ -165,18 +165,63 @@ export function getDeckManaCurve(deck: Deck, cards: CatalogCard[] | CardCollecti
   return bins;
 }
 
-function toBase64(value: string): string {
-  if (typeof window === 'undefined') {
-    return Buffer.from(value, 'utf-8').toString('base64');
+type BufferLike = {
+  from(value: string, encoding: string): { toString(encoding: string): string };
+};
+
+function getGlobalBuffer(): BufferLike | undefined {
+  return (globalThis as { Buffer?: BufferLike }).Buffer;
+}
+
+function encodeWithBtoa(value: string, base64Encode: (value: string) => string): string {
+  const encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
+  if (!encoder) {
+    return base64Encode(value);
   }
-  return window.btoa(value);
+  const bytes = encoder.encode(value);
+  let binary = '';
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return base64Encode(binary);
+}
+
+function decodeWithAtob(value: string, base64Decode: (value: string) => string): string {
+  const binary = base64Decode(value);
+  const decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder() : null;
+  if (!decoder) {
+    return binary;
+  }
+  const bytes = Uint8Array.from({ length: binary.length }, (_, index) => binary.charCodeAt(index));
+  return decoder.decode(bytes);
+}
+
+function toBase64(value: string): string {
+  const buffer = getGlobalBuffer();
+  if (buffer) {
+    return buffer.from(value, 'utf-8').toString('base64');
+  }
+  if (typeof btoa === 'function') {
+    return encodeWithBtoa(value, btoa);
+  }
+  if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+    return encodeWithBtoa(value, window.btoa.bind(window));
+  }
+  throw new Error('Base64 encoding is not supported in this environment.');
 }
 
 function fromBase64(value: string): string {
-  if (typeof window === 'undefined') {
-    return Buffer.from(value, 'base64').toString('utf-8');
+  const buffer = getGlobalBuffer();
+  if (buffer) {
+    return buffer.from(value, 'base64').toString('utf-8');
   }
-  return window.atob(value);
+  if (typeof atob === 'function') {
+    return decodeWithAtob(value, atob);
+  }
+  if (typeof window !== 'undefined' && typeof window.atob === 'function') {
+    return decodeWithAtob(value, window.atob.bind(window));
+  }
+  throw new Error('Base64 decoding is not supported in this environment.');
 }
 
 export function serializeDeckCode(deck: Deck): string {

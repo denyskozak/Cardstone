@@ -1,5 +1,5 @@
 import type { CardInHand } from '@cardstone/shared/types';
-import { Assets, BlurFilter, Texture, type FederatedPointerEvent } from 'pixi.js';
+import { Assets, BlurFilter, Graphics, Texture, type FederatedPointerEvent } from 'pixi.js';
 import { useEffect, useState } from 'react';
 
 
@@ -93,22 +93,22 @@ export function Card({
       onPointerOut={() => {
         onHover?.(undefined);
       }}
-      onPointerDown={(event) => {
+      onPointerDown={(event: FederatedPointerEvent) => {
         if (!disabled) {
           onDragStart?.(card, event);
         }
       }}
-      onPointerMove={(event) => {
+      onPointerMove={(event: FederatedPointerEvent) => {
         if (!disabled) {
           onDragMove?.(card, event);
         }
       }}
-      onPointerUp={(event) => {
+      onPointerUp={(event: FederatedPointerEvent) => {
         if (!disabled) {
           onDragEnd?.(card, event);
         }
       }}
-      onPointerUpOutside={(event) => {
+      onPointerUpOutside={(event: FederatedPointerEvent) => {
         if (!disabled) {
           onDragEnd?.(card, event);
         }
@@ -120,7 +120,7 @@ export function Card({
           anchor={0.5}
           alpha={0.7}
           filters={[PLAYABLE_GLOW_FILTER]}
-          draw={(g) => {
+          draw={(g: Graphics) => {
             g.clear();
             g.beginFill(0x78ff5a, 0.85);
             g.drawEllipse(
@@ -168,18 +168,22 @@ export function Card({
         y={CARD_HEIGHT * 0.7}
         style={{ fill: 0x000000, fontSize: CARD_WIDTH * 0.1, fontWeight: 'bold' }}
       />) : null}
-      {card.card.attack ? (<pixiText
-        text={card.card.attack}
-        x={CARD_WIDTH * 0.11}
-        y={CARD_HEIGHT * 0.85}
-        style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
-      />) : null}
-      {card.card?.health ? (<pixiText
-        text={card.card?.health}
-        x={CARD_WIDTH * 0.87}
-        y={CARD_HEIGHT * 0.85}
-        style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
-      />) : null}
+      {"attack" in card.card ? (
+        <pixiText
+          text={card.card.attack}
+          x={CARD_WIDTH * 0.11}
+          y={CARD_HEIGHT * 0.85}
+          style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
+        />
+      ) : null}
+      {"health" in card.card ? (
+        <pixiText
+          text={card.card.health}
+          x={CARD_WIDTH * 0.87}
+          y={CARD_HEIGHT * 0.85}
+          style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
+        />
+      ) : null}
     </pixiContainer>
   );
 }

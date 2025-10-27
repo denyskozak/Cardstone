@@ -6,6 +6,7 @@ type OpenListener = () => void;
 type CommandName = ClientToServer['t'];
 
 type CommandPayload<T extends CommandName> = Extract<ClientToServer, { t: T }>['payload'];
+type CommandMessage<T extends CommandName> = Extract<ClientToServer, { t: T }>;
 
 type CommandOptions = {
   expectAck?: boolean;
@@ -100,7 +101,7 @@ export class GameSocket {
 
   send<T extends CommandName>(t: T, payload: CommandPayload<T>, options: CommandOptions = {}): void {
     const expectAck = options.expectAck ?? false;
-    const message: Partial<ClientToServer> & { t: T; payload: CommandPayload<T> } = { t, payload };
+    const message = { t, payload } as CommandMessage<T>;
     if (expectAck) {
       message.seq = this.seq++;
       message.nonce = randomNonce();
@@ -114,8 +115,8 @@ export class GameSocket {
   ): { seq: number; nonce: string } {
     const seq = this.seq++;
     const nonce = randomNonce();
-    const message = { t, payload, seq, nonce } as ClientToServer;
-    this.dispatch(message);
+    const message = { t, payload, seq, nonce } as CommandMessage<T>;
+    this.dispatch(message as ClientToServer);
     return { seq, nonce };
   }
 

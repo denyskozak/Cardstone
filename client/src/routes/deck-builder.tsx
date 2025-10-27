@@ -438,7 +438,10 @@ export function DeckBuilderPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '20px', flex: 1, minHeight: 0 }}>
               <section style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                  <Tabs.Root value={activeTab} onValueChange={(value) => setActiveTab(value as CatalogTab)}>
+                  <Tabs.Root
+                    value={activeTab}
+                    onValueChange={(value: string) => setActiveTab(value as CatalogTab)}
+                  >
                     <Tabs.List style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '6px', borderRadius: '999px' }}>
                       {(['All', 'Minions', 'Spells', 'Weapons'] as CatalogTab[]).map((tab) => (
                         <Tabs.Trigger
@@ -516,7 +519,9 @@ export function DeckBuilderPage() {
                       max={7}
                       step={1}
                       minStepsBetweenThumbs={1}
-                      onValueChange={(value) => setManaRange(value as [number, number])}
+                      onValueChange={(value: number[]) =>
+                        setManaRange([value[0] ?? manaRange[0], value[1] ?? manaRange[1]])
+                      }
                       style={{ display: 'flex', alignItems: 'center', height: '24px' }}
                     >
                       <Slider.Track
@@ -583,7 +588,7 @@ export function DeckBuilderPage() {
                           <label key={rarity} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                             <Checkbox.Root
                               checked={checked}
-                              onCheckedChange={(value) => {
+                              onCheckedChange={(value: boolean | 'indeterminate') => {
                                 setRarities((current) => {
                                   const next = new Set(current);
                                   if (value === true) {
@@ -617,7 +622,7 @@ export function DeckBuilderPage() {
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
                     <Checkbox.Root
                       checked={ownedOnly}
-                      onCheckedChange={(value) => setOwnedOnly(value === true)}
+                      onCheckedChange={(value: boolean | 'indeterminate') => setOwnedOnly(value === true)}
                       style={{
                         width: '18px',
                         height: '18px',
@@ -1011,7 +1016,15 @@ export function DeckBuilderPage() {
         </div>
       )}
 
-      <Toast.Root open={Boolean(toastMessage)} onOpenChange={(openState) => !openState && setToastMessage(null)} duration={3000}>
+      <Toast.Root
+        open={Boolean(toastMessage)}
+        onOpenChange={(openState: boolean) => {
+          if (!openState) {
+            setToastMessage(null);
+          }
+        }}
+        duration={3000}
+      >
         <Toast.Title>{toastMessage}</Toast.Title>
       </Toast.Root>
       <Toast.Viewport

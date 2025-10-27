@@ -8,7 +8,8 @@ import type {
 import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import { actionRequiresTarget, getPrimaryPlayAction } from '@cardstone/shared/effects';
 import type { FederatedPointerEvent } from 'pixi.js';
-import { Assets, Container, DisplayObject, Graphics, Point, Rectangle, Texture, BlurFilter } from 'pixi.js';
+import { Assets, BlurFilter, Container, Graphics, Point, Rectangle, Texture } from 'pixi.js';
+import type { ContainerChild } from 'pixi.js';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   useUiStore,
@@ -88,7 +89,7 @@ function MinionCardArt({ cardId }: { cardId: string }) {
                   y={0} texture={texture} width={MINION_WIDTH + (MINION_ART_INSET_X * 5)} height={MINION_HEIGHT} />
       <pixiGraphics
         ref={handleMaskRef}
-        draw={(g) => {
+        draw={(g: Graphics) => {
           g.clear();
           g.beginFill(0xffffff, 1);
           g.drawEllipse(MINION_WIDTH / 2, MINION_HEIGHT / 2, artWidth / 2, (artHeight + 8) / 2);
@@ -226,11 +227,14 @@ function HeroAvatar({
   );
 }
 
-type TargetTaggedDisplayObject = DisplayObject & {
+type TargetTaggedDisplayObject = Container<ContainerChild> & {
   cardstoneTarget?: TargetDescriptor;
 };
 
-function attachTargetDescriptor(display: DisplayObject | null, descriptor: TargetDescriptor) {
+function attachTargetDescriptor(
+  display: Container<ContainerChild> | null,
+  descriptor: TargetDescriptor
+) {
   if (!display) {
     return;
   }
@@ -273,7 +277,7 @@ export default function Board({
   const targetRef = useRef<TargetDescriptor | null>(null);
   const pendingAttackTimeoutsRef = useRef<Array<ReturnType<typeof window.setTimeout>>>([]);
   const enqueueLocalAttackAnimation = useUiStore((s) => s.enqueueLocalAttackAnimation);
-  const heroRefs = useRef<Record<PlayerSide, Container | null>>({ A: null, B: null });
+  const heroRefs = useRef<Record<PlayerSide, Container<ContainerChild> | null>>({ A: null, B: null });
 
   const { boardTopY, boardBottomY, laneWidth, laneX } = useMemo(
     () => getBoardLaneGeometry(width, height),
@@ -333,7 +337,11 @@ export default function Board({
     if (targeting.source.kind === 'minion') {
       return getTargetingPredicate({ kind: 'minion' }, playerSide, state);
     }
-    const action = getPrimaryPlayAction(targeting.source.card.card);
+    const spellCard = targeting.source.card.card;
+    if (spellCard.type !== 'Spell') {
+      return null;
+    }
+    const action = getPrimaryPlayAction(spellCard);
     if (!action || !actionRequiresTarget(action)) {
       return null;
     }
@@ -344,7 +352,7 @@ export default function Board({
     const cache = minionCacheRef.current;
     const activeIds = new Set<string>();
     (['A', 'B'] as PlayerSide[]).forEach((side) => {
-      state.board[side].forEach((minion) => {
+      state.board[side].forEach((minion: MinionEntity) => {
         const cached = cache.get(minion.instanceId);
         cache.set(minion.instanceId, {
           entity: minion,
@@ -377,9 +385,9 @@ export default function Board({
         return;
       }
 
-      const descriptor = resolveTargetDescriptor(event.target as DisplayObject | null);
+      const descriptor = resolveTargetDescriptor(event.target as Container<ContainerChild> | null);
       if (descriptor && targetingPredicate(descriptor)) {
-        setCurrentTarget((previous) => {
+        setCurrentTarget((previous: TargetDescriptor | null) => {
           if (previous && targetsEqual(previous, descriptor)) {
             return previous;
           }
@@ -388,7 +396,7 @@ export default function Board({
         return;
       }
 
-      setCurrentTarget((previous) => (previous ? null : previous));
+      setCurrentTarget((previous: TargetDescriptor | null) => (previous ? null : previous));
     },
     [setCurrentTarget, targeting, targetingPredicate, updateTargeting]
   );
@@ -407,6 +415,7 @@ export default function Board({
       }
 
       if (action.source.kind === 'minion') {
+        const attackerId = action.source.entityId;
         const queuedTarget: TargetDescriptor =
           target.type === 'hero'
             ? { type: 'hero', side: target.side }
@@ -414,12 +423,12 @@ export default function Board({
         // Kick off the local strike animation immediately so the attacker
         // lunges before the server confirms the combat result.
         enqueueLocalAttackAnimation({
-          attackerId: action.source.entityId,
+          attackerId,
           side: playerSide,
           target: queuedTarget
         });
         const timeout = window.setTimeout(() => {
-          onAttack(action.source.entityId, target);
+          onAttack(attackerId, target);
           pendingAttackTimeoutsRef.current = pendingAttackTimeoutsRef.current.filter(
             (value) => value !== timeout
           );
@@ -457,7 +466,7 @@ export default function Board({
       if (!container) {
         return;
       }
-      const display = event.currentTarget as DisplayObject | null;
+      const display = event.currentTarget as Container<ContainerChild> | null;
       let centerGlobal = event.global as Point;
       if (display) {
         const bounds = display.getBounds();
@@ -612,7 +621,7 @@ export default function Board({
                   }
                 : undefined
             }
-            ref={(instance) => attachTargetDescriptor(instance, targetDescriptor)}
+            ref={(instance: Container | null) => attachTargetDescriptor(instance, targetDescriptor)}
           >
             {isFriendly && canAttackThisMinion ? (
               <pixiGraphics
@@ -620,7 +629,7 @@ export default function Board({
                 anchor={0.5}
                 alpha={0.7}
                 filters={[blurFilter]}
-                draw={(g) => {
+                draw={(g: Graphics) => {
                   g.clear();
                   g.beginFill(0x78ff5a, 0.85);
                   g.drawEllipse(
@@ -635,7 +644,7 @@ export default function Board({
             ) : null}
             {entity.divineShield ? (
               <pixiGraphics
-                draw={(g) => {
+                draw={(g: Graphics) => {
                   g.clear();
                   g.lineStyle(4, 0xfff4aa, 0.9);
                   g.drawEllipse(
@@ -818,7 +827,7 @@ export default function Board({
       onPointerCancel={handlePointerUp}
     >
       <pixiGraphics
-        draw={(g) => {
+        draw={(g: Graphics) => {
           g.clear();
           g.lineStyle(2, 0xffffff, 0.2);
           g.drawRoundedRect(laneX, boardTopY - 20, laneWidth, MINION_HEIGHT + 40, 20);
@@ -909,8 +918,10 @@ function targetsEqual(a: TargetDescriptor | null, b: TargetDescriptor) {
   return false;
 }
 
-function resolveTargetDescriptor(display: DisplayObject | null): TargetDescriptor | null {
-  let current: DisplayObject | null = display;
+function resolveTargetDescriptor(
+  display: Container<ContainerChild> | null
+): TargetDescriptor | null {
+  let current: Container<ContainerChild> | null = display;
   while (current) {
     const descriptor = (current as TargetTaggedDisplayObject).cardstoneTarget;
     if (descriptor) {

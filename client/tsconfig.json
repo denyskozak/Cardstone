@@ -3,11 +3,13 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "moduleResolution": "Bundler",
-    "types": ["vite/client"],
+    "noEmit": true,
+    "types": ["vite/client", "@pixi/react"],
     "baseUrl": "./src",
     "paths": {
       "@cardstone/shared/*": ["../../shared/*"],
-      "@radax/ui": ["./src/lib/radax-ui.ts"]
+      "@radax/ui": ["./src/lib/radax-ui.ts"],
+      "react-dom/client": ["./types/react-dom-client"]
     }
   },
   "include": ["src"],
