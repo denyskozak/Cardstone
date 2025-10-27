@@ -7,5 +7,6 @@
 /.idea
 
 /client/node_modules/
+/client/dist/
 /shared/dist
 client/tsconfig.tsbuildinfo
