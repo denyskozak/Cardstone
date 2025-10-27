@@ -168,7 +168,7 @@ export default function TargetingArrow({ playerSide }: TargetingArrowProps) {
   const targeting = useUiStore((state) => state.targeting);
   const currentTarget = useUiStore((state) => state.currentTarget ?? null);
   const smoothedCurrent = useSmoothedPoint(targeting ? targeting.current : null);
-  const cacheRef = useRef<CurveCache>();
+  const cacheRef = useRef<CurveCache | null>(null);
   const lastCurveRef = useRef<CurveGeometry | null>(null);
   const hasTarget = Boolean(targeting && smoothedCurrent);
   const origin = targeting?.origin ?? null;
@@ -181,15 +181,15 @@ export default function TargetingArrow({ playerSide }: TargetingArrowProps) {
       };
     }
     const cache = cacheRef.current;
-    if (hasTarget && origin && smoothedCurrent) {
+    if (cache && hasTarget && origin && smoothedCurrent) {
       const curve = computeCurve(cache, origin, smoothedCurrent);
       lastCurveRef.current = curve;
       return curve;
     }
     return (
       lastCurveRef.current ?? {
-        positions: cache.positions,
-        tangents: cache.tangents,
+        positions: cache?.positions ?? new Float32Array(SAMPLE_COUNT * 2),
+        tangents: cache?.tangents ?? new Float32Array(SAMPLE_COUNT * 2),
         tipPosition: { x: 0, y: 0 },
         tipDirection: { x: 1, y: 0 }
       }

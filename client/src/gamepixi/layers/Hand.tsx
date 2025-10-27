@@ -1,7 +1,7 @@
 import type { CardInHand, CardPlacement } from '@cardstone/shared/types';
 import { actionRequiresTarget, getPrimaryPlayAction } from '@cardstone/shared/effects';
 import type { FederatedPointerEvent } from 'pixi.js';
-import { DisplayObject } from 'pixi.js';
+import type { Container, ContainerChild } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CARD_SIZE } from '../Card';
 import { useUiStore } from '../../state/store';
@@ -465,7 +465,7 @@ export default function HandLayer({
         if (targeting) {
           return;
         }
-        const display = event.currentTarget as DisplayObject | null;
+        const display = event.currentTarget as Container<ContainerChild> | null;
         let originX = event.global.x;
         let originY = event.global.y;
         if (display) {

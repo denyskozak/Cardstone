@@ -6,6 +6,7 @@ import type {
   PlayerSide,
   TargetDescriptor
 } from '@cardstone/shared/types';
+import type { Application } from 'pixi.js';
 import Background from './layers/Background';
 import Board from './layers/Board';
 import HandLayer from './layers/Hand';
@@ -13,6 +14,12 @@ import OpponentHandLayer from './layers/OpponentHand';
 import Effects from './layers/Effects';
 import { useApplication } from '@pixi/react';
 import { useEffect, useMemo } from 'react';
+
+declare global {
+  interface Window {
+    __PIXI_DEVTOOLS__?: { app: Application };
+  }
+}
 
 interface StageRootProps {
   state: GameState | null;
@@ -81,9 +88,15 @@ export default function StageRoot({
     app.renderer?.resize(targetWidth, targetHeight);
   }, [app, targetHeight, targetWidth]);
 
-  window.__PIXI_DEVTOOLS__ = {
-    app: app,
-  };
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.__PIXI_DEVTOOLS__ = { app };
+    return () => {
+      delete window.__PIXI_DEVTOOLS__;
+    };
+  }, [app]);
   if (!state || !playerSide) {
     return (
       <pixiContainer width={targetWidth} height={targetHeight} options={{ backgroundAlpha: 0 }}>

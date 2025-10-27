@@ -306,7 +306,15 @@ export function DecksPage() {
         )}
       </div>
 
-      <Toast.Root open={Boolean(toastMessage)} onOpenChange={(openState) => !openState && setToastMessage(null)} duration={3000}>
+      <Toast.Root
+        open={Boolean(toastMessage)}
+        onOpenChange={(openState: boolean) => {
+          if (!openState) {
+            setToastMessage(null);
+          }
+        }}
+        duration={3000}
+      >
         <Toast.Title>{toastMessage}</Toast.Title>
       </Toast.Root>
       <Toast.Viewport

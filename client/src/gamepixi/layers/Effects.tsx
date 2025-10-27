@@ -99,6 +99,9 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const [damageIndicators, setDamageIndicators] = useState<DamageIndicator[]>([]);
   const damageSequenceRef = useRef(0);
   const [damageTexture, setDamageTexture] = useState<Texture>(Texture.EMPTY);
+  const damageTextureReady = (
+    damageTexture.baseTexture as typeof damageTexture.baseTexture & { valid?: boolean }
+  ).valid ?? false;
   useEffect(() => {
     prevHeroPositionsRef.current = heroPositions;
   }, [heroPositions]);
@@ -461,7 +464,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
             width={120}
             height={120}
             anchor={{ x: 0.5, y: 0.5 }}
-            alpha={damageTexture.baseTexture.valid ? 1 : 0}
+            alpha={damageTextureReady ? 1 : 0}
           />
           <pixiText
             text={`${indicator.amount}`}

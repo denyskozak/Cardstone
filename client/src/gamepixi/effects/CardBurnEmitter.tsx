@@ -135,7 +135,8 @@ export default function CardBurnEmitter({ x, y, onComplete }: CardBurnEmitterPro
       emitter.emit = false;
     }, EMIT_DURATION_MS);
 
-    const tick = (deltaMS: number) => {
+    const tick = (ticker: Ticker) => {
+      const deltaMS = ticker.deltaMS;
       const delta = deltaMS / 1000;
       elapsed += deltaMS;
       emitter.update(delta);
