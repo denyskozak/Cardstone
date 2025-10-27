@@ -14,13 +14,14 @@ type CommandOptions = {
 const RECONNECT_DELAY = 1500;
 
 function resolveWsUrl(): string {
-  if (typeof window === 'undefined') {
-    return 'ws://localhost:8787';
-  }
-  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  const port = window.location.port === '5173' ? '8787' : window.location.port;
-  const host = window.location.hostname;
-  return `${protocol}://${host}${port ? `:${port}` : ''}`;
+  return import.meta.env.VITE_API_URL!;
+  // if (typeof window === 'undefined') {
+  //   return 'ws://localhost:8787';
+  // }
+  // const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  // const port = window.location.port === '5173' ? '8787' : window.location.port;
+  // const host = window.location.hostname;
+  // return `${protocol}://${host}${port ? `:${port}` : ''}`;
 }
 
 function randomNonce(): string {
