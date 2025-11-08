@@ -14,6 +14,7 @@ import OpponentHandLayer from './layers/OpponentHand';
 import Effects from './layers/Effects';
 import { useApplication } from '@pixi/react';
 import { useEffect, useMemo } from 'react';
+import { preloadGameSounds } from './sounds';
 
 declare global {
   interface Window {
@@ -87,6 +88,10 @@ export default function StageRoot({
   useEffect(() => {
     app.renderer?.resize(targetWidth, targetHeight);
   }, [app, targetHeight, targetWidth]);
+
+  useEffect(() => {
+    preloadGameSounds();
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
