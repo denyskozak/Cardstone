@@ -127,6 +127,7 @@ export function DecksPage() {
   const cards = cardsQuery.data ?? [];
   const decks = decksQuery.data ?? [];
   const loadError = (cardsQuery.error ?? decksQuery.error) as Error | undefined;
+  const isLoading = cardsQuery.isLoading || decksQuery.isLoading;
 
   const filteredDecks = useMemo(() => {
     return decks.filter((deck) => {
@@ -166,8 +167,6 @@ export function DecksPage() {
     },
     [navigate, selectDeck]
   );
-
-  const isLoading = cardsQuery.isLoading || decksQuery.isLoading;
 
   return (
     <Toast.Provider swipeDirection="down">
