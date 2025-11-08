@@ -12,6 +12,7 @@ import { computeBoardLayout } from '../layout';
 import useMiniTicker from '../hooks/useMiniTicker';
 import { useUiStore } from '../../state/store';
 import CardBurnEmitter from '../effects/CardBurnEmitter';
+import { GameSoundId, playGameSound } from '../sounds';
 
 interface EffectsProps {
   state: GameState;
@@ -189,6 +190,16 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       return;
     }
 
+    const drawnCards = detectNewHandCards(previous, state, playerSide);
+    if (drawnCards.length > 0) {
+      drawnCards.forEach(() => playGameSound(GameSoundId.CardDraw));
+    }
+
+    const placements = detectBoardPlacements(previous, state);
+    if (placements.length > 0) {
+      placements.forEach(() => playGameSound(GameSoundId.CardPlacement));
+    }
+
     const attackEvents = detectAttackEvents(previous, state);
 
     if (attackEvents.length === 0) {
@@ -261,7 +272,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     }
     prevStateRef.current = state;
     prevLayoutRef.current = layout;
-  }, [layout, state]);
+  }, [layout, playerSide, state]);
 
   useEffect(() => {
     if (!localAttackQueueVersion) {
@@ -354,6 +365,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
           const impactReady =
             !updated.impactEmitted && progress >= DAMAGE_IMPACT_THRESHOLD && updated.damageAmount > 0;
           if (impactReady) {
+            playGameSound(GameSoundId.AttackImpact);
             const key = `${animation.key}:impact:${damageSequenceRef.current}`;
             damageSequenceRef.current += 1;
             additions.push({
@@ -581,6 +593,31 @@ function detectAttackEvents(previous: GameState, next: GameState) {
   });
 
   return events;
+}
+
+function detectNewHandCards(previous: GameState, next: GameState, side: PlayerSide): string[] {
+  const prevPlayer = previous.players[side];
+  const nextPlayer = next.players[side];
+  if (!prevPlayer || !nextPlayer) {
+    return [];
+  }
+  const previousIds = new Set(prevPlayer.hand.map((card) => card.instanceId));
+  return nextPlayer.hand
+    .filter((card) => !previousIds.has(card.instanceId))
+    .map((card) => card.instanceId);
+}
+
+function detectBoardPlacements(previous: GameState, next: GameState): string[] {
+  const placements: string[] = [];
+  SIDES.forEach((side) => {
+    const prevIds = new Set(previous.board[side].map((minion) => minion.instanceId));
+    next.board[side].forEach((minion) => {
+      if (!prevIds.has(minion.instanceId)) {
+        placements.push(minion.instanceId);
+      }
+    });
+  });
+  return placements;
 }
 
 interface BurnDetectionResult {
