@@ -208,7 +208,7 @@ export function DeckBuilderPage() {
   const validation = useMemo(() => validateDeck(deck, cards), [deck.cards, deck.heroClass, cards]);
 
   const filteredCards = useMemo(() => {
-    return cards.filter((card) => {
+    const filtered = cards.filter((card) => {
       if (!cardMatchesTab(card, activeTab)) return false;
       if (!matchesManaRange(card, manaRange)) return false;
       if (rarities.size > 0 && !rarities.has(card.rarity)) return false;
@@ -225,6 +225,12 @@ export function DeckBuilderPage() {
         }
       }
       return true;
+    });
+    return filtered.sort((a, b) => {
+      if (a.cost === b.cost) {
+        return a.name.localeCompare(b.name);
+      }
+      return a.cost - b.cost;
     });
   }, [cards, activeTab, manaRange, rarities, filterClass, ownedOnly, search]);
 
