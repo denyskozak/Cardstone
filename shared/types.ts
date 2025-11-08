@@ -102,6 +102,7 @@ export interface MinionEntity {
   attacksRemaining: number;
   divineShield?: boolean;
   berserkActive?: boolean;
+  auras?: Record<string, { attack?: number; health?: number }>;
 }
 
 export interface HeroState {
