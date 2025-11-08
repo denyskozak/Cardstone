@@ -327,10 +327,36 @@ const minions: Record<string, MinionCard> = {
     attack: 1,
     health: 1,
   },
+  [CARD_IDS.seal]: {
+    id: CARD_IDS.seal,
+    name: 'Seal',
+    type: 'Minion',
+    cost: 1,
+    attack: 1,
+    health: 2,
+  },
+
+};
+
+const spells: Record<string, SpellCard> = {
+  [CARD_IDS.coin]: {
+    id: CARD_IDS.coin,
+    name: 'The Coin',
+    type: 'Spell',
+    cost: 0,
+    text: 'Gain 1 temporary mana crystal.',
+    effects: [
+      {
+        trigger: { type: 'Play' },
+        action: { type: 'ManaCrystal', amount: 1 }
+      }
+    ]
+  }
 };
 
 export const DEMO_CARDS: Record<string, CardDefinition> = {
   ...minions,
+  ...spells,
 };
 export const DEMO_CARD_POOL = Object.values(DEMO_CARDS);
 export function getCardDefinition(cardId: string): CardDefinition {
