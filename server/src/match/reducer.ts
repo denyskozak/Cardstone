@@ -7,7 +7,8 @@ import {
   type MinionEntity,
   type PlayerSide,
   type SpellCard,
-  type TargetDescriptor
+  type TargetDescriptor,
+  type TargetSelector
 } from '@cardstone/shared/types';
 import { getCardDefinition } from '@cardstone/shared/cards/demo';
 import { CARD_IDS, DRAW_PER_TURN, MATCH_CONFIG } from '@cardstone/shared/constants';
@@ -100,9 +101,10 @@ export function applyPlayCard(
   player.hand.splice(handIndex, 1);
 
   if (handCard.card.type === 'Minion') {
-    summonMinion(state, side, handCard.card, placement);
+    summonMinion(state, side, handCard.card, placement, target);
   } else if (handCard.card.type === 'Spell') {
     resolveSpell(state, side, handCard.card, target);
+    triggerSpellCastEffects(state, side);
     player.graveyard.push(handCard.card.id);
   } else {
     throw new Error(`Unsupported card type ${handCard.card.type}`);
@@ -113,7 +115,8 @@ function summonMinion(
   state: GameState,
   side: PlayerSide,
   card: MinionCard,
-  placement: CardPlacement | undefined
+  placement: CardPlacement | undefined,
+  target?: TargetDescriptor
 ): void {
   const minion: MinionEntity = {
     instanceId: randomUUID(),
@@ -131,27 +134,190 @@ function summonMinion(
     state.board[side].push(minion);
   }
 
-  applySummonEffects(state, side, minion);
+  applyExistingAurasToMinion(state, side, minion);
+  applyAurasFromMinion(state, side, minion);
+  applySummonEffects(state, side, minion, target);
 }
 
-function applySummonEffects(state: GameState, side: PlayerSide, minion: MinionEntity): void {
+function applySummonEffects(
+  state: GameState,
+  side: PlayerSide,
+  minion: MinionEntity,
+  providedTarget?: TargetDescriptor
+): void {
   const effects = [
     ...getEffectsByTrigger(minion.card, 'Battlecry'),
     ...getEffectsByTrigger(minion.card, 'Play')
   ];
   for (const effect of effects) {
-    if (actionRequiresTarget(effect.action)) {
-      throw new Error('Summon effect requires a target which is not supported yet');
+    const action = effect.action;
+    let target = providedTarget;
+    if (actionRequiresTarget(action)) {
+      target = target ?? getDefaultSummonTarget(action, side, minion);
+      if (!target) {
+        throw new Error('Summon effect requires a target which is not supported yet');
+      }
     }
-    executeEffectAction(state, side, effect.action);
+    executeEffectAction(state, side, action, target, minion);
   }
+}
+
+function getDefaultSummonTarget(
+  action: EffectAction,
+  side: PlayerSide,
+  minion: MinionEntity
+): TargetDescriptor | undefined {
+  if (action.type === 'Damage' || action.type === 'Heal' || action.type === 'Buff') {
+    switch (action.target) {
+      case 'Hero':
+        return { type: 'hero', side };
+      case 'Self':
+        return { type: 'minion', side, entityId: minion.instanceId };
+      default:
+        return undefined;
+    }
+  }
+  return undefined;
+}
+
+function applyExistingAurasToMinion(state: GameState, side: PlayerSide, minion: MinionEntity): void {
+  for (const ally of state.board[side]) {
+    if (ally.instanceId === minion.instanceId) {
+      continue;
+    }
+    const effects = getEffectsByTrigger(ally.card, 'Aura');
+    effects.forEach((effect, index) => {
+      if (effect.action.type !== 'Buff') {
+        return;
+      }
+      const auraKey = getAuraKey(ally.instanceId, index);
+      const targets = getAuraTargets(state, side, ally, effect.action.target);
+      if (targets.some((entry) => entry.minion.instanceId === minion.instanceId)) {
+        applyAuraBuffToMinion(minion, auraKey, effect.action.stats);
+      }
+    });
+  }
+}
+
+function applyAurasFromMinion(state: GameState, side: PlayerSide, minion: MinionEntity): void {
+  const effects = getEffectsByTrigger(minion.card, 'Aura');
+  effects.forEach((effect, index) => {
+    if (effect.action.type !== 'Buff') {
+      return;
+    }
+    const auraKey = getAuraKey(minion.instanceId, index);
+    const targets = getAuraTargets(state, side, minion, effect.action.target);
+    for (const target of targets) {
+      applyAuraBuffToMinion(target.minion, auraKey, effect.action.stats);
+    }
+  });
+}
+
+function getAuraKey(sourceId: string, index: number): string {
+  return `${sourceId}:${index}`;
+}
+
+function getAuraTargets(
+  state: GameState,
+  side: PlayerSide,
+  source: MinionEntity,
+  selector: TargetSelector
+): { side: PlayerSide; minion: MinionEntity }[] {
+  switch (selector) {
+    case 'Self':
+      return [{ side, minion: source }];
+    case 'FriendlyMinion':
+    case 'AllFriendlies':
+      return state.board[side].map((entity) => ({ side, minion: entity }));
+    case 'EnemyMinion':
+    case 'AllEnemies': {
+      const opponent = getOpponentSide(side);
+      return state.board[opponent].map((entity) => ({ side: opponent, minion: entity }));
+    }
+    case 'AnyMinion':
+      return [
+        ...state.board.A.map((entity) => ({ side: 'A' as PlayerSide, minion: entity })),
+        ...state.board.B.map((entity) => ({ side: 'B' as PlayerSide, minion: entity }))
+      ];
+    default:
+      return [];
+  }
+}
+
+function applyAuraBuffToMinion(
+  minion: MinionEntity,
+  auraKey: string,
+  stats: { attack?: number; health?: number }
+): void {
+  const attackBonus = stats.attack ?? 0;
+  const healthBonus = stats.health ?? 0;
+  if (attackBonus === 0 && healthBonus === 0) {
+    return;
+  }
+  minion.auras ??= {};
+  if (minion.auras[auraKey]) {
+    return;
+  }
+  const record: { attack?: number; health?: number } = {};
+  if (attackBonus !== 0) {
+    minion.attack += attackBonus;
+    record.attack = attackBonus;
+  }
+  if (healthBonus !== 0) {
+    minion.maxHealth += healthBonus;
+    minion.health += healthBonus;
+    record.health = healthBonus;
+  }
+  if (record.attack !== undefined || record.health !== undefined) {
+    minion.auras[auraKey] = record;
+    updateBerserkState(minion);
+  }
+}
+
+function removeAurasFromMinion(state: GameState, source: MinionEntity): void {
+  const effects = getEffectsByTrigger(source.card, 'Aura');
+  effects.forEach((effect, index) => {
+    if (effect.action.type !== 'Buff') {
+      return;
+    }
+    const auraKey = getAuraKey(source.instanceId, index);
+    for (const side of ['A', 'B'] as const) {
+      for (const minion of state.board[side]) {
+        removeAuraBuffFromTarget(minion, auraKey);
+      }
+    }
+  });
+}
+
+function removeAuraBuffFromTarget(minion: MinionEntity, auraKey: string): void {
+  const record = minion.auras?.[auraKey];
+  if (!record) {
+    return;
+  }
+  if (record.attack) {
+    minion.attack -= record.attack;
+  }
+  if (record.health) {
+    minion.maxHealth -= record.health;
+    if (minion.health > minion.maxHealth) {
+      minion.health = minion.maxHealth;
+    }
+  }
+  if (minion.auras) {
+    delete minion.auras[auraKey];
+    if (Object.keys(minion.auras).length === 0) {
+      delete minion.auras;
+    }
+  }
+  updateBerserkState(minion);
 }
 
 function executeEffectAction(
   state: GameState,
   side: PlayerSide,
   action: EffectAction,
-  target?: TargetDescriptor
+  target?: TargetDescriptor,
+  source?: MinionEntity
 ): void {
   switch (action.type) {
     case 'Damage':
@@ -175,6 +341,10 @@ function executeEffectAction(
       applyManaCrystal(state, side, action.amount);
       return;
     case 'Buff':
+      if (action.target === 'AllFriendlies' || action.target === 'AllEnemies' || action.target === 'AnyMinion') {
+        applyBuffToSelector(state, side, action.target, action.stats);
+        return;
+      }
       if (!target) {
         throw new Error('Target required for buff effect');
       }
@@ -193,7 +363,7 @@ function executeEffectAction(
       }
       return;
     case 'Custom':
-      executeCustomEffectAction(state, side, action, target);
+      executeCustomEffectAction(state, side, action, target, source);
       return;
     default:
       throw new Error('Unhandled effect action');
@@ -204,7 +374,8 @@ function executeCustomEffectAction(
   state: GameState,
   side: PlayerSide,
   action: Extract<EffectAction, { type: 'Custom' }> ,
-  target?: TargetDescriptor
+  target: TargetDescriptor | undefined,
+  source?: MinionEntity
 ): void {
   switch (action.key) {
     case 'CunningPeopleBattlecry': {
@@ -223,6 +394,22 @@ function executeCustomEffectAction(
       addCardToHand(state, side, cardId);
       return;
     }
+    case 'BuffPerCardInHand': {
+      if (!source) {
+        return;
+      }
+      const amount = state.players[side].hand.length;
+      if (amount <= 0) {
+        return;
+      }
+      const selfTarget: TargetDescriptor = { type: 'minion', side, entityId: source.instanceId };
+      applyBuff(state, selfTarget, { attack: amount, health: amount });
+      return;
+    }
+    case 'Taunt':
+    case 'Berserk':
+    case 'DivineShield':
+      return;
     default:
       return;
   }
@@ -267,6 +454,40 @@ function applyBuff(
   updateBerserkState(entity);
 }
 
+function applyBuffToSelector(
+  state: GameState,
+  side: PlayerSide,
+  selector: TargetSelector,
+  stats: { attack?: number; health?: number }
+): void {
+  switch (selector) {
+    case 'AllFriendlies':
+    case 'FriendlyMinion': {
+      for (const entity of state.board[side]) {
+        const descriptor: TargetDescriptor = { type: 'minion', side, entityId: entity.instanceId };
+        applyBuff(state, descriptor, stats);
+      }
+      return;
+    }
+    case 'AllEnemies':
+    case 'EnemyMinion': {
+      const opponent = getOpponentSide(side);
+      for (const entity of state.board[opponent]) {
+        const descriptor: TargetDescriptor = { type: 'minion', side: opponent, entityId: entity.instanceId };
+        applyBuff(state, descriptor, stats);
+      }
+      return;
+    }
+    case 'AnyMinion': {
+      applyBuffToSelector(state, side, 'FriendlyMinion', stats);
+      applyBuffToSelector(state, side, 'EnemyMinion', stats);
+      return;
+    }
+    default:
+      throw new Error('Unsupported buff selector');
+  }
+}
+
 function resolveSpell(
   state: GameState,
   side: PlayerSide,
@@ -284,6 +505,18 @@ function resolveSpell(
       executeEffectAction(state, side, action, target);
     } else {
       executeEffectAction(state, side, action);
+    }
+  }
+}
+
+function triggerSpellCastEffects(state: GameState, side: PlayerSide): void {
+  for (const minion of state.board[side]) {
+    const effects = getEffectsByTrigger(minion.card, 'SpellCast');
+    for (const effect of effects) {
+      if (actionRequiresTarget(effect.action)) {
+        throw new Error('Spell cast triggered effect requires a target which is not supported yet');
+      }
+      executeEffectAction(state, side, effect.action, undefined, minion);
     }
   }
 }
@@ -381,12 +614,29 @@ function applyManaCrystal(state: GameState, side: PlayerSide, amount: number): v
   player.ownsCoin = false;
 }
 
+function getOpponentSide(side: PlayerSide): PlayerSide {
+  return side === 'A' ? 'B' : 'A';
+}
+
 function removeMinion(state: GameState, side: PlayerSide, entityId: string): void {
   const minions = state.board[side];
   const index = minions.findIndex((m) => m.instanceId === entityId);
   if (index >= 0) {
     const [dead] = minions.splice(index, 1);
+    removeAurasFromMinion(state, dead);
     state.players[side].graveyard.push(dead.card.id);
+    applyDeathrattleEffects(state, side, dead);
+  }
+}
+
+function applyDeathrattleEffects(state: GameState, side: PlayerSide, minion: MinionEntity): void {
+  const effects = getEffectsByTrigger(minion.card, 'Deathrattle');
+  for (const effect of effects) {
+    const action = effect.action;
+    if (actionRequiresTarget(action)) {
+      throw new Error('Deathrattle effect requires a target which is not supported yet');
+    }
+    executeEffectAction(state, side, action, undefined, minion);
   }
 }
 

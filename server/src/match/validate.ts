@@ -1,6 +1,7 @@
 import type {
   CardPlacement,
   GameState,
+  MinionCard,
   PlayerSide,
   SpellCard,
   TargetDescriptor
@@ -13,6 +14,7 @@ import {
 import {
   actionRequiresTarget,
   getActionTargetSelector,
+  getEffectsByTrigger,
   getPrimaryPlayAction,
   hasTaunt
 } from '@cardstone/shared/effects';
@@ -51,6 +53,8 @@ export function validatePlayCard(
   }
   if (handCard.card.type === 'Spell') {
     validateSpellTarget(state, side, handCard.card, target);
+  } else if (handCard.card.type === 'Minion') {
+    validateMinionTarget(state, side, handCard.card, target);
   }
 }
 
@@ -68,7 +72,7 @@ function validateSpellTarget(
     throw new ValidationError('Target required');
   }
 
-  assertSpellTargetExists(state, target);
+  assertTargetExists(state, target);
 
   const predicate = getTargetingPredicate({ kind: 'spell', action }, actingSide);
   if (!predicate(target)) {
@@ -81,7 +85,36 @@ function validateSpellTarget(
   }
 }
 
-function assertSpellTargetExists(state: GameState, target: TargetDescriptor): void {
+function validateMinionTarget(
+  state: GameState,
+  actingSide: PlayerSide,
+  card: MinionCard,
+  target: TargetDescriptor | undefined
+): void {
+  const effects = getEffectsByTrigger(card, 'Battlecry');
+  for (const effect of effects) {
+    const action = effect.action;
+    if (!actionRequiresTarget(action)) {
+      continue;
+    }
+    const selector = getActionTargetSelector(action);
+    if (!selector) {
+      continue;
+    }
+    if (selector === 'Hero' || selector === 'Self') {
+      continue;
+    }
+    if (!target) {
+      throw new ValidationError('Target required');
+    }
+    assertTargetExists(state, target);
+    if (!targetMatchesSelector(target, selector, actingSide)) {
+      throw new ValidationError('Invalid target for minion effect');
+    }
+  }
+}
+
+function assertTargetExists(state: GameState, target: TargetDescriptor): void {
   if (target.type === 'hero') {
     if (!state.players[target.side]) {
       throw new ValidationError('Target hero not found');
