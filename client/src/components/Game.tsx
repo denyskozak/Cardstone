@@ -418,12 +418,12 @@ export function Game() {
                     onClick={() => handleMulliganReplace(card)}
                     disabled={disabled}
                   >
-                    <img
-                      src={`/assets/cards/${card.card.id}.webp`}
-                      alt={card.card.name}
-                      className={styles.mulliganCardArt}
-                    />
-                    <span className={styles.mulliganCardName}>{card.card.name}</span>
+                      <img
+                          src={`/assets/cards/${card.card.id}.webp`}
+                          alt={card.card.name}
+                          className={styles.mulliganCardArt}
+                      />
+                      <span className={styles.mulliganCardName}>{card.card.name}</span>
                     <div className={styles.mulliganCardStats}>
                       <div className={styles.mulliganCardStatsRow}>
                         <span

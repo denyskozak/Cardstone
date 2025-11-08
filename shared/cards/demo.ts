@@ -243,7 +243,7 @@ const minions: Record<string, MinionCard> = {
     cost: 5,
     attack: 4,
     health: 6,
-    text: 'Buff: Add 2 attacks, 2 hp all minions on board',
+    text: 'Buff: Add 1 attacks, 1 hp all friendly minions on board',
     effects: [
       {
         trigger: { type: 'Aura' },
