@@ -582,6 +582,11 @@ export default function Board({
         const rotation = animation?.rotation ?? 0;
         const zIndex = animation?.zIndex ?? defaultZIndex;
 
+        const hasBonusAttack = entity.attack > entity.card.attack;
+        const hasBonusHealth = Math.max(entity.health, entity.maxHealth) > entity.card.health;
+        const buffColor = 0x00ff00;
+        const baseColor = 0xffffff;
+
         return (
           <pixiContainer
             key={key}
@@ -661,13 +666,21 @@ export default function Board({
               text={`${entity.attack}`}
               x={MINION_WIDTH * 0.09}
               y={MINION_HEIGHT * 0.7}
-              style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
+              style={{
+                fill: hasBonusAttack ? buffColor : baseColor,
+                fontSize: 22,
+                fontWeight: 'bold'
+              }}
             />
             <pixiText
               text={`${entity.health}`}
               x={MINION_WIDTH * 0.8}
               y={MINION_HEIGHT * 0.7}
-              style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
+              style={{
+                fill: hasBonusHealth ? buffColor : baseColor,
+                fontSize: 22,
+                fontWeight: 'bold'
+              }}
             />
             {isTargeted ? (
               <TargetReticle
