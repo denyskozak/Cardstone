@@ -17,6 +17,7 @@ import {
   MAX_DECK_SIZE,
   MAX_LEGENDARY_COPIES
 } from '@cardstone/shared/decks.js';
+import { DEFAULT_DECK } from '@cardstone/shared/constants.js';
 import { cardsById, catalogCards } from './data/cards.js';
 
 interface ConnectionContext {
@@ -38,6 +39,38 @@ const playerConnections = new Map<string, ConnectionContext>();
 const matchConnections = new Map<string, Set<ConnectionContext>>();
 const chatVisibilityByMatch = new Map<string, boolean>();
 const deckStore = new Map<string, Deck>();
+
+const DEFAULT_DECK_ID = 'starter-deck';
+const DEFAULT_DECK_NAME = 'Starter Deck';
+const DEFAULT_DECK_HERO_CLASS: Deck['heroClass'] = 'Mage';
+
+function createDeckEntriesFromCardIds(cardIds: readonly string[]): DeckCardEntry[] {
+  const counts = new Map<string, number>();
+  for (const cardId of cardIds) {
+    counts.set(cardId, (counts.get(cardId) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([cardId, count]) => ({ cardId, count }))
+    .sort((a, b) => a.cardId.localeCompare(b.cardId));
+}
+
+function seedDefaultDeck(): void {
+  if (deckStore.has(DEFAULT_DECK_ID)) {
+    return;
+  }
+  const cards = createDeckEntriesFromCardIds(DEFAULT_DECK);
+  const now = new Date().toISOString();
+  deckStore.set(DEFAULT_DECK_ID, {
+    id: DEFAULT_DECK_ID,
+    name: DEFAULT_DECK_NAME,
+    heroClass: DEFAULT_DECK_HERO_CLASS,
+    cards,
+    createdAt: now,
+    updatedAt: now
+  });
+}
+
+seedDefaultDeck();
 
 interface MatchTimerEntry {
   mulligan?: NodeJS.Timeout;
@@ -213,6 +246,10 @@ server.on('request', async (req, res) => {
       const existing = deckStore.get(deckId);
       if (!existing) {
         sendJson(res, 404, { message: 'Deck not found.' });
+        return;
+      }
+      if (deckId === DEFAULT_DECK_ID && req.method !== 'GET') {
+        sendJson(res, 403, { message: 'The starter deck cannot be modified or deleted.' });
         return;
       }
       if (req.method === 'GET') {
