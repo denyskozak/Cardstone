@@ -273,6 +273,14 @@ const minions: Record<string, MinionCard> = {
       }
     ]
   },
+  [CARD_IDS.noodls]: {
+    id: CARD_IDS.noodls,
+    name: 'Noodls protocl',
+    type: 'Minion',
+    cost: 4,
+    attack: 3,
+    health: 5
+  },
   [CARD_IDS.georgeDanezis]: {
     id: CARD_IDS.georgeDanezis,
     name: 'George Danezis',
