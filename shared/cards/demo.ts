@@ -238,7 +238,7 @@ const minions: Record<string, MinionCard> = {
   },
   [CARD_IDS.samBlackshear]: {
     id: CARD_IDS.samBlackshear,
-    name: 'Sam Blackshear',
+    name: 'Sam',
     type: 'Minion',
     cost: 5,
     attack: 4,
