@@ -676,7 +676,7 @@ export function DeckBuilderPage() {
                                   <img src={getCardImageUrl(card)} alt="" style={cardImageStyle} />
                                   {cardHasStats && (
                                     <>
-                                      <span style={cardStatBadgeStyle.rarity}>Mana: {card.cost}</span>
+                                      <span style={cardStatBadgeStyle.rarity}>Cost: {card.cost}</span>
                                       <span style={cardStatBadgeStyle.attack}>Attack: {card.attack}</span>
                                       <span style={cardStatBadgeStyle.health}>HP: {card.health}</span>
                                     </>
@@ -1099,7 +1099,7 @@ const catalogScrollAreaStyle: CSSProperties = {
 
 const catalogGridStyle: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
   gap: '10px'
 };
 
@@ -1132,7 +1132,7 @@ const cardStatBadgeBaseStyle: CSSProperties = {
   padding: '4px 10px',
   borderRadius: '999px',
   fontWeight: 700,
-  fontSize: '1rem',
+  fontSize: '0.8rem',
   color: '#0f172a',
   boxShadow: '0 10px 20px rgba(15, 23, 42, 0.35)'
 };
