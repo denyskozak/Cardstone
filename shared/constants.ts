@@ -14,7 +14,7 @@ export const MULLIGAN_DURATION_MS = MATCH_CONFIG.mulliganDurationMs;
 export const TURN_DURATION_MS = MATCH_CONFIG.turnDurationMs;
 
 export const DRAW_PER_TURN = 1;
-export const MAX_DECK_SIZE = 15;
+export const MAX_DECK_SIZE = 30;
 export const STARTING_SEQ = 1;
 
 export const CARD_IDS = {

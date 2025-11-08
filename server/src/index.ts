@@ -79,33 +79,9 @@ function normalizeDeckCards(entries?: DeckCardEntry[]): DeckCardEntry[] {
     }
     counts.set(entry.cardId, current + amount);
   }
-  const byManaCost = (cardId: string): number => {
-    const card = cardsById.get(cardId);
-    if (!card) {
-      return Number.POSITIVE_INFINITY;
-    }
-    return Number.isFinite(card.cost) ? card.cost : Number.POSITIVE_INFINITY;
-  };
   return Array.from(counts.entries())
     .map(([cardId, count]) => ({ cardId, count }))
-    .sort((a, b) => {
-      const costA = byManaCost(a.cardId);
-      const costB = byManaCost(b.cardId);
-      if (costA !== costB) {
-        return costA - costB;
-      }
-      const cardA = cardsById.get(a.cardId);
-      const cardB = cardsById.get(b.cardId);
-      if (cardA && cardB) {
-        if (cardA.type !== cardB.type) {
-          return cardA.type.localeCompare(cardB.type);
-        }
-        return cardA.name.localeCompare(cardB.name);
-      }
-      if (cardA) return -1;
-      if (cardB) return 1;
-      return a.cardId.localeCompare(b.cardId);
-    });
+    .sort((a, b) => a.cardId.localeCompare(b.cardId));
 }
 
 function isHeroClass(value: string): value is Deck['heroClass'] {
