@@ -521,14 +521,19 @@ async function handleClientMessage(
 ): Promise<void> {
   switch (message.t) {
     case 'JoinMatch': {
-      const playerId = message.payload.playerId ?? randomUUID();
-      const existing = playerConnections.get(playerId);
+      const requestedPlayerId = message.payload.playerId;
+      let playerId = requestedPlayerId ?? randomUUID();
+      const existing = requestedPlayerId ? playerConnections.get(requestedPlayerId) : undefined;
       if (existing && existing !== context) {
-        existing.alive = false;
-        try {
-          existing.ws.close();
-        } catch (error) {
-          console.error('Failed to close existing connection', error);
+        if (message.payload.matchId === 'auto') {
+          playerId = randomUUID();
+        } else {
+          existing.alive = false;
+          try {
+            existing.ws.close();
+          } catch (error) {
+            console.error('Failed to close existing connection', error);
+          }
         }
       }
       context.playerId = playerId;
