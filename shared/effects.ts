@@ -75,7 +75,15 @@ export function actionRequiresTarget(action: EffectAction): boolean {
     case 'Heal':
       return true;
     case 'Buff':
-      return action.target !== 'Self';
+      switch (action.target) {
+        case 'Self':
+        case 'AllFriendlies':
+        case 'AllEnemies':
+        case 'AnyMinion':
+          return false;
+        default:
+          return true;
+      }
     case 'Summon':
       return false;
     case 'DrawCard':

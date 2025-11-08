@@ -55,7 +55,7 @@ const minions: Record<string, MinionCard> = {
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Buff', stats: { attack: 2, health: 2}, target: 'FriendlyMinion' }
+        action: { type: 'Buff', stats: { attack: 2, health: 2 }, target: 'AllFriendlies' }
       }
     ]
   },
@@ -115,11 +115,11 @@ const minions: Record<string, MinionCard> = {
     cost: 3,
     attack: 2,
     health: 4,
-    text: 'Battlecry: Give a friendly minion +2 Health.',
+    text: 'Battlecry: Give your minions +2 Health.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Buff', stats: {health: 2 }, target: 'FriendlyMinion' }
+        action: { type: 'Buff', stats: { health: 2 }, target: 'AllFriendlies' }
       }
     ]
   },
