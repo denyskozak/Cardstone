@@ -303,12 +303,12 @@ describe('match reducer', () => {
 });
 
 describe('validatePlayCard', () => {
-  it('requires a target for minion battlecries that need one', () => {
+  it('allows battlecry buffs that affect all friendly minions without a target', () => {
     const state = createState();
     const instanceId = addCard(state, 'A', CARD_IDS.cetus);
     state.players.A.mana = { current: 5, max: 5 };
 
-    expect(() => validatePlayCard(state, 'A', instanceId)).toThrow(ValidationError);
+    expect(() => validatePlayCard(state, 'A', instanceId)).not.toThrow();
   });
 });
 
