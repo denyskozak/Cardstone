@@ -193,7 +193,7 @@ const minions: Record<string, MinionCard> = {
   },
   [CARD_IDS.deepBook]: {
     id: CARD_IDS.deepBook,
-    name: 'DeepBook AI',
+    name: 'DeepBook ',
     type: 'Minion',
     cost: 3,
     attack: 2,
@@ -223,7 +223,7 @@ const minions: Record<string, MinionCard> = {
   },
   [CARD_IDS.kostasKryptos]: {
     id: CARD_IDS.kostasKryptos,
-    name: 'Kostas Kryptos',
+    name: 'Kostas',
     type: 'Minion',
     cost: 5,
     attack: 4,

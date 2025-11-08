@@ -33,16 +33,16 @@ export function MainRoute() {
 
   const slides = [
     {
-      titles: ['Online', 'Collectible Cards Game'],
-      subtitle: 'Spell-slinging PvP with the thrill of FPS combat',
+      titles: ['First Sui Season', 'Mint Unique Cards'],
+      subtitle: 'WEB Collective Card Game',
     },
     {
-      titles: ['Built by', 'Hearthstone Fan'],
-      subtitle: 'Innovative technology which opens new world of opportunities',
+      titles: ['Built by', 'Single Developer'],
+      subtitle: 'Innovative technology',
     },
     {
       titles: ['Powered by ', 'Sui Blockchain'],
-      subtitle: 'Claim $SuiWars tokens, loot, and rare gear — fully tradable',
+      subtitle: 'Play-to-fun and earn',
     },
   ];
 
@@ -86,11 +86,11 @@ export function MainRoute() {
                 &nbsp;-&nbsp;<br />{slides[index].titles[1]}
               </span>
 
-                    {/*<div*/}
-                    {/*  className="mt-4 text-xl text-[#FF705B"*/}
-                    {/*>*/}
-                    {/*  {slides[index].subtitle}*/}
-                    {/*</div>*/}
+                    <div
+                      className="mt-4 text-xl text-[#FF705B"
+                    >
+                      {slides[index].subtitle}
+                    </div>
                   </motion.div>
                 </AnimatePresence>
               </div>
