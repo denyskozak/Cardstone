@@ -4,7 +4,8 @@ import type {
   MinionCard,
   PlayerSide,
   SpellCard,
-  TargetDescriptor
+  TargetDescriptor,
+  TargetSelector
 } from '@cardstone/shared/types.js';
 import {
   getTargetingPredicate,
@@ -101,7 +102,7 @@ function validateMinionTarget(
     if (!selector) {
       continue;
     }
-    if (selector === 'Hero' || selector === 'Self') {
+    if (!selectorNeedsManualTarget(selector)) {
       continue;
     }
     if (!target) {
@@ -111,6 +112,16 @@ function validateMinionTarget(
     if (!targetMatchesSelector(target, selector, actingSide)) {
       throw new ValidationError('Invalid target for minion effect');
     }
+  }
+}
+
+function selectorNeedsManualTarget(selector: TargetSelector): boolean {
+  switch (selector) {
+    case 'FriendlyMinion':
+    case 'EnemyMinion':
+      return true;
+    default:
+      return false;
   }
 }
 
