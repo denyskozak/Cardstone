@@ -181,21 +181,23 @@ function getDefaultSummonTarget(
 }
 
 function applyExistingAurasToMinion(state: GameState, side: PlayerSide, minion: MinionEntity): void {
-  for (const ally of state.board[side]) {
-    if (ally.instanceId === minion.instanceId) {
-      continue;
+  for (const candidateSide of ['A', 'B'] as const) {
+    for (const source of state.board[candidateSide]) {
+      if (source.instanceId === minion.instanceId) {
+        continue;
+      }
+      const effects = getEffectsByTrigger(source.card, 'Aura');
+      effects.forEach((effect, index) => {
+        if (effect.action.type !== 'Buff') {
+          return;
+        }
+        const auraKey = getAuraKey(source.instanceId, index);
+        const targets = getAuraTargets(state, candidateSide, source, effect.action.target);
+        if (targets.some((entry) => entry.minion.instanceId === minion.instanceId)) {
+          applyAuraBuffToMinion(minion, auraKey, effect.action.stats);
+        }
+      });
     }
-    const effects = getEffectsByTrigger(ally.card, 'Aura');
-    effects.forEach((effect, index) => {
-      if (effect.action.type !== 'Buff') {
-        return;
-      }
-      const auraKey = getAuraKey(ally.instanceId, index);
-      const targets = getAuraTargets(state, side, ally, effect.action.target);
-      if (targets.some((entry) => entry.minion.instanceId === minion.instanceId)) {
-        applyAuraBuffToMinion(minion, auraKey, effect.action.stats);
-      }
-    });
   }
 }
 

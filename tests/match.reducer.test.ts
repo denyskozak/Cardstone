@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CARD_IDS, MATCH_CONFIG } from '@cardstone/shared/constants.js';
-import type { GameState, MinionCard, PlayerSide } from '@cardstone/shared/types.js';
+import type { GameState, MinionCard, MinionEntity, PlayerSide } from '@cardstone/shared/types.js';
 import { getCardDefinition } from '@cardstone/shared/cards/demo.js';
 import { applyAttack, applyPlayCard, drawCard, gainMana, startTurn } from '@cardstone/server/match/reducer.js';
 import {
@@ -266,6 +266,98 @@ describe('match reducer', () => {
     const matteoAfter = state.board.A.find((minion) => minion.card.id === CARD_IDS.matteo);
     expect(matteoAfter?.attack).toBe(matteoCard.attack);
     expect(matteoAfter?.maxHealth).toBe(matteoCard.health);
+  });
+
+  it('does not apply friendly aura buffs to enemy minions', () => {
+    const state = createState();
+    state.players.A.mana = { current: 10, max: 10 };
+
+    const enemyManifestCard = getCardDefinition(CARD_IDS.manifest) as MinionCard;
+    summonMinion(state, 'B', CARD_IDS.manifest);
+
+    const samInstanceId = addCard(state, 'A', CARD_IDS.samBlackshear);
+    applyPlayCard(state, 'A', samInstanceId);
+
+    const enemyManifest = state.board.B.find((minion) => minion.card.id === CARD_IDS.manifest);
+    expect(enemyManifest).toBeDefined();
+    expect(enemyManifest?.attack).toBe(enemyManifestCard.attack);
+    expect(enemyManifest?.maxHealth).toBe(enemyManifestCard.health);
+  });
+
+  it('does not apply friendly aura buffs to later summoned enemy minions', () => {
+    const state = createState();
+    state.players.A.mana = { current: 10, max: 10 };
+    state.players.B.mana = { current: 10, max: 10 };
+
+    const samInstanceId = addCard(state, 'A', CARD_IDS.samBlackshear);
+    applyPlayCard(state, 'A', samInstanceId);
+
+    const enemyManifestCard = getCardDefinition(CARD_IDS.manifest) as MinionCard;
+    const enemyManifestInstanceId = addCard(state, 'B', CARD_IDS.manifest);
+    applyPlayCard(state, 'B', enemyManifestInstanceId);
+
+    const enemyManifest = state.board.B.find((minion) => minion.card.id === CARD_IDS.manifest);
+    expect(enemyManifest).toBeDefined();
+    expect(enemyManifest?.attack).toBe(enemyManifestCard.attack);
+    expect(enemyManifest?.maxHealth).toBe(enemyManifestCard.health);
+  });
+
+  it('does not apply enemy aura buffs to friendly minions', () => {
+    const state = createState();
+    state.players.A.mana = { current: 10, max: 10 };
+    state.players.B.mana = { current: 10, max: 10 };
+
+    const friendlyManifestCard = getCardDefinition(CARD_IDS.manifest) as MinionCard;
+    summonMinion(state, 'A', CARD_IDS.manifest);
+
+    const samInstanceId = addCard(state, 'B', CARD_IDS.samBlackshear);
+    applyPlayCard(state, 'B', samInstanceId);
+
+    const friendlyManifest = state.board.A.find((minion) => minion.card.id === CARD_IDS.manifest);
+    expect(friendlyManifest).toBeDefined();
+    expect(friendlyManifest?.attack).toBe(friendlyManifestCard.attack);
+    expect(friendlyManifest?.maxHealth).toBe(friendlyManifestCard.health);
+  });
+
+  it('applies enemy-targeting aura effects to newly summoned minions', () => {
+    const state = createState();
+    state.players.A.mana = { current: 10, max: 10 };
+    state.players.B.mana = { current: 10, max: 10 };
+
+    const auraCard: MinionCard = {
+      id: 'test_aura',
+      name: 'Aura Test',
+      type: 'Minion',
+      cost: 1,
+      attack: 1,
+      health: 1,
+      text: 'Aura: -1/-0 to enemy minions',
+      effects: [
+        {
+          trigger: { type: 'Aura' },
+          action: { type: 'Buff', stats: { attack: -1 }, target: 'AllEnemies' }
+        }
+      ]
+    };
+
+    const auraMinion: MinionEntity = {
+      instanceId: 'aura_1',
+      card: auraCard,
+      attack: auraCard.attack,
+      health: auraCard.health,
+      maxHealth: auraCard.health,
+      attacksRemaining: 0
+    };
+
+    state.board.A.push(auraMinion);
+
+    const enemyManifestCard = getCardDefinition(CARD_IDS.manifest) as MinionCard;
+    const enemyManifestInstanceId = addCard(state, 'B', CARD_IDS.manifest);
+    applyPlayCard(state, 'B', enemyManifestInstanceId);
+
+    const enemyManifest = state.board.B.find((minion) => minion.card.id === CARD_IDS.manifest);
+    expect(enemyManifest).toBeDefined();
+    expect(enemyManifest?.attack).toBe(enemyManifestCard.attack - 1);
   });
 
   it('triggers spell cast effects on friendly minions', () => {
