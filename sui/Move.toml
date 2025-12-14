@@ -1,0 +1,14 @@
+[package]
+name = "CardstoneContracts"
+version = "0.0.1"
+edition = "2024.beta"
+
+authors = ["Cardstone Contributors"]
+
+[addresses]
+cardstone = "0x0"
+sui = "0x2"
+std = "0x1"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "sui-v1.38.0" }
