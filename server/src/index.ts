@@ -19,6 +19,7 @@ import {
 } from '@cardstone/shared/decks.js';
 import { DEFAULT_DECK } from '@cardstone/shared/constants.js';
 import { cardsById, catalogCards } from './data/cards.js';
+import { sanitizeAttachmentName } from './util/download.js';
 
 interface ConnectionContext {
   ws: WebSocket;
@@ -253,6 +254,14 @@ server.on('request', async (req, res) => {
         return;
       }
       if (req.method === 'GET') {
+        if (url.searchParams.get('download') === '1') {
+          const { headerValue } = sanitizeAttachmentName(existing.name, 'json');
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Content-Disposition', headerValue);
+          res.end(JSON.stringify(serializeDeck(existing), null, 2));
+          return;
+        }
         sendJson(res, 200, serializeDeck(existing));
         return;
       }
