@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { URL } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { MatchJoinInfo, PlayerSide } from '@cardstone/shared/types.js';
@@ -40,6 +40,16 @@ const playerConnections = new Map<string, ConnectionContext>();
 const matchConnections = new Map<string, Set<ConnectionContext>>();
 const chatVisibilityByMatch = new Map<string, boolean>();
 const deckStore = new Map<string, Deck>();
+const adminTokens = new Map<string, number>();
+
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME ?? 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'password';
+const DEFAULT_ADMIN_TOKEN_TTL_MS = 1000 * 60 * 60;
+const configuredAdminTtl = Number(process.env.ADMIN_TOKEN_TTL_MS);
+const ADMIN_TOKEN_TTL_MS =
+  Number.isFinite(configuredAdminTtl) && configuredAdminTtl > 0
+    ? configuredAdminTtl
+    : DEFAULT_ADMIN_TOKEN_TTL_MS;
 
 const DEFAULT_DECK_ID = 'starter-deck';
 const DEFAULT_DECK_NAME = 'Starter Deck';
@@ -81,6 +91,40 @@ interface MatchTimerEntry {
 }
 
 const matchTimers = new Map<string, MatchTimerEntry>();
+
+function issueAdminToken(): { token: string; expiresAt: number } {
+  const token = randomBytes(32).toString('hex');
+  const expiresAt = Date.now() + ADMIN_TOKEN_TTL_MS;
+  adminTokens.set(token, expiresAt);
+  return { token, expiresAt };
+}
+
+function validateAdminToken(token?: string): number | null {
+  if (!token) {
+    return null;
+  }
+  const expiresAt = adminTokens.get(token);
+  if (!expiresAt) {
+    return null;
+  }
+  if (expiresAt < Date.now()) {
+    adminTokens.delete(token);
+    return null;
+  }
+  return expiresAt;
+}
+
+function extractBearerToken(req: IncomingMessage): string | undefined {
+  const value = req.headers.authorization;
+  if (!value) {
+    return undefined;
+  }
+  const [scheme, token] = value.split(' ');
+  if (scheme?.toLowerCase() !== 'bearer' || !token) {
+    return undefined;
+  }
+  return token;
+}
 
 function sendJson(res: ServerResponse, status: number, data: unknown): void {
   res.statusCode = status;
@@ -172,7 +216,7 @@ server.on('request', async (req, res) => {
   }
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
     res.end();
@@ -191,6 +235,32 @@ server.on('request', async (req, res) => {
   }
 
   try {
+    if (url.pathname === '/api/admin/login' && req.method === 'POST') {
+      const payload = await readJsonBody<{ username?: string; password?: string }>(req);
+      if (!payload || !payload.username || !payload.password) {
+        sendJson(res, 400, { message: 'username and password are required.' });
+        return;
+      }
+      if (payload.username !== ADMIN_USERNAME || payload.password !== ADMIN_PASSWORD) {
+        sendJson(res, 401, { message: 'Invalid credentials.' });
+        return;
+      }
+      const { token, expiresAt } = issueAdminToken();
+      sendJson(res, 200, { token, expiresAt: new Date(expiresAt).toISOString() });
+      return;
+    }
+
+    if (url.pathname === '/api/admin/me' && req.method === 'GET') {
+      const token = extractBearerToken(req);
+      const expiresAt = validateAdminToken(token);
+      if (!expiresAt) {
+        sendJson(res, 401, { message: 'Unauthorized.' });
+        return;
+      }
+      sendJson(res, 200, { username: ADMIN_USERNAME, expiresAt: new Date(expiresAt).toISOString() });
+      return;
+    }
+
     if (url.pathname === '/api/cards' && req.method === 'GET') {
       sendJson(res, 200, catalogCards.map((card) => ({ ...card })));
       return;

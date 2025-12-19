@@ -19,4 +19,4 @@ This package contains Sui Move modules that back the blockchain-facing parts of 
 - `withdraw` releases the full balance to the beneficiary after the deadline using the on-chain `Clock` for time checks.
 
 ### card_factory
-- `mint` creates an on-chain `Card` object with fields aligned to the shared card definitions used by the app (IDs, name, type, cost, rarity, tribe, text, and optional stats such as attack/health/durability).
+- `mint` creates an on-chain `Card` object with fields aligned to the shared card definitions used by the app (IDs, name, type, cost, rarity, tribe, text, optional `image_url`, and optional stats such as attack/health/durability).

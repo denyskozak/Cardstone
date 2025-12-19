@@ -6,6 +6,7 @@ import { GameRoute } from './game';
 import { DecksPage } from './decks';
 import { DeckBuilderPage } from './deck-builder';
 import { MenuPage } from './menu';
+import { AdminPage } from './admin';
 
 export const router = createBrowserRouter([
   {
@@ -35,5 +36,9 @@ export const router = createBrowserRouter([
   {
     path: '/menu',
     element: <MenuPage />,
+  },
+  {
+    path: '/admin',
+    element: <AdminPage />,
   },
 ])

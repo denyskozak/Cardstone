@@ -1,9 +1,8 @@
 import { TabNav } from '@radix-ui/themes'
 import { useNavigate } from 'react-router'
 
-
 export const Navigation = () => {
-  const navigate =  useNavigate();
+  const navigate = useNavigate()
 
   return (
     <TabNav.Root  justify="center" className="h-[98px] bg-black" color="gold"  >
@@ -13,6 +12,9 @@ export const Navigation = () => {
         </a>
         <TabNav.Link href="#">
           <span className="text-lg">Card Market</span>
+        </TabNav.Link>
+        <TabNav.Link onClick={() => navigate('/admin')} href="/admin">
+          Admin
         </TabNav.Link>
         {/*<TabNav.Link href="#" >FAQ</TabNav.Link>*/}
         {/*<TabNav.Link href="#" onClick={() => navigate('/profile')}>Profile</TabNav.Link>*/}

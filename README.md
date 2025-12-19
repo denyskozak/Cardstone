@@ -22,6 +22,12 @@ npm run dev
 * The WebSocket server runs on `ws://localhost:8787`.
 * Open the client in two browser tabs to play a demo match.
 
+### Admin access
+
+* Server-side credentials are configured through `ADMIN_USERNAME` and `ADMIN_PASSWORD` (defaults: `admin` / `password`).
+* Tokens issued by `/api/admin/login` expire after `ADMIN_TOKEN_TTL_MS` milliseconds (1 hour by default) and can be validated via `/api/admin/me`.
+* The client exposes a `/admin` page to request and store a token.
+
 ### Other scripts
 
 ```bash

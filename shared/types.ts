@@ -62,6 +62,7 @@ interface CardDefinitionBase {
   set?: string;
   tribe?: string;
   text?: string;
+  imageUrl?: string;
   effects?: Effect[];
 }
 
