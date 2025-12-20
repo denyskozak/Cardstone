@@ -138,7 +138,7 @@ export function Card({
         width={CARD_WIDTH * 0.6}
         height={CARD_HEIGHT * 0.5}
         x={CARD_WIDTH * 0.2}
-        y={CARD_HEIGHT * 0.07}
+        y={CARD_HEIGHT * 0.05}
       />
       <pixiSprite
         texture={texture}
@@ -158,9 +158,9 @@ export function Card({
       />
       <pixiText
         text={card.card.cost}
-        x={CARD_WIDTH * 0.12}
+        x={CARD_WIDTH * 0.1}
         y={CARD_HEIGHT * 0.04}
-        style={{ fill: 0xffffff, fontSize: 24, fontWeight: 'bold' }}
+        style={{ fill: 0xffffff, fontSize: 28, fontWeight: 'bold' }}
       />
       {card.card.text ? (<pixiText
         text={card.card.text}
