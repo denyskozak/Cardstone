@@ -126,7 +126,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
 
   useEffect(() => {
     let cancelled = false;
-    Assets.load('/assets/images/damage_placeholder.webp').then((texture) => {
+    Assets.load('/assets/damage-background.svg').then((texture) => {
       if (!cancelled) {
         setDamageTexture(texture);
       }
