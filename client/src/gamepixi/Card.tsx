@@ -1,6 +1,6 @@
 import type { CardInHand } from '@cardstone/shared/types';
-import { Assets, BlurFilter, Graphics, Texture, type FederatedPointerEvent } from 'pixi.js';
-import { useEffect, useState } from 'react';
+import { Assets, BlurFilter, Graphics, Rectangle, Texture, type FederatedPointerEvent } from 'pixi.js';
+import { useEffect, useMemo, useState } from 'react';
 
 
 const CARD_WIDTH = 160;
@@ -46,6 +46,16 @@ export function Card({
   const [texture, setTexture] = useState(Texture.EMPTY)
   const [innerTexture, setInnerTexture] = useState(Texture.EMPTY)
   const combinedScale = scale * (selected ? 1.05 : 1)
+  const hitArea = useMemo(
+    () =>
+      new Rectangle(
+        -CARD_WIDTH / 2 / combinedScale,
+        -CARD_HEIGHT / combinedScale,
+        CARD_WIDTH / combinedScale,
+        CARD_HEIGHT / combinedScale
+      ),
+    [combinedScale]
+  )
   // Preload the sprite if it hasn't been loaded yet
   useEffect(() => {
     if (texture === Texture.EMPTY) {
@@ -82,6 +92,7 @@ export function Card({
       eventMode={eventMode}
       cursor={cursor ?? (disabled ? 'not-allowed' : 'pointer')}
       zIndex={zIndex}
+      hitArea={hitArea}
       onPointerTap={() => {
         if (!disabled) {
           onClick?.(card);
