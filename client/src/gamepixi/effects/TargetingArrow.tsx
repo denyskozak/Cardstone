@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PlayerSide } from '@cardstone/shared/types';
 import { useUiStore } from '../../state/store';
 import useMiniTicker from '../hooks/useMiniTicker';
-import type { Graphics } from 'pixi.js';
+import { Assets, Texture, type Graphics } from 'pixi.js';
 import TargetReticle from './TargetReticle';
 
 // Hearthstone's targeting line looks "hand drawn" because it is smooth yet chunky;
@@ -12,6 +12,7 @@ const BASE_BODY_WIDTH = 28;
 const TIP_WIDTH = 12;
 const TIP_LENGTH = 46;
 const TIP_SCALE = 1.8;
+const TARGET_TEXTURE_ASPECT = 322 / 839;
 const NORMALIZE_EPSILON = 1e-4;
 
 type ArrowThemeKey = 'ally' | 'enemy' | 'neutral';
@@ -199,6 +200,21 @@ export default function TargetingArrow({ playerSide }: TargetingArrowProps) {
   const tipRotation = Math.atan2(tipDirection.y, tipDirection.x);
 
   const [pulsePhase, setPulsePhase] = useState(0);
+  const [headTexture, setHeadTexture] = useState<Texture | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    Assets.load('/assets/target.svg').then((texture) => {
+      if (!cancelled) {
+        setHeadTexture(texture);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useMiniTicker(
     (deltaMS) => {
       setPulsePhase((prev) => {
@@ -362,7 +378,17 @@ export default function TargetingArrow({ playerSide }: TargetingArrowProps) {
       ) : null}
       <pixiContainer x={tipPosition.x} y={tipPosition.y} rotation={tipRotation} eventMode="none">
         <pixiGraphics draw={drawHeadGlow} alpha={pulseAlpha} blendMode="add" />
-        <pixiGraphics draw={drawHead} />
+        {headTexture ? (
+          <pixiSprite
+            texture={headTexture}
+            anchor={0.5}
+            width={TIP_LENGTH * TIP_SCALE * 2 * TARGET_TEXTURE_ASPECT}
+            height={TIP_LENGTH * TIP_SCALE * 2}
+            rotation={Math.PI / 2}
+          />
+        ) : (
+          <pixiGraphics draw={drawHead} />
+        )}
       </pixiContainer>
     </pixiContainer>
   );
