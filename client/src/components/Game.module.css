@@ -146,6 +146,25 @@
     cursor: not-allowed;
 }
 
+.mulliganCardReplacedSlot:disabled {
+    opacity: 1;
+    cursor: default;
+    filter: drop-shadow(0 0 12px rgba(122, 214, 255, 0.5));
+}
+
+.mulliganCardReplacedSlot::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 18px;
+    background: radial-gradient(circle at 30% 20%, rgba(190, 240, 255, 0.6), transparent 55%),
+        radial-gradient(circle at 70% 80%, rgba(160, 190, 255, 0.5), transparent 60%);
+    opacity: 0.8;
+    mix-blend-mode: screen;
+    animation: mulliganGlow 1.8s ease-in-out infinite;
+    pointer-events: none;
+}
+
 .mulliganCardReplaced {
     position: absolute;
     top: 8px;
@@ -178,4 +197,19 @@
     background: #555;
     cursor: not-allowed;
     box-shadow: none;
+}
+
+@keyframes mulliganGlow {
+    0% {
+        opacity: 0.5;
+        transform: scale(0.98);
+    }
+    50% {
+        opacity: 0.95;
+        transform: scale(1.02);
+    }
+    100% {
+        opacity: 0.55;
+        transform: scale(0.99);
+    }
 }

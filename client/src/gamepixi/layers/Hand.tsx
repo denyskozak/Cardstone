@@ -41,6 +41,7 @@ type AnimationIntent = 'base' | 'hover';
 
 interface CardAnimationState {
   base: Transform;
+  baseCurrent: Transform;
   current: Transform;
   target: Transform;
   intent: AnimationIntent;
@@ -207,6 +208,7 @@ export default function HandLayer({
       if (!state) {
         state = {
           base: baseState,
+          baseCurrent: cloneTransform(baseState),
           current: cloneTransform(baseState),
           target: toBaseTarget(baseState),
           intent: 'base'
@@ -249,6 +251,7 @@ export default function HandLayer({
         const nextState = states.get(nextId);
         if (nextState) {
           nextState.intent = 'hover';
+          nextState.current = cloneTransform(nextState.baseCurrent);
           nextState.target = toHoverTarget(nextState.base);
         }
       }
@@ -288,6 +291,36 @@ export default function HandLayer({
 
       states.forEach((state) => {
         const speed = state.intent === 'hover' ? HOVER_SPEED : RETURN_SPEED;
+        const baseSpeed = RETURN_SPEED;
+
+        const nextBaseX = approach(state.baseCurrent.x, state.base.x, baseSpeed);
+        if (nextBaseX !== state.baseCurrent.x) {
+          state.baseCurrent.x = nextBaseX;
+          mutated = true;
+        }
+
+        const nextBaseY = approach(state.baseCurrent.y, state.base.y, baseSpeed);
+        if (nextBaseY !== state.baseCurrent.y) {
+          state.baseCurrent.y = nextBaseY;
+          mutated = true;
+        }
+
+        const nextBaseRotation = approach(state.baseCurrent.rotation, state.base.rotation, baseSpeed);
+        if (nextBaseRotation !== state.baseCurrent.rotation) {
+          state.baseCurrent.rotation = nextBaseRotation;
+          mutated = true;
+        }
+
+        const nextBaseScale = approach(state.baseCurrent.scale, state.base.scale, baseSpeed);
+        if (nextBaseScale !== state.baseCurrent.scale) {
+          state.baseCurrent.scale = nextBaseScale;
+          mutated = true;
+        }
+
+        if (state.baseCurrent.z !== state.base.z) {
+          state.baseCurrent.z = state.base.z;
+          mutated = true;
+        }
 
         const nextX = approach(state.current.x, state.target.x, speed);
         if (nextX !== state.current.x) {
@@ -523,9 +556,10 @@ export default function HandLayer({
         : false;
     const dragScale = isOverDropZone ? 0.94 : 1;
 
-    const cardX = isDraggingThisCard && dragging ? dragging.x : state.current.x;
-    const cardY = isDraggingThisCard && dragging ? dragging.y : state.current.y;
-    const cardScale = isDraggingThisCard ? dragScale : state.current.scale;
+    const baseTransform = state.baseCurrent;
+    const cardX = isDraggingThisCard && dragging ? dragging.x : baseTransform.x;
+    const cardY = isDraggingThisCard && dragging ? dragging.y : baseTransform.y;
+    const cardScale = isDraggingThisCard ? dragScale : baseTransform.scale;
     const dragRotation =
       isDraggingThisCard && dragging
         ? clamp(
@@ -534,32 +568,45 @@ export default function HandLayer({
             DRAG_TILT_MAX
           )
         : 0;
-    const cardRotation = isDraggingThisCard ? dragRotation : state.current.rotation;
-    const cardZIndex = isDraggingThisCard ? DRAG_Z_INDEX : state.current.z;
+    const cardRotation = isDraggingThisCard ? dragRotation : baseTransform.rotation;
+    const cardZIndex = isDraggingThisCard ? DRAG_Z_INDEX : baseTransform.z;
+    const showHoverPreview = !isDraggingThisCard && state.intent === 'hover';
 
     return (
-      <Card
-        key={card.instanceId}
-        card={card}
-        x={cardX}
-        y={cardY}
-        rotation={cardRotation}
-        disabled={disabled}
-        selected={selected === card.instanceId}
-        onHover={handleCardHover}
-        onClick={handleCardClick}
-        onDragStart={(c, e) => {
-          const currentState = animationStatesRef.current.get(card.instanceId);
-          const start = currentState
-            ? { x: currentState.current.x, y: currentState.current.y }
-            : { x: base.x, y: base.y };
-          handleDragStart(c, e, start);
-        }}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-        scale={cardScale}
-        zIndex={cardZIndex}
-      />
+      <pixiContainer key={card.instanceId} sortableChildren>
+        <Card
+          card={card}
+          x={cardX}
+          y={cardY}
+          rotation={cardRotation}
+          disabled={disabled}
+          selected={selected === card.instanceId}
+          onHover={handleCardHover}
+          onClick={handleCardClick}
+          onDragStart={(c, e) => {
+            const currentState = animationStatesRef.current.get(card.instanceId);
+            const start = currentState
+              ? { x: currentState.baseCurrent.x, y: currentState.baseCurrent.y }
+              : { x: base.x, y: base.y };
+            handleDragStart(c, e, start);
+          }}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          scale={cardScale}
+          zIndex={cardZIndex}
+        />
+        {showHoverPreview ? (
+          <Card
+            card={card}
+            x={state.current.x}
+            y={state.current.y}
+            rotation={state.current.rotation}
+            scale={state.current.scale}
+            zIndex={state.current.z}
+            eventMode="none"
+          />
+        ) : null}
+      </pixiContainer>
     );
   });
 
