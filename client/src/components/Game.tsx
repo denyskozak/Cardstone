@@ -21,6 +21,7 @@ import StageRoot from '../gamepixi/StageRoot';
 import { GameSocket } from '../net/ws';
 import styles from './Game.module.css';
 import { MatchChat, type MatchChatEntry } from './MatchChat';
+import { InterfaceCard } from './InterfaceCard';
 
 import {
   Container,
@@ -418,44 +419,7 @@ export function Game() {
                     onClick={() => handleMulliganReplace(card)}
                     disabled={disabled}
                   >
-                      <img
-                          src={`/assets/cards/${card.card.id}.webp`}
-                          alt={card.card.name}
-                          className={styles.mulliganCardArt}
-                      />
-                      <span className={styles.mulliganCardName}>{card.card.name}</span>
-                    <div className={styles.mulliganCardStats}>
-                      <div className={styles.mulliganCardStatsRow}>
-                        <span
-                          className={styles.mulliganCardStat}
-                          title="Mana cost"
-                        >
-                          <span className={styles.mulliganCardStatLabel}>Mana</span>
-                          <span className={styles.mulliganCardStatValue}>{card.card.cost}</span>
-                        </span>
-                        {'attack' in card.card ? (
-                          <span
-                            className={styles.mulliganCardStat}
-                            title="Attack"
-                          >
-                            <span className={styles.mulliganCardStatLabel}>ATK</span>
-                            <span className={styles.mulliganCardStatValue}>{card.card.attack}</span>
-                          </span>
-                        ) : null}
-                        {'health' in card.card ? (
-                          <span
-                            className={styles.mulliganCardStat}
-                            title="Health"
-                          >
-                            <span className={styles.mulliganCardStatLabel}>HP</span>
-                            <span className={styles.mulliganCardStatValue}>{card.card.health}</span>
-                          </span>
-                        ) : null}
-                      </div>
-                      {card.card.text ? (
-                        <p className={styles.mulliganCardText}>{card.card.text}</p>
-                      ) : null}
-                    </div>
+                    <InterfaceCard card={card.card} />
                     {card.mulliganReplaced ? (
                       <span className={styles.mulliganCardReplaced}>✖</span>
                     ) : null}

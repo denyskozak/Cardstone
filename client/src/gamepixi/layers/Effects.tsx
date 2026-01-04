@@ -81,9 +81,12 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const consumeLocalAttackQueue = useUiStore((s) => s.consumeLocalAttackQueue);
   const localAttackQueueVersion = useUiStore((s) => s.localAttackQueueVersion);
   const heroPositions = useUiStore((s) => s.heroPositions);
+  const minionAnimations = useUiStore((s) => s.minionAnimations);
 
   const pendingLocalAttackersRef = useRef(new Map<string, number>());
   const pendingImpactResultsRef = useRef(new Map<string, PendingImpactResult[]>());
+  const deathTimeoutsRef = useRef(new Map<string, ReturnType<typeof window.setTimeout>>());
+  const prevDeathStateRef = useRef<GameState | null>(null);
 
   const layout = useMemo(
     () => computeBoardLayout(state, playerSide, width, height),
@@ -120,8 +123,37 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       pendingImpactResultsRef.current.clear();
       setDamageIndicators([]);
       damageSequenceRef.current = 0;
+      deathTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
+      deathTimeoutsRef.current.clear();
     };
   }, [resetMinionAnimations]);
+
+  useEffect(() => {
+    const previous = prevDeathStateRef.current;
+    if (!previous) {
+      prevDeathStateRef.current = state;
+      return;
+    }
+    if (previous.seq >= state.seq) {
+      prevDeathStateRef.current = state;
+      return;
+    }
+    const destroyed = detectDestroyedMinions(previous, state);
+    if (destroyed.length > 0) {
+      destroyed.forEach((id) => {
+        if (deathTimeoutsRef.current.has(id)) {
+          return;
+        }
+        setMinionAnimation(id, { offsetX: 0, offsetY: 0, grayscale: true });
+        const timeout = window.setTimeout(() => {
+          clearMinionAnimation(id);
+          deathTimeoutsRef.current.delete(id);
+        }, 3000);
+        deathTimeoutsRef.current.set(id, timeout);
+      });
+    }
+    prevDeathStateRef.current = state;
+  }, [clearMinionAnimation, setMinionAnimation, state]);
 
 
   useEffect(() => {
@@ -428,13 +460,13 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     });
 
     previousIds.forEach((id) => {
-      if (!nextIds.has(id)) {
+      if (!nextIds.has(id) && !minionAnimations[id]?.grayscale) {
         clearMinionAnimation(id);
       }
     });
 
     previousAnimationIdsRef.current = nextIds;
-  }, [animations, clearMinionAnimation, setMinionAnimation]);
+  }, [animations, clearMinionAnimation, minionAnimations, setMinionAnimation]);
 
   return (
     <pixiContainer>
@@ -618,6 +650,19 @@ function detectBoardPlacements(previous: GameState, next: GameState): string[] {
     });
   });
   return placements;
+}
+
+function detectDestroyedMinions(previous: GameState, next: GameState): string[] {
+  const destroyed: string[] = [];
+  SIDES.forEach((side) => {
+    const nextIds = new Set(next.board[side].map((minion) => minion.instanceId));
+    previous.board[side].forEach((minion) => {
+      if (!nextIds.has(minion.instanceId)) {
+        destroyed.push(minion.instanceId);
+      }
+    });
+  });
+  return destroyed;
 }
 
 interface BurnDetectionResult {

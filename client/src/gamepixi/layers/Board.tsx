@@ -8,7 +8,7 @@ import type {
 import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import { actionRequiresTarget, getPrimaryPlayAction } from '@cardstone/shared/effects';
 import type { FederatedPointerEvent } from 'pixi.js';
-import { Assets, BlurFilter, Container, Graphics, Point, Rectangle, Texture } from 'pixi.js';
+import { Assets, BlurFilter, ColorMatrixFilter, Container, Graphics, Point, Rectangle, Texture } from 'pixi.js';
 import type { ContainerChild } from 'pixi.js';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -283,6 +283,11 @@ export default function Board({
     () => getBoardLaneGeometry(width, height),
     [width, height]
   );
+  const grayscaleFilter = useMemo(() => {
+    const filter = new ColorMatrixFilter();
+    filter.desaturate();
+    return filter;
+  }, []);
 
   const updateHeroPosition = useCallback(
     (side: PlayerSide) => {
@@ -581,6 +586,7 @@ export default function Board({
         const scale = animation?.scale ?? 1.3;
         const rotation = animation?.rotation ?? 0;
         const zIndex = animation?.zIndex ?? defaultZIndex;
+        const isGrayscale = Boolean(animation?.grayscale);
 
         const hasBonusAttack = entity.attack > entity.card.attack;
         const hasBonusHealth = Math.max(entity.health, entity.maxHealth) > entity.card.health;
@@ -596,6 +602,8 @@ export default function Board({
             scale={scale}
             rotation={rotation}
             zIndex={zIndex}
+            filters={isGrayscale ? [grayscaleFilter] : undefined}
+            alpha={isGrayscale ? 0.6 : 1}
             interactive={interactive}
             eventMode={interactive ? 'static' : undefined}
             cursor={
@@ -745,6 +753,7 @@ export default function Board({
       handleStartAttack,
       handleTargetOut,
       handleTargetOver,
+      grayscaleFilter,
       laneX,
       laneWidth,
       minionAnimations,
