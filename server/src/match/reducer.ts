@@ -344,7 +344,7 @@ function executeEffectAction(
       return;
     case 'Buff':
       if (action.target === 'AllFriendlies' || action.target === 'AllEnemies' || action.target === 'AnyMinion') {
-        applyBuffToSelector(state, side, action.target, action.stats);
+        applyBuffToSelector(state, side, action.target, action.stats, source);
         return;
       }
       if (!target) {
@@ -460,12 +460,16 @@ function applyBuffToSelector(
   state: GameState,
   side: PlayerSide,
   selector: TargetSelector,
-  stats: { attack?: number; health?: number }
+  stats: { attack?: number; health?: number },
+  source?: MinionEntity
 ): void {
   switch (selector) {
     case 'AllFriendlies':
     case 'FriendlyMinion': {
       for (const entity of state.board[side]) {
+        if (selector === 'AllFriendlies' && source && entity.instanceId === source.instanceId) {
+          continue;
+        }
         const descriptor: TargetDescriptor = { type: 'minion', side, entityId: entity.instanceId };
         applyBuff(state, descriptor, stats);
       }
@@ -481,8 +485,8 @@ function applyBuffToSelector(
       return;
     }
     case 'AnyMinion': {
-      applyBuffToSelector(state, side, 'FriendlyMinion', stats);
-      applyBuffToSelector(state, side, 'EnemyMinion', stats);
+      applyBuffToSelector(state, side, 'FriendlyMinion', stats, source);
+      applyBuffToSelector(state, side, 'EnemyMinion', stats, source);
       return;
     }
     default:

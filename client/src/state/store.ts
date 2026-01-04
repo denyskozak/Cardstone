@@ -18,6 +18,7 @@ export interface MinionAnimationTransform {
   rotation?: number;
   scale?: number;
   zIndex?: number;
+  grayscale?: boolean;
 }
 
 interface LocalAttackAnimation {

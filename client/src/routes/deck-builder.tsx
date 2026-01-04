@@ -38,6 +38,7 @@ import {
 } from '../lib/deckRules';
 import { SoundButton as Button } from '../components/SoundButton';
 import { Badge } from '../components/Badge';
+import { InterfaceCard } from '../components/InterfaceCard';
 import { apiPath } from '../config';
 import { fetchJson } from '../lib/api';
 import { CARDS_QUERY_KEY, DECKS_QUERY_KEY, deckByIdQueryKey } from '../lib/queryKeys';
@@ -124,10 +125,6 @@ function cardMatchesTab(card: CatalogCard, tab: CatalogTab): boolean {
 function matchesManaRange(card: CatalogCard, [min, max]: [number, number]): boolean {
   const cappedMax = max === 7 ? Infinity : max;
   return card.cost >= min && card.cost <= cappedMax;
-}
-
-function getCardImageUrl(card: CatalogCard): string {
-  return `/assets/cards/${card.id}.webp`;
 }
 
 export function DeckBuilderPage() {
@@ -658,7 +655,6 @@ export function DeckBuilderPage() {
                           ? 'Deck is full.'
                           : undefined;
                         const limitReached = inDeck && inDeck.count >= (card.rarity === 'Legendary' ? 1 : 2);
-                        const cardHasStats = 'attack' in card && 'health' in card;
                         return (
                           <Tooltip.Root key={card.id} delayDuration={100}>
                             <Tooltip.Trigger asChild>
@@ -678,16 +674,7 @@ export function DeckBuilderPage() {
                                   cursor: disabledReason ? 'not-allowed' : 'grab'
                                 }}
                               >
-                                <div style={cardImageWrapperStyle}>
-                                  <img src={getCardImageUrl(card)} alt="" style={cardImageStyle} />
-                                  {cardHasStats && (
-                                    <>
-                                      <span style={cardStatBadgeStyle.rarity}>Cost: {card.cost}</span>
-                                      <span style={cardStatBadgeStyle.attack}>Attack: {card.attack}</span>
-                                      <span style={cardStatBadgeStyle.health}>HP: {card.health}</span>
-                                    </>
-                                  )}
-                                </div>
+                                <InterfaceCard card={card} />
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <strong>{card.name}</strong>
@@ -1118,52 +1105,6 @@ const catalogCardStyle: CSSProperties = {
   background: 'rgba(17,24,39,0.85)',
   border: '1px solid rgba(255,255,255,0.08)',
   boxShadow: '0 10px 20px rgba(0,0,0,0.25)'
-};
-
-const cardImageWrapperStyle: CSSProperties = {
-  position: 'relative'
-};
-
-const cardImageStyle: CSSProperties = {
-  width: '100%',
-  borderRadius: '10px',
-  objectFit: 'cover',
-  aspectRatio: '3 / 4',
-  background: 'rgba(0,0,0,0.35)',
-  display: 'block'
-};
-
-const cardStatBadgeBaseStyle: CSSProperties = {
-  position: 'absolute',
-  padding: '4px 10px',
-  borderRadius: '999px',
-  fontWeight: 700,
-  fontSize: '0.8rem',
-  color: '#0f172a',
-  boxShadow: '0 10px 20px rgba(15, 23, 42, 0.35)'
-};
-
-const cardStatBadgeStyle: Record<'attack' | 'health' | 'rarity', CSSProperties> = {
-  attack: {
-    ...cardStatBadgeBaseStyle,
-    left: '8px',
-    bottom: '8px',
-
-    background: 'linear-gradient(135deg,#fb923c,#f97316)'
-  },
-  rarity: {
-    ...cardStatBadgeBaseStyle,
-    top: '8px',
-    left: '8px',
-    background: 'linear-gradient(135deg,#fb923c,#f97316)'
-  },
-  health: {
-    ...cardStatBadgeBaseStyle,
-    right: '8px',
-    bottom: '8px',
-
-    background: 'linear-gradient(135deg,#34d399,#22d3ee)'
-  }
 };
 
 const hoverTooltipStyle: CSSProperties = {

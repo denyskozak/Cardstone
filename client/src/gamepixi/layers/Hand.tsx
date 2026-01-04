@@ -26,6 +26,8 @@ const DRAG_Z_INDEX = HOVER_Z_INDEX + 1;
 const HOVER_SPEED = 0.5;
 const RETURN_SPEED = 0.18;
 const EPSILON = 0.0001;
+const DRAG_TILT_MAX = 0.25;
+const DRAG_TILT_DISTANCE = 200;
 
 type Transform = {
   x: number;
@@ -76,6 +78,10 @@ function approach(current: number, target: number, factor: number): number {
     return target;
   }
   return current + diff * factor;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 export interface HandLayoutOptions {
@@ -520,7 +526,15 @@ export default function HandLayer({
     const cardX = isDraggingThisCard && dragging ? dragging.x : state.current.x;
     const cardY = isDraggingThisCard && dragging ? dragging.y : state.current.y;
     const cardScale = isDraggingThisCard ? dragScale : state.current.scale;
-    const cardRotation = isDraggingThisCard ? 0 : state.current.rotation;
+    const dragRotation =
+      isDraggingThisCard && dragging
+        ? clamp(
+            (dragging.x - dragging.startX) / DRAG_TILT_DISTANCE,
+            -DRAG_TILT_MAX,
+            DRAG_TILT_MAX
+          )
+        : 0;
+    const cardRotation = isDraggingThisCard ? dragRotation : state.current.rotation;
     const cardZIndex = isDraggingThisCard ? DRAG_Z_INDEX : state.current.z;
 
     return (
