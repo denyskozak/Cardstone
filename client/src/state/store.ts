@@ -86,13 +86,32 @@ export const useUiStore = create<UiState>((set) => ({
     })),
   setMinionAnimation: (id, transform) =>
     set((state) => {
-      const next = { ...state.minionAnimations };
-      if (transform) {
-        next[id] = transform;
-      } else {
+      const current = state.minionAnimations[id];
+      if (!transform) {
+        if (!current) {
+          return state;
+        }
+        const next = { ...state.minionAnimations };
         delete next[id];
+        return { minionAnimations: next };
       }
-      return { minionAnimations: next };
+      if (
+        current &&
+        current.offsetX === transform.offsetX &&
+        current.offsetY === transform.offsetY &&
+        current.rotation === transform.rotation &&
+        current.scale === transform.scale &&
+        current.zIndex === transform.zIndex &&
+        current.grayscale === transform.grayscale
+      ) {
+        return state;
+      }
+      return {
+        minionAnimations: {
+          ...state.minionAnimations,
+          [id]: transform
+        }
+      };
     }),
   clearMinionAnimation: (id) =>
     set((state) => {

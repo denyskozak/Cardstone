@@ -415,7 +415,9 @@ export function Game() {
                   <button
                     key={card.instanceId}
                     type="button"
-                    className={styles.mulliganCard}
+                    className={`${styles.mulliganCard} ${
+                      card.mulliganReplaced ? styles.mulliganCardReplacedSlot : ''
+                    }`}
                     onClick={() => handleMulliganReplace(card)}
                     disabled={disabled}
                   >
