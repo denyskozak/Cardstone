@@ -8,56 +8,47 @@ import { SoundButton as Button } from '../components/SoundButton'
 import { useCurrentAccount } from '@mysten/dapp-kit'
 
 export function MainRoute() {
-  const logoRef = useRef(null)
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const account = useCurrentAccount();
-  const [index, setIndex] = useState(0)
+  const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    if (!logoRef.current) return
-    const tl = gsap.timeline({ repeat: -1, yoyo: true })
-
-    tl.to(logoRef.current, { y: -20, duration: 2, ease: 'sine.inOut' })
-
     const interval = setInterval(() => {
-      setIndex((i) => (i + 1) % slides.length)
-    }, 10000)
-
+      setIndex((i) => (i + 1) % slides.length);
+    }, 10 * 1000);
 
     return () => {
-      tl.kill()
-      clearInterval(interval)
-    }
-  }, [])
-
+      clearInterval(interval);
+    };
+  }, []);
 
   const slides = [
     {
       titles: ['First Sui Season', 'Mint Unique Cards'],
-      subtitle: 'WEB Collective Card Game',
+      subtitle: 'WEB Collective Card Game'
     },
     {
       titles: ['Built by', 'Single Developer'],
-      subtitle: 'Innovative technology',
+      subtitle: 'Innovative technology'
     },
     {
       titles: ['Powered by ', 'Sui Blockchain'],
-      subtitle: 'Play-to-fun and earn',
-    },
+      subtitle: 'Play-to-fun and earn'
+    }
   ];
 
   return (
     <div className="h-full">
       <Navigation />
 
-      <div className="relative justify-center align-middle items-center flex flex-col w-full h-[calc(100%-98px)]">
+      <div className="relative justify-center align-middle items-center pt-8 flex flex-col w-full h-[calc(100%-98px)]">
         <MagicCanvas />
         <img
-          ref={logoRef}
           alt="Big Logo"
-          className="mt-[64px] max-w-[280px] object-cover z-[2]"
+          className="mt-[64px] max-w-[200px] object-cover z-[2]"
           src="/assets/images/logo_big.webp"
         />
+
 
         <img
           alt="Turtle Art"
@@ -68,57 +59,49 @@ export function MainRoute() {
         <main className="z-[2] gap-10 flex  items-center flex-col w-full h-full overflow-y-auto">
           <div className="flex items-center flex-col">
             {/* HeroUI-like header */}
-            <div  className="text-center mt-4">
-              <div className="inline-block max-w-xl text-center justify-center items-center">
+            <div className="text-center">
+              <div className="inline-block  max-w-xl text-center justify-center items-center">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={slides[index].titles[0]}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-lg"
+                    className="rounded-lg"
                     exit={{ opacity: 0, y: -10 }}
                     initial={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.5 }}
                   >
-              <span className="tracking-tight inline font-semibold title-text z-[2] from-[#00b7fa] to-[#01cfea] text-4xl lg:text-5xl bg-clip-text text-transparent bg-gradient-to-b">
-                {slides[index].titles[0]}
-              </span>
-                    <span className="tracking-tight inline font-semibold title-text z-[2] from-[#FF705B] to-[#FFB457] text-4xl lg:text-5xl bg-clip-text text-transparent bg-gradient-to-b">
-                &nbsp;-&nbsp;<br />{slides[index].titles[1]}
-              </span>
+                    <span className="tracking-tight inline font-semibold title-text z-[2]  text-2xl lg:text-2xl bg-clip-text bg-gradient-to-b">
+                      {slides[index].titles[0]}
+                    </span>
+                    <span className="tracking-tight inline font-semibold title-text z-[2]  text-2xl lg:text-2xl bg-clip-text bg-gradient-to-b">
+                      &nbsp;-&nbsp;
+                      <br />
+                      {slides[index].titles[1]}
+                    </span>
 
-                    <div
-                      className="mt-4 text-xl text-[#FF705B"
-                    >
-                      {slides[index].subtitle}
-                    </div>
+                    {/*<div className="mt-4 text-xl text-black">*/}
+                    {/*  <span className="tracking-tight inline font-semibold title-text z-[2] text-black text-xl bg-clip-text ">*/}
+                    {/*  {slides[index].subtitle}*/}
+                    {/*</span>*/}
+                    {/*</div>*/}
                   </motion.div>
                 </AnimatePresence>
               </div>
             </div>
           </div>
-          <div
-
-          >
+          <div>
             <Button
-              onClick={() => navigate(account ? '/matches' : '/sign-in')}
-            >
+              onClick={() => navigate(account ? '/decks' : '/sign-in')}>
               {/*<span className="absolute inset-0 bg-gradient-to-r from-[#1E3A8A] via-[#38BDF8] to-[#FBBF24] animate-pulse opacity-100 group-hover:opacity-100 blur-md" />*/}
-
-              <span aria-hidden style={{ fontSize: '1.1rem' }}>🔮</span> Launch Game
+              Play
             </Button>
           </div>
 
           <div className="absolute bottom-4 right-2 transform -translate-x-1/2 z-[2] flex flex-col items-center">
-            <img
-              alt="Sui logo"
-              height={120}
-              src="/assets/images/Sui_Logo_White.svg"
-              width={80}
-            />
+            <img alt="Sui logo" height={120} src="/assets/images/Sui_Logo_White.svg" width={80} />
           </div>
         </main>
       </div>
-
     </div>
-  )
+  );
 }

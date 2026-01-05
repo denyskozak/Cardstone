@@ -92,7 +92,7 @@ export function Card({
       eventMode={eventMode}
       cursor={cursor ?? (disabled ? 'not-allowed' : 'pointer')}
       zIndex={zIndex}
-      hitArea={hitArea}
+      // hitArea={hitArea}
       onPointerTap={() => {
         if (!disabled) {
           onClick?.(card);
@@ -158,32 +158,37 @@ export function Card({
       />
       <pixiText
         text={card.card.name}
-        x={CARD_WIDTH * 0.2}
+        x={CARD_WIDTH * 0.14}
         y={CARD_HEIGHT * 0.50}
         style={{
           fill: 0xffffff,
-          fontSize: CARD_WIDTH * 0.1,
+          fontSize: 16,
           fontWeight: 'bold',
           transform: 'translateX(-50%)',
         }}
       />
       <pixiText
         text={card.card.cost}
-        x={CARD_WIDTH * 0.1}
-        y={CARD_HEIGHT * 0.04}
+        x={CARD_WIDTH * 0.115}
+        y={CARD_HEIGHT * 0.055}
         style={{ fill: 0xffffff, fontSize: 28, fontWeight: 'bold' }}
       />
       {card.card.text ? (<pixiText
         text={card.card.text}
-        x={CARD_WIDTH * 0.25}
-        y={CARD_HEIGHT * 0.7}
-        style={{ fill: 0x000000, fontSize: CARD_WIDTH * 0.1, fontWeight: 'bold' }}
+        x={CARD_WIDTH * 0.2}
+        y={CARD_HEIGHT * 0.63}
+        style={{
+          fill: 0xffffff, fontSize: 12 ,
+          wordWrap: true,
+          wordWrapWidth: CARD_WIDTH - 50,
+          breakWords: true,
+      }}
       />) : null}
       {"attack" in card.card ? (
         <pixiText
           text={card.card.attack}
           x={CARD_WIDTH * 0.11}
-          y={CARD_HEIGHT * 0.85}
+          y={CARD_HEIGHT * 0.80}
           style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
         />
       ) : null}
@@ -191,7 +196,7 @@ export function Card({
         <pixiText
           text={card.card.health}
           x={CARD_WIDTH * 0.87}
-          y={CARD_HEIGHT * 0.85}
+          y={CARD_HEIGHT * 0.80}
           style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
         />
       ) : null}

@@ -57,6 +57,7 @@ export default function TargetingArrow({ playerSide: _playerSide }: TargetingArr
       anchor={{ x: 0, y: 0.5 }}
       eventMode="none"
       alpha={0.9}
+
     />
   );
 }

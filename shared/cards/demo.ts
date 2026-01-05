@@ -51,11 +51,11 @@ const minions: Record<string, MinionCard> = {
     cost: 5,
     attack: 3,
     health: 6,
-    text: 'Battlecry: Add 2/2 to friendly minions',
+    text: 'Battlecry: Add 1 hp to friendly minions',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Buff', stats: { attack: 2, health: 2 }, target: 'AllFriendlies' }
+        action: { type: 'Buff', stats: {  health: 1 }, target: 'AllFriendlies' }
       }
     ]
   },
@@ -113,13 +113,13 @@ const minions: Record<string, MinionCard> = {
     name: 'Axol of Aqua',
     type: 'Minion',
     cost: 3,
-    attack: 2,
-    health: 4,
-    text: 'Battlecry: Give your minions +2 Health.',
+    attack: 1,
+    health: 2,
+    text: 'Battlecry: Damage 2 to all enemies.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Buff', stats: { health: 2 }, target: 'AllFriendlies' }
+        action: { type: 'Damage', amount: 2, target: 'AllEnemies' }
       }
     ]
   },
@@ -180,8 +180,8 @@ const minions: Record<string, MinionCard> = {
     id: CARD_IDS.suilend,
     name: 'Suilend Protocol',
     type: 'Minion',
-    cost: 5,
-    attack: 4,
+    cost: 8,
+    attack: 5,
     health: 5,
     text: 'Battlecry: Gain +1/+1 for each card in your hand.',
     effects: [
@@ -240,20 +240,16 @@ const minions: Record<string, MinionCard> = {
     id: CARD_IDS.samBlackshear,
     name: 'Sam',
     type: 'Minion',
-    cost: 5,
-    attack: 4,
-    health: 6,
-    text: 'Buff: Add 1 attacks, 1 hp all friendly minions on board',
+    cost: 3,
+    attack: 2,
+    health: 3,
+    text: 'Battlecry: Add 1 mana crystal',
     effects: [
       {
-        trigger: { type: 'Aura' },
+        trigger: { type: 'Battlecry' },
         action: {
-          type: 'Buff',
-          stats: {
-            attack: 2,
-            health: 2
-          },
-          target: 'AllFriendlies'
+          type: 'ManaCrystal',
+          amount: 1
         }
       }
     ]
@@ -264,8 +260,8 @@ const minions: Record<string, MinionCard> = {
     type: 'Minion',
     cost: 4,
     attack: 3,
-    health: 5,
-    text: 'Battlecry: DrawCard 2 cards.',
+    health: 3,
+    text: 'Battlecry: Draw 2 cards',
     effects: [
       {
         trigger: { type: 'Battlecry' },
@@ -278,21 +274,21 @@ const minions: Record<string, MinionCard> = {
     name: 'Noodls protocl',
     type: 'Minion',
     cost: 4,
-    attack: 3,
+    attack: 4,
     health: 5
   },
   [CARD_IDS.georgeDanezis]: {
     id: CARD_IDS.georgeDanezis,
     name: 'George Danezis',
     type: 'Minion',
-    cost: 5,
-    attack: 4,
+    cost: 6,
+    attack: 6,
     health: 6,
-    text: 'Aura: Friendly Minions Get 3 Healths.',
+    text: 'Draw Card on attack',
     effects: [
       {
-        trigger: { type: 'Aura' },
-        action: { type: 'Buff', stats: { health: 3}, target: "FriendlyMinion" }
+        trigger: { type: 'Attack' },
+        action: { type: 'DrawCard', amount: 1 }
       }
     ]
   },
@@ -300,14 +296,14 @@ const minions: Record<string, MinionCard> = {
     id: CARD_IDS.adeniyi,
     name: 'Adeniyi the Researcher',
     type: 'Minion',
-    cost: 6,
-    attack: 5,
-    health: 6,
-    text: 'Battlecry: Summon a Robot.',
+    cost: 10,
+    attack: 8,
+    health: 8,
+    text: 'Battlecry: Summon 3 zk-tunnel robots 2/3',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Summon', cardId: CARD_IDS.robot, count: 1, target: 'Board' }
+        action: { type: 'Summon', cardId: CARD_IDS.robot, count: 3, target: 'Board' }
       }
     ]
   },
@@ -317,7 +313,7 @@ const minions: Record<string, MinionCard> = {
     type: 'Minion',
     cost: 2,
     attack: 2,
-    health: 3,
+    health: 2,
   },
   [CARD_IDS.devIntern]: {
     id: CARD_IDS.devIntern,

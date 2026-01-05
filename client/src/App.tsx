@@ -23,7 +23,7 @@ const queryClient = new QueryClient()
 export function App() {
   const showThemeEdit = window.location.search === '?them-edit=true'
   return (
-    <Theme accentColor="cyan" appearance="dark" panelBackground="translucent" className="theme-provider">
+    <Theme accentColor="amber"  radius="full" appearance="dark" panelBackground="translucent" className="theme-provider">
       <QueryClientProvider client={queryClient}>
         <SuiClientProvider networks={networkConfig} defaultNetwork="mainnet">
           <WalletProvider autoConnect>

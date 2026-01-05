@@ -420,6 +420,9 @@ export function Game() {
                     }`}
                     onClick={() => handleMulliganReplace(card)}
                     disabled={disabled}
+                    style={{
+                      cursor: disabled  ? 'block' : 'pointer'
+                    }}
                   >
                     <InterfaceCard card={card.card} />
                     {card.mulliganReplaced ? (

@@ -183,34 +183,13 @@ export function DeckCard({ deck, cards, onEdit, onDuplicate, onRename, onDelete,
         <footer style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center' }}>
           <Button
             onClick={onUse}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              border: 'none',
-              padding: '10px 14px',
-              borderRadius: '999px',
-              background: 'linear-gradient(90deg, #10b981, #3b82f6)',
-              color: '#0b1324',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
+
           >
             <span aria-hidden style={menuIconStyle}>▶</span> Use Deck
           </Button>
           <Button
             onClick={onEdit}
-            style={{
-              border: '1px solid rgba(255,255,255,0.18)',
-              background: 'rgba(255,255,255,0.06)',
-              color: 'white',
-              borderRadius: '14px',
-              padding: '10px 16px',
-              fontWeight: 500,
-              cursor: 'pointer'
-            }}
+
           >
             Edit
           </Button>

@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { Button } from '@radix-ui/themes';
 
 type ButtonElement = HTMLButtonElement;
 type ButtonEvent = React.MouseEvent<ButtonElement>;
@@ -36,25 +37,12 @@ export function SoundButton({
       <audio ref={audioRef} hidden src={soundSrc}>
         <track kind="captions" />
       </audio>
-      <button
+      <Button
         onClick={handlePress}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "12px 18px",
-          borderRadius: "16px",
-          border: "none",
-          background: "linear-gradient(90deg,#f97316,#facc15)",
-          color: "#0b1324",
-          fontWeight: 700,
-          cursor: "pointer",
-          ...style,
-        }}
         {...buttonProps}
       >
         {children}
-      </button>
+      </Button>
     </>
   );
 }

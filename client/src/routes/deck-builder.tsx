@@ -676,15 +676,7 @@ export function DeckBuilderPage() {
                               >
                                 <InterfaceCard card={card} />
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <strong>{card.name}</strong>
-                                    <span>{card.rarity}</span>
-                                  </div>
-                                  <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)' }}>{card.type}</span>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
-                                    <span>{card.heroClass}</span>
-                                    <span>{card.text}</span>
-                                  </div>
+
                                   {inDeck && (
                                     <span style={{ fontSize: '0.8rem', color: 'rgba(16,185,129,0.85)' }}>In deck: {inDeck.count}</span>
                                   )}
@@ -713,7 +705,7 @@ export function DeckBuilderPage() {
                                       opacity: Boolean(disabledReason) || Boolean(limitReached) ? 0.6 : 1
                                     }}
                                   >
-                                    Добавить в колоду
+                                    Add to deck
                                   </button>
                                 </div>
                               </div>
