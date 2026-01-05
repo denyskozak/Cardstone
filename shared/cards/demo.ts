@@ -3,7 +3,7 @@ import { CARD_IDS } from '../constants.js';
 const minions: Record<string, MinionCard> = {
   [CARD_IDS.ika]: {
     id: CARD_IDS.ika,
-    name: 'Ika the Ink Trader',
+    name: 'Ika',
     type: 'Minion',
     cost: 2,
     attack: 2,
@@ -59,7 +59,7 @@ const minions: Record<string, MinionCard> = {
   },
   [CARD_IDS.blub]: {
     id: CARD_IDS.blub,
-    name: 'Blub the Bubble',
+    name: 'Blub',
     type: 'Minion',
     cost: 2,
     attack: 2,
@@ -132,8 +132,9 @@ const minions: Record<string, MinionCard> = {
     ]
   },
   [CARD_IDS.fud]: {
-    id: CARD_IDS.fud,
-    name: 'FUD the Pug',
+
+    id: CARD_IDS.suilend,
+    name: 'Suilend',
     type: 'Minion',
     cost: 4,
     attack: 4,
@@ -172,8 +173,9 @@ const minions: Record<string, MinionCard> = {
     effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Taunt' } }]
   },
   [CARD_IDS.suilend]: {
-    id: CARD_IDS.suilend,
-    name: 'Suilend',
+
+    id: CARD_IDS.adeniyi,
+    name: 'Adeniyi',
     type: 'Minion',
     cost: 5,
     attack: 7,
@@ -203,12 +205,12 @@ const minions: Record<string, MinionCard> = {
   },
   [CARD_IDS.matteo]: {
     id: CARD_IDS.matteo,
-    name: 'Matteo the Builder',
+    name: 'Matteo',
     type: 'Minion',
     cost: 2,
     attack: 3,
     health: 2,
-    text: 'Battlecry: Return a friendly minion from the battlefield to your hand.',
+    text: 'Battlecry: Return a friendly minion to your hand.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
@@ -232,8 +234,8 @@ const minions: Record<string, MinionCard> = {
     ]
   },
   [CARD_IDS.samBlackshear]: {
-    id: CARD_IDS.samBlackshear,
-    name: 'Sam',
+    id: CARD_IDS.fud,
+    name: 'FUD the Pug',
     type: 'Minion',
     cost: 1,
     attack: 1,
@@ -252,7 +254,7 @@ const minions: Record<string, MinionCard> = {
   },
   [CARD_IDS.evan]: {
     id: CARD_IDS.evan,
-    name: 'Evan the Architect',
+    name: 'Evan',
     type: 'Minion',
     cost: 3,
     attack: 3,
@@ -276,7 +278,7 @@ const minions: Record<string, MinionCard> = {
   },
   [CARD_IDS.georgeDanezis]: {
     id: CARD_IDS.georgeDanezis,
-    name: 'George Danezis',
+    name: 'George',
     type: 'Minion',
     cost: 6,
     attack: 4,
@@ -286,17 +288,18 @@ const minions: Record<string, MinionCard> = {
 
   },
   [CARD_IDS.adeniyi]: {
-    id: CARD_IDS.adeniyi,
-    name: 'Adeniyi',
+
+    id: CARD_IDS.samBlackshear,
+    name: 'Sam',
     type: 'Minion',
     cost: 6,
     attack: 5,
     health: 5,
-    text: 'Battlecry: Freeze a character.',
+    text: 'Battlecry: Freeze all enemies',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Custom', key: 'FreezeCharacter', data: { target: 'AnyCharacter' } }
+        action: { type: 'Custom', key: 'Freeze', data: { target: 'AllEnemies' } }
       }
     ]
   },
