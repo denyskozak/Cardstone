@@ -492,9 +492,9 @@ export function DeckBuilderPage() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.75rem' }}>
-                    Catalog Class
+                <div style={{ display: 'flex', alignItems: 'center', verticalAlign: 'middle', flexWrap: 'wrap', gap: '12px' }}>
+                  {/*<label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.75rem' }}>*/}
+                    {/*Catalog Class*/}
                     <select
                       value={filterClass}
                       onChange={(event) => setFilterClass(event.target.value as HeroClass | 'All')}
@@ -513,42 +513,42 @@ export function DeckBuilderPage() {
                         </option>
                       ))}
                     </select>
-                  </label>
+                  {/*</label>*/}
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                    <span style={{ fontSize: '0.75rem' }}>Mana Cost: {manaRange[0]} - {manaRange[1]}</span>
-                    <Slider.Root
-                      value={manaRange}
-                      max={7}
-                      step={1}
-                      minStepsBetweenThumbs={1}
-                      onValueChange={(value: number[]) =>
-                        setManaRange([value[0] ?? manaRange[0], value[1] ?? manaRange[1]])
-                      }
-                      style={{ display: 'flex', alignItems: 'center', height: '24px' }}
-                    >
-                      <Slider.Track
-                        style={{
-                          position: 'relative',
-                          flex: 1,
-                          height: '4px',
-                          background: 'rgba(255,255,255,0.15)',
-                          borderRadius: '999px'
-                        }}
-                      >
-                        <Slider.Range
-                          style={{
-                            position: 'absolute',
-                            height: '100%',
-                            background: 'linear-gradient(90deg,#2563eb,#f97316)',
-                            borderRadius: '999px'
-                          }}
-                        />
-                      </Slider.Track>
-                      <Slider.Thumb aria-label="Minimum mana" style={sliderThumbStyle} />
-                      <Slider.Thumb aria-label="Maximum mana" style={sliderThumbStyle} />
-                    </Slider.Root>
-                  </div>
+                  {/*<div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>*/}
+                  {/*  <span style={{ fontSize: '0.75rem' }}>Mana Cost: {manaRange[0]} - {manaRange[1]}</span>*/}
+                  {/*  <Slider.Root*/}
+                  {/*    value={manaRange}*/}
+                  {/*    max={7}*/}
+                  {/*    step={1}*/}
+                  {/*    minStepsBetweenThumbs={1}*/}
+                  {/*    onValueChange={(value: number[]) =>*/}
+                  {/*      setManaRange([value[0] ?? manaRange[0], value[1] ?? manaRange[1]])*/}
+                  {/*    }*/}
+                  {/*    style={{ display: 'flex', alignItems: 'center', height: '24px' }}*/}
+                  {/*  >*/}
+                  {/*    <Slider.Track*/}
+                  {/*      style={{*/}
+                  {/*        position: 'relative',*/}
+                  {/*        flex: 1,*/}
+                  {/*        height: '4px',*/}
+                  {/*        background: 'rgba(255,255,255,0.15)',*/}
+                  {/*        borderRadius: '999px'*/}
+                  {/*      }}*/}
+                  {/*    >*/}
+                  {/*      <Slider.Range*/}
+                  {/*        style={{*/}
+                  {/*          position: 'absolute',*/}
+                  {/*          height: '100%',*/}
+                  {/*          background: 'linear-gradient(90deg,#2563eb,#f97316)',*/}
+                  {/*          borderRadius: '999px'*/}
+                  {/*        }}*/}
+                  {/*      />*/}
+                  {/*    </Slider.Track>*/}
+                  {/*    <Slider.Thumb aria-label="Minimum mana" style={sliderThumbStyle} />*/}
+                  {/*    <Slider.Thumb aria-label="Maximum mana" style={sliderThumbStyle} />*/}
+                  {/*  </Slider.Root>*/}
+                  {/*</div>*/}
 
                   <Popover.Root>
                     <Popover.Trigger asChild>
@@ -622,25 +622,25 @@ export function DeckBuilderPage() {
                     </Popover.Content>
                   </Popover.Root>
 
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-                    <Checkbox.Root
-                      checked={ownedOnly}
-                      onCheckedChange={(value: boolean | 'indeterminate') => setOwnedOnly(value === true)}
-                      style={{
-                        width: '18px',
-                        height: '18px',
-                        borderRadius: '6px',
-                        border: '1px solid rgba(255,255,255,0.3)',
-                        display: 'grid',
-                        placeItems: 'center'
-                      }}
-                    >
-                      <Checkbox.Indicator>
-                        <Icon symbol="✓" size="0.85rem" />
-                      </Checkbox.Indicator>
-                    </Checkbox.Root>
-                    Show craftable only
-                  </label>
+                  {/*<label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>*/}
+                  {/*  <Checkbox.Root*/}
+                  {/*    checked={ownedOnly}*/}
+                  {/*    onCheckedChange={(value: boolean | 'indeterminate') => setOwnedOnly(value === true)}*/}
+                  {/*    style={{*/}
+                  {/*      width: '18px',*/}
+                  {/*      height: '18px',*/}
+                  {/*      borderRadius: '6px',*/}
+                  {/*      border: '1px solid rgba(255,255,255,0.3)',*/}
+                  {/*      display: 'grid',*/}
+                  {/*      placeItems: 'center'*/}
+                  {/*    }}*/}
+                  {/*  >*/}
+                  {/*    <Checkbox.Indicator>*/}
+                  {/*      <Icon symbol="✓" size="0.85rem" />*/}
+                  {/*    </Checkbox.Indicator>*/}
+                  {/*  </Checkbox.Root>*/}
+                  {/*  Show craftable only*/}
+                  {/*</label>*/}
                 </div>
 
                 <ScrollArea.Root style={catalogScrollAreaStyle}>
@@ -744,7 +744,7 @@ export function DeckBuilderPage() {
                   <div style={deckDetailsScrollableStyle}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <strong>Deck Name</strong>
+                      {/*<strong>Deck Name</strong>*/}
                       <input
                         value={deck.name}
                         onChange={(event) => setDeck((current) => ({ ...current, name: event.target.value }))}
@@ -788,8 +788,8 @@ export function DeckBuilderPage() {
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.75rem' }}>
-                      Hero Class
+                    {/*<label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.75rem' }}>*/}
+                    {/*  Hero Class*/}
                       <select
                         value={deck.heroClass}
                         onChange={(event) => handleHeroClassChange(event.target.value as HeroClass)}
@@ -807,7 +807,7 @@ export function DeckBuilderPage() {
                           </option>
                         ))}
                       </select>
-                    </label>
+                    {/*</label>*/}
                     <Button
                       onClick={() => setDeck(deckToDraft(deckData))}
                       style={{

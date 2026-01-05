@@ -24,11 +24,11 @@ export function MainRoute() {
 
   const slides = [
     {
-      titles: ['First Sui Season', 'Mint Unique Cards'],
+      titles: ['Collective', 'Cards Game'],
       subtitle: 'WEB Collective Card Game'
     },
     {
-      titles: ['Built by', 'Single Developer'],
+      titles: ['Dive into Sui Season', 'Earn Unique Cards'],
       subtitle: 'Innovative technology'
     },
     {
@@ -59,7 +59,7 @@ export function MainRoute() {
         <main className="z-[2] gap-5 flex  items-center flex-col w-full h-full overflow-y-auto">
           <div className="flex items-center flex-col">
             {/* HeroUI-like header */}
-            <div className="text-center">
+            <div className="text-center mt-4">
               <div className="inline-block  max-w-xl text-center justify-center items-center">
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -70,11 +70,11 @@ export function MainRoute() {
                     initial={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.5 }}
                   >
-                    <span className="tracking-tight inline font-semibold title-text z-[2]  text-2xl lg:text-2xl bg-clip-text bg-gradient-to-b">
+                    <span className="tracking-tight inline font-semibold title-text z-[2] text-2xl lg:text-3xl bg-clip-text bg-gradient-to-b">
                       {slides[index].titles[0]}
                     </span>
-                    <span className="tracking-tight inline font-semibold title-text z-[2]  text-2xl lg:text-2xl bg-clip-text bg-gradient-to-b">
-                      &nbsp;-&nbsp;
+                    <span className="tracking-tight inline font-semibold title-text z-[2] text-2xl lg:text-3xl bg-clip-text bg-gradient-to-b">
+                      {/*&nbsp;-&nbsp;*/}
                       <br />
                       {slides[index].titles[1]}
                     </span>
