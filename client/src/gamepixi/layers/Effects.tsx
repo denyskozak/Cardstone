@@ -82,6 +82,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const localAttackQueueVersion = useUiStore((s) => s.localAttackQueueVersion);
   const heroPositions = useUiStore((s) => s.heroPositions);
   const minionAnimations = useUiStore((s) => s.minionAnimations);
+  const minionAnimationsRef = useRef(minionAnimations);
 
   const pendingLocalAttackersRef = useRef(new Map<string, number>());
   const pendingImpactResultsRef = useRef(new Map<string, PendingImpactResult[]>());
@@ -103,12 +104,14 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const [damageIndicators, setDamageIndicators] = useState<DamageIndicator[]>([]);
   const damageSequenceRef = useRef(0);
   const [damageTexture, setDamageTexture] = useState<Texture>(Texture.EMPTY);
-  const damageTextureReady = (
-    damageTexture.baseTexture as typeof damageTexture.baseTexture & { valid?: boolean }
-  ).valid ?? false;
+  const damageTextureReady = damageTexture !== Texture.EMPTY;
   useEffect(() => {
     prevHeroPositionsRef.current = heroPositions;
   }, [heroPositions]);
+
+  useEffect(() => {
+    minionAnimationsRef.current = minionAnimations;
+  }, [minionAnimations]);
 
   useEffect(() => {
     return () => {
@@ -445,6 +448,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   useLayoutEffect(() => {
     const previousIds = previousAnimationIdsRef.current;
     const nextIds = new Set<string>();
+    const currentMinionAnimations = minionAnimationsRef.current;
 
     animations.forEach((animation) => {
       nextIds.add(animation.attackerId);
@@ -460,13 +464,13 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     });
 
     previousIds.forEach((id) => {
-      if (!nextIds.has(id) && !minionAnimations[id]?.grayscale) {
+      if (!nextIds.has(id) && !currentMinionAnimations[id]?.grayscale) {
         clearMinionAnimation(id);
       }
     });
 
     previousAnimationIdsRef.current = nextIds;
-  }, [animations, clearMinionAnimation, minionAnimations, setMinionAnimation]);
+  }, [animations, clearMinionAnimation, setMinionAnimation]);
 
   return (
     <pixiContainer>
