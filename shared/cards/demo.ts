@@ -5,136 +5,129 @@ const minions: Record<string, MinionCard> = {
     id: CARD_IDS.ika,
     name: 'Ika the Ink Trader',
     type: 'Minion',
-    cost: 1,
-    attack: 1,
-    health: 2,
-    text: 'Battlecry: Draw 1 card',
+    cost: 2,
+    attack: 2,
+    health: 1,
+    text: 'Deathrattle: Draw a card.',
     effects: [
-      {
-        trigger: { type: 'Battlecry' },
-        action: { type: 'DrawCard', amount: 1 }
-      }
+      { trigger: { type: 'Deathrattle' }, action: { type: 'DrawCard', amount: 1 } }
     ]
   },
   [CARD_IDS.walrus]: {
     id: CARD_IDS.walrus,
-    name: 'Walrus of the Deep',
+    name: 'Walrus',
     type: 'Minion',
-    cost: 4,
-    attack: 4,
-    health: 5,
-    text: 'Taunt. Deathrattle: Summon a 2/2 Mini Walrus.',
+    cost: 3,
+    attack: 2,
+    health: 3,
+    text: 'Taunt. Deathrattle: Summon a 1/1 Mini Walrus',
     effects: [
       {
-        trigger: { type: 'Aura' },
-        action: { type: 'Custom', key: 'Taunt' }
-      },
-      {
         trigger: { type: 'Deathrattle' },
-        action: { type: 'Summon', cardId: CARD_IDS.miniWalrus, count: 1, target: "Board"  }
-      }
+        action: { type: 'Summon', cardId: CARD_IDS.miniWalrus, count: 1, target: 'Board' }
+      },
+      { trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Taunt' } },
     ]
   },
   [CARD_IDS.miniWalrus]: {
     id: CARD_IDS.miniWalrus,
     name: 'Mini Walrus',
     type: 'Minion',
-    cost: 2,
-    attack: 2,
-    health: 2,
+    cost: 1,
+    attack: 1,
+    health: 1,
     text: 'Cute',
   },
   [CARD_IDS.cetus]: {
     id: CARD_IDS.cetus,
-    name: 'Cetus Protocol',
+    name: 'Cetus',
     type: 'Minion',
-    cost: 5,
-    attack: 3,
-    health: 6,
-    text: 'Battlecry: Add 1 hp to friendly minions',
+    cost: 4,
+    attack: 4,
+    health: 4,
+    text: 'Battlecry: Give a minion +2 Attack this turn.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Buff', stats: {  health: 1 }, target: 'AllFriendlies' }
+        action: {
+          type: 'Custom',
+          key: 'BuffTargetThisTurn',
+          data: { stats: { attack: 2 }, target: 'AnyMinion' }
+        }
       }
     ]
   },
   [CARD_IDS.blub]: {
     id: CARD_IDS.blub,
-    name: 'Blub the Bubble King',
+    name: 'Blub the Bubble',
     type: 'Minion',
-    cost: 3,
-    attack: 3,
-    health: 3,
-    text: 'Aura: Friendly minions gain +1 Attack while this is alive.',
+    cost: 2,
+    attack: 2,
+    health: 2,
+    text: 'Adjacent minions have +1 Attack.',
     effects: [
       {
         trigger: { type: 'Aura' },
-        action: { type: 'Buff', stats: { attack: 1 }, target: 'AllFriendlies' }
+        action: { type: 'Custom', key: 'AdjacentBuff', data: { stats: { attack: 1 } } }
       }
     ]
   },
   [CARD_IDS.hipo]: {
     id: CARD_IDS.hipo,
-    name: 'Hipo the Hodler',
+    name: 'Hipo',
     type: 'Minion',
-    cost: 2,
-    attack: 1,
-    health: 5,
-    text: 'Taunt. When attacked, gain +1 Attack.',
-    effects: [
-      {
-        trigger: { type: 'Aura' },
-        action: { type: 'Custom', key: 'Taunt' }
-      },
-      {
-        trigger: { type: 'Aura' },
-        action: { type: 'Custom', key: 'Berserk', data: { attack: 1 } }
-      }
-    ]
+    cost: 1,
+    attack: 0,
+    health: 4,
+    text: 'Taunt',
+    effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Taunt' } }]
   },
   [CARD_IDS.lofi]: {
     id: CARD_IDS.lofi,
-    name: 'Lofi Validator',
+    name: 'Lofi',
     type: 'Minion',
-    cost: 1,
-    attack: 1,
+    cost: 3,
+    attack: 3,
     health: 3,
-    text: 'Battlecry: Heal your hero for 4.',
+    text: 'Battlecry: Restore Hero 3 Health.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Heal', amount: 4, target: 'Hero' }
+        action: { type: 'Heal', amount: 3, target: 'Hero' }
       }
     ]
   },
   [CARD_IDS.axol]: {
     id: CARD_IDS.axol,
-    name: 'Axol of Aqua',
+    name: 'Axol',
     type: 'Minion',
-    cost: 3,
-    attack: 1,
+    cost: 2,
+    attack: 3,
     health: 2,
-    text: 'Battlecry: Damage 2 to all enemies.',
+    text: 'Battlecry: Deal 3 damage randomly split between all other characters.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Damage', amount: 2, target: 'AllEnemies' }
+        action: {
+          type: 'Custom',
+          key: 'RandomSplitDamage',
+          data: { amount: 3, pool: 'AllOtherCharacters' }
+        }
       }
     ]
   },
   [CARD_IDS.miu]: {
     id: CARD_IDS.miu,
-    name: 'Miu the Coder Cat',
+    name: 'Miu',
     type: 'Minion',
-    cost: 2,
+    cost: 3,
     attack: 2,
-    health: 2,
-    text: 'Spellcast: Draw a random card.',
+    health: 1,
+    text: 'Battlecry: Silence a minion.',
     effects: [
       {
-        trigger: { type: 'SpellCast' },
-        action: { type: 'DrawCard', amount: 1 }
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Custom', key: 'Silence', data: { target: 'AnyMinion' } }
       }
     ]
   },
@@ -142,52 +135,54 @@ const minions: Record<string, MinionCard> = {
     id: CARD_IDS.fud,
     name: 'FUD the Pug',
     type: 'Minion',
-    cost: 3,
-    attack: 3,
+    cost: 4,
+    attack: 4,
     health: 2,
-    text: 'Battlecry: Give your minions on board + 1 health.',
+    text: 'After a friendly minion dies, draw a card.',
     effects: [
       {
-        trigger: { type: 'Aura' },
-        action: { type: 'Buff', stats: { health: 1 }, target: 'AllFriendlies' }
+        trigger: { type: 'Custom', key: 'FriendlyMinionDied' },
+        action: { type: 'DrawCard', amount: 1 }
       }
     ]
   },
   [CARD_IDS.manifest]: {
     id: CARD_IDS.manifest,
-    name: 'Manifest Node',
-    type: 'Minion',
-    cost: 3,
-    attack: 2,
-    health: 5,
-  },
-  [CARD_IDS.scallop]: {
-    id: CARD_IDS.scallop,
-    name: 'Scallop Stone',
+    name: 'Manifest',
     type: 'Minion',
     cost: 2,
-    attack: 1,
-    health: 4,
-    text: 'Taunt',
+    attack: 2,
+    health: 3,
+    text: 'Has +3 Attack while damaged.',
     effects: [
       {
         trigger: { type: 'Aura' },
-        action: { type: 'Custom', key: 'Taunt' }
+        action: { type: 'Custom', key: 'AttackWhileDamaged', data: { amount: 3 } }
       }
     ]
   },
+  [CARD_IDS.scallop]: {
+    id: CARD_IDS.scallop,
+    name: 'Scallop',
+    type: 'Minion',
+    cost: 5,
+    attack: 3,
+    health: 6,
+    text: 'Taunt',
+    effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Taunt' } }]
+  },
   [CARD_IDS.suilend]: {
     id: CARD_IDS.suilend,
-    name: 'Suilend Protocol',
+    name: 'Suilend',
     type: 'Minion',
-    cost: 8,
-    attack: 5,
-    health: 5,
-    text: 'Battlecry: Gain +1/+1 for each card in your hand.',
+    cost: 5,
+    attack: 7,
+    health: 6,
+    text: 'Your minions cost (3) more.',
     effects: [
       {
-        trigger: { type: 'Battlecry' },
-        action: { type: 'Custom', key: 'BuffPerCardInHand' }
+        trigger: { type: 'Aura' },
+        action: { type: 'Custom', key: 'IncreaseFriendlyMinionCosts', data: { amount: 3 } }
       }
     ]
   },
@@ -196,13 +191,13 @@ const minions: Record<string, MinionCard> = {
     name: 'DeepBook ',
     type: 'Minion',
     cost: 3,
-    attack: 2,
-    health: 4,
-    text: 'Whenever you cast a spell, draw a card.',
+    attack: 3,
+    health: 3,
+    text: 'Whenever a minion dies, gain +1 Attack.',
     effects: [
       {
-        trigger: { type: 'SpellCast' },
-        action: { type: 'DrawCard', amount: 1 }
+        trigger: { type: 'Custom', key: 'AnyMinionDied' },
+        action: { type: 'Buff', stats: { attack: 1 }, target: 'Self' }
       }
     ]
   },
@@ -211,13 +206,13 @@ const minions: Record<string, MinionCard> = {
     name: 'Matteo the Builder',
     type: 'Minion',
     cost: 2,
-    attack: 2,
-    health: 3,
-    text: 'Battlecry: Summon a 1/1 “Dev Intern”.',
+    attack: 3,
+    health: 2,
+    text: 'Battlecry: Return a friendly minion from the battlefield to your hand.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Summon', cardId: CARD_IDS.devIntern, count: 1, target: "Board" }
+        action: { type: 'Custom', key: 'ReturnFriendlyMinionToHand', data: { target: 'FriendlyMinion' } }
       }
     ]
   },
@@ -228,11 +223,11 @@ const minions: Record<string, MinionCard> = {
     cost: 5,
     attack: 4,
     health: 4,
-    text: 'Battlecry: Summon to 2 Seals',
+    text: 'Battlecry: Summon a 2/2 Squire.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Summon', cardId: CARD_IDS.seal, count: 2, target: 'Board' }
+        action: { type: 'Summon', cardId: CARD_IDS.seal, count: 1, target: 'Board' }
       }
     ]
   },
@@ -240,16 +235,17 @@ const minions: Record<string, MinionCard> = {
     id: CARD_IDS.samBlackshear,
     name: 'Sam',
     type: 'Minion',
-    cost: 3,
-    attack: 2,
-    health: 3,
-    text: 'Battlecry: Add 1 mana crystal',
+    cost: 1,
+    attack: 1,
+    health: 1,
+    text: 'Battlecry: Give a minion +2 Attack this turn.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
         action: {
-          type: 'ManaCrystal',
-          amount: 1
+          type: 'Custom',
+          key: 'BuffTargetThisTurn',
+          data: { stats: { attack: 2 }, target: 'AnyMinion' }
         }
       }
     ]
@@ -258,52 +254,49 @@ const minions: Record<string, MinionCard> = {
     id: CARD_IDS.evan,
     name: 'Evan the Architect',
     type: 'Minion',
-    cost: 4,
+    cost: 3,
     attack: 3,
-    health: 3,
-    text: 'Battlecry: Draw 2 cards',
-    effects: [
-      {
-        trigger: { type: 'Battlecry' },
-        action: { type: 'DrawCard', amount: 2 }
-      }
-    ]
+    health: 1,
+    text: 'Divine Shield',
+    effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'DivineShield' } }]
+
   },
   [CARD_IDS.noodls]: {
     id: CARD_IDS.noodls,
     name: 'Noodls protocl',
     type: 'Minion',
     cost: 4,
-    attack: 4,
-    health: 5
+    attack: 3,
+    health: 3,
+    text: 'Taunt. Costs (1) less per Attack of your weapon.',
+    effects: [
+      { trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Taunt' } },
+      { trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'CostLessPerWeaponAttack', data: { amount: 1 } } }
+    ]
   },
   [CARD_IDS.georgeDanezis]: {
     id: CARD_IDS.georgeDanezis,
     name: 'George Danezis',
     type: 'Minion',
     cost: 6,
-    attack: 6,
-    health: 6,
-    text: 'Draw Card on attack',
-    effects: [
-      {
-        trigger: { type: 'Attack' },
-        action: { type: 'DrawCard', amount: 1 }
-      }
-    ]
+    attack: 4,
+    health: 5,
+    text: 'Windfury',
+    effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Windfury' } }]
+
   },
   [CARD_IDS.adeniyi]: {
     id: CARD_IDS.adeniyi,
-    name: 'Adeniyi the Researcher',
+    name: 'Adeniyi',
     type: 'Minion',
-    cost: 10,
-    attack: 8,
-    health: 8,
-    text: 'Battlecry: Summon 3 zk-tunnel robots 2/3',
+    cost: 6,
+    attack: 5,
+    health: 5,
+    text: 'Battlecry: Freeze a character.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Summon', cardId: CARD_IDS.robot, count: 3, target: 'Board' }
+        action: { type: 'Custom', key: 'FreezeCharacter', data: { target: 'AnyCharacter' } }
       }
     ]
   },
@@ -311,9 +304,14 @@ const minions: Record<string, MinionCard> = {
     id: CARD_IDS.robot,
     name: 'Sui Robot',
     type: 'Minion',
-    cost: 2,
+    cost: 3,
     attack: 2,
-    health: 2,
+    health: 3,
+    text: 'Taunt. Has +3 Attack while damaged.',
+    effects: [
+      { trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Taunt' } },
+      { trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'AttackWhileDamaged', data: { amount: 3 } } }
+    ]
   },
   [CARD_IDS.devIntern]: {
     id: CARD_IDS.devIntern,
@@ -322,14 +320,18 @@ const minions: Record<string, MinionCard> = {
     cost: 1,
     attack: 1,
     health: 1,
+    text: 'Divine Shield',
+    effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'DivineShield' } }]
+
   },
   [CARD_IDS.seal]: {
     id: CARD_IDS.seal,
     name: 'Seal',
     type: 'Minion',
-    cost: 1,
-    attack: 1,
+    cost: 2,
+    attack: 2,
     health: 2,
+    text: ''
   },
 
 };
