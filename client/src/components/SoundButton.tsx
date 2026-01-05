@@ -1,11 +1,14 @@
 import React, { useRef } from "react";
 import { Button } from '@radix-ui/themes';
+import { BaseButton } from '@radix-ui/themes/components/_internal/base-button';
 
-type ButtonElement = HTMLButtonElement;
+type ButtonElement = React.ElementRef<typeof BaseButton>;
 type ButtonEvent = React.MouseEvent<ButtonElement>;
 
+interface ButtonProps extends React.ComponentPropsWithoutRef<typeof BaseButton> {}
+
 export interface SoundButtonProps
-  extends React.ButtonHTMLAttributes<ButtonElement> {
+  extends ButtonProps {
   soundSrc?: string;
 }
 
@@ -38,6 +41,7 @@ export function SoundButton({
         <track kind="captions" />
       </audio>
       <Button
+
         onClick={handlePress}
         {...buttonProps}
       >

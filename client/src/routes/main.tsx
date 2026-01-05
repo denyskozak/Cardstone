@@ -56,7 +56,7 @@ export function MainRoute() {
           src="/assets/images/background.webp"
         />
 
-        <main className="z-[2] gap-10 flex  items-center flex-col w-full h-full overflow-y-auto">
+        <main className="z-[2] gap-5 flex  items-center flex-col w-full h-full overflow-y-auto">
           <div className="flex items-center flex-col">
             {/* HeroUI-like header */}
             <div className="text-center">
@@ -89,8 +89,9 @@ export function MainRoute() {
               </div>
             </div>
           </div>
-          <div>
+          <div style={{ position: 'absolute', bottom: '5vh'}}>
             <Button
+              size='4'
               onClick={() => navigate(account ? '/decks' : '/sign-in')}>
               {/*<span className="absolute inset-0 bg-gradient-to-r from-[#1E3A8A] via-[#38BDF8] to-[#FBBF24] animate-pulse opacity-100 group-hover:opacity-100 blur-md" />*/}
               Play
