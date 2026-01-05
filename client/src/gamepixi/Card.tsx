@@ -20,10 +20,12 @@ interface CardProps {
   onDragStart?: (card: CardInHand, event: FederatedPointerEvent) => void;
   onDragEnd?: (card: CardInHand, event: FederatedPointerEvent) => void;
   onDragMove?: (card: CardInHand, event: FederatedPointerEvent) => void;
+  onDisabledClick?: (card: CardInHand) => void;
   scale?: number;
   zIndex?: number;
   eventMode?: 'none' | 'auto' | 'static' | 'dynamic' | 'passive';
   cursor?: string;
+  alpha?: number;
 }
 
 export function Card({
@@ -38,10 +40,12 @@ export function Card({
   onDragStart,
   onDragEnd,
   onDragMove,
+  onDisabledClick,
   scale = 1,
   zIndex = 0,
   eventMode = 'static',
-  cursor
+  cursor,
+  alpha = 1
 }: CardProps) {
   const [texture, setTexture] = useState(Texture.EMPTY)
   const [innerTexture, setInnerTexture] = useState(Texture.EMPTY)
@@ -92,11 +96,14 @@ export function Card({
       eventMode={eventMode}
       cursor={cursor ?? (disabled ? 'not-allowed' : 'pointer')}
       zIndex={zIndex}
+      alpha={alpha}
       // hitArea={hitArea}
       onPointerTap={() => {
-        if (!disabled) {
-          onClick?.(card);
+        if (disabled) {
+          onDisabledClick?.(card);
+          return;
         }
+        onClick?.(card);
       }}
       onPointerOver={() => {
         onHover?.(card.instanceId);

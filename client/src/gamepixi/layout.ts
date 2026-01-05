@@ -4,7 +4,7 @@ export const MINION_WIDTH = 96;
 export const MINION_HEIGHT = 112;
 export const MINION_ART_INSET_X = 2;
 export const MINION_ART_INSET_Y = 6;
-export const MINION_HORIZONTAL_GAP = 24;
+export const MINION_HORIZONTAL_GAP = 32;
 
 export interface BoardLaneGeometry {
   boardTopY: number;

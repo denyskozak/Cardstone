@@ -51,42 +51,24 @@ export const CARD_IDS = {
 export type DemoCardId = (typeof CARD_IDS)[keyof typeof CARD_IDS];
 
 export const DEFAULT_DECK: DemoCardId[] = [
-  // 🔹 1 мана — ранняя поддержка и хил
-  CARD_IDS.lofi,
-  CARD_IDS.miu,
-  CARD_IDS.blub,
+  // 🔹 1–2 маны — ранняя поддержка и контроль
   CARD_IDS.hipo,
-  CARD_IDS.axol,
-
-  // 🔹 2 маны — контроль и добор
+  CARD_IDS.samBlackshear,
+  CARD_IDS.blub,
   CARD_IDS.ika,
-  CARD_IDS.fud,
-  CARD_IDS.noodls,
   CARD_IDS.matteo,
-  CARD_IDS.kostasKryptos,
 
-  // 🔹 3 маны — синергия и мелкие комбо
-  CARD_IDS.walrus,
-  CARD_IDS.scallop,
-  CARD_IDS.manifest,
+  // 🔹 2–3 маны — синергия и гибкость
   CARD_IDS.axol,
-  CARD_IDS.fud,
-
-  // 🔹 4 маны — сильные протоколы и персонажи
-  CARD_IDS.cetus,
-  CARD_IDS.evan,
-  CARD_IDS.kostasKryptos,
-  CARD_IDS.deepBook,
-
-  // 🔹 5 маны — масштабные протоколы
-  CARD_IDS.suilend,
   CARD_IDS.manifest,
-  CARD_IDS.deepBook,
-  CARD_IDS.samBlackshear,
-  CARD_IDS.cetus,
+  CARD_IDS.walrus,
+  CARD_IDS.evan,
+  CARD_IDS.lofi,
 
-  // 🔹 6–7 маны — лейт-гейм, ядро протокольной силы
+  // 🔹 4–6 маны — силовые пики и финиш
+  CARD_IDS.noodls,
+  CARD_IDS.cetus,
+  CARD_IDS.scallop,
   CARD_IDS.suilend,
-  CARD_IDS.samBlackshear,
-  CARD_IDS.seal, // можно представить как мощную финальную карту
+  CARD_IDS.adeniyi,
 ];
