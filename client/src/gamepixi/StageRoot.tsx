@@ -132,6 +132,7 @@ export default function StageRoot({
           canPlay={canPlayCard}
           onPlay={(card, options) => onPlayCard(card, options)}
           boardMinionCount={state.board[playerSide].length}
+          currentMana={player.mana.current}
           width={targetWidth}
           height={targetHeight}
         />

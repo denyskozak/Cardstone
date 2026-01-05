@@ -8,9 +8,11 @@ interface TargetingArrowProps {
 }
 
 const ARROW_THICKNESS = 32;
+const ARROW_HOVER_MULTIPLIER = 1.2;
 
 export default function TargetingArrow({ playerSide: _playerSide }: TargetingArrowProps) {
   const targeting = useUiStore((state) => state.targeting);
+  const currentTarget = useUiStore((state) => state.currentTarget);
 
   const [arrowTexture, setArrowTexture] = useState<Texture | null>(null);
 
@@ -52,7 +54,7 @@ export default function TargetingArrow({ playerSide: _playerSide }: TargetingArr
       x={arrow.x}
       y={arrow.y}
       width={arrow.width}
-      height={ARROW_THICKNESS}
+      height={ARROW_THICKNESS * (currentTarget ? ARROW_HOVER_MULTIPLIER : 1)}
       rotation={arrow.rotation}
       anchor={{ x: 0, y: 0.5 }}
       eventMode="none"

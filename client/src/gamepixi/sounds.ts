@@ -3,7 +3,8 @@ import { sound } from '@pixi/sound';
 const GAME_SOUND_PATHS = {
   attackImpact: '/assets/sounds/components/mixkit-weak-hit-impact.wav',
   cardDraw: '/assets/sounds/components/mixkit-poker-card-draw.wav',
-  cardPlacement: '/assets/sounds/components/mixkit-poker-card-placement.wav'
+  cardPlacement: '/assets/sounds/components/mixkit-poker-card-placement.wav',
+  noMana: '/assets/sounds/components/no_mana.ogg'
 } as const;
 
 type GameSoundKey = keyof typeof GAME_SOUND_PATHS;
@@ -11,7 +12,8 @@ type GameSoundKey = keyof typeof GAME_SOUND_PATHS;
 const SOUND_IDS: Record<GameSoundKey, string> = {
   attackImpact: 'attack-impact',
   cardDraw: 'card-draw',
-  cardPlacement: 'card-placement'
+  cardPlacement: 'card-placement',
+  noMana: 'no-mana'
 };
 
 function isBrowserEnvironment(): boolean {
@@ -48,5 +50,6 @@ export function playGameSound(key: GameSoundKey) {
 export const GameSoundId = {
   AttackImpact: 'attackImpact' as const satisfies GameSoundKey,
   CardDraw: 'cardDraw' as const satisfies GameSoundKey,
-  CardPlacement: 'cardPlacement' as const satisfies GameSoundKey
+  CardPlacement: 'cardPlacement' as const satisfies GameSoundKey,
+  NoMana: 'noMana' as const satisfies GameSoundKey
 };

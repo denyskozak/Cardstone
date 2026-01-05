@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CARD_SIZE } from '../Card';
 import { useUiStore } from '../../state/store';
 import { getBoardLaneGeometry } from '../layout';
+import { GameSoundId, playGameSound } from '../sounds';
 
 const MAX_FAN_DEG = 50;
 const FAN_MIX_WEIGHT = 0.72;
@@ -147,6 +148,7 @@ interface HandProps {
   canPlay: (card: CardInHand) => boolean;
   onPlay: (card: CardInHand, options?: { placement?: CardPlacement }) => void;
   boardMinionCount: number;
+  currentMana: number;
   width: number;
   height: number;
 }
@@ -156,6 +158,7 @@ export default function HandLayer({
   canPlay,
   onPlay,
   boardMinionCount,
+  currentMana,
   width,
   height
 }: HandProps) {
@@ -571,6 +574,7 @@ export default function HandLayer({
     const cardRotation = isDraggingThisCard ? dragRotation : baseTransform.rotation;
     const cardZIndex = isDraggingThisCard ? DRAG_Z_INDEX : baseTransform.z;
     const showHoverPreview = !isDraggingThisCard && state.intent === 'hover';
+    const cardAlpha = showHoverPreview ? 0 : 1;
 
     return (
       <pixiContainer key={card.instanceId} sortableChildren>
@@ -580,9 +584,15 @@ export default function HandLayer({
           y={cardY}
           rotation={cardRotation}
           disabled={disabled}
+          alpha={cardAlpha}
           selected={selected === card.instanceId}
           onHover={handleCardHover}
           onClick={handleCardClick}
+          onDisabledClick={(clickedCard) => {
+            if (clickedCard.card.cost > currentMana) {
+              playGameSound(GameSoundId.NoMana);
+            }
+          }}
           onDragStart={(c, e) => {
             const currentState = animationStatesRef.current.get(card.instanceId);
             const start = currentState
@@ -604,6 +614,7 @@ export default function HandLayer({
             scale={state.current.scale}
             zIndex={state.current.z}
             eventMode="none"
+            disabled={disabled}
           />
         ) : null}
       </pixiContainer>
