@@ -23,6 +23,15 @@ export interface BoardEntityLayout {
   heroes: Record<PlayerSide, EntityPosition>;
 }
 
+export interface DeckPositions {
+  player: EntityPosition;
+  opponent: EntityPosition;
+}
+
+export const DECK_SCALE = 0.38;
+export const DECK_STACK_COUNT = 3;
+export const DECK_STACK_OFFSET = { x: -6, y: -4 };
+
 export function getBoardLaneGeometry(width: number, height: number): BoardLaneGeometry {
   const centerY = height * 0.425;
   const topOffset = (centerY - height * 0.35) * 1.2;
@@ -33,6 +42,18 @@ export function getBoardLaneGeometry(width: number, height: number): BoardLaneGe
   const laneX = (width - laneWidth) / 2;
 
   return { boardTopY, boardBottomY, laneWidth, laneX };
+}
+
+export function getDeckPositions(width: number, height: number): DeckPositions {
+  const { boardTopY, boardBottomY, laneX } = getBoardLaneGeometry(width, height);
+  const deckX = Math.max(40, laneX - 70);
+  const opponentY = Math.max(80, boardTopY - 30);
+  const playerY = Math.min(height - 40, boardBottomY + MINION_HEIGHT + 50);
+
+  return {
+    player: { x: deckX, y: playerY },
+    opponent: { x: deckX, y: opponentY }
+  };
 }
 
 function computeRowPositions(

@@ -8,11 +8,13 @@ import type {
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Assets, Texture } from 'pixi.js';
 import TargetingArrow from '../effects/TargetingArrow';
-import { computeBoardLayout } from '../layout';
+import { computeBoardLayout, DECK_SCALE, getDeckPositions } from '../layout';
 import useMiniTicker from '../hooks/useMiniTicker';
 import { useUiStore } from '../../state/store';
 import CardBurnEmitter from '../effects/CardBurnEmitter';
 import { GameSoundId, playGameSound } from '../sounds';
+import { CARD_SIZE } from '../Card';
+import { computeHandLayout, HAND_BASE_SCALE, HAND_CARD_DIMENSIONS } from './Hand';
 
 interface EffectsProps {
   state: GameState;
@@ -62,6 +64,10 @@ const ATTACK_LUNGE_SCALE = 0.08;
 const SIDES: PlayerSide[] = ['A', 'B'];
 const DAMAGE_DISPLAY_DURATION = 2000;
 const DAMAGE_IMPACT_THRESHOLD = 0.5;
+const DRAW_DURATION = 480;
+const DRAW_LIFT = 26;
+const DRAW_STAGGER = 70;
+const CARD_BACK_TEXTURE = '/assets/card_skins/1.webp';
 
 interface DamageIndicator {
   key: string;
@@ -69,6 +75,15 @@ interface DamageIndicator {
   y: number;
   amount: number;
   remaining: number;
+}
+
+interface DrawAnimation {
+  key: string;
+  side: PlayerSide;
+  from: { x: number; y: number; rotation: number; scale: number };
+  to: { x: number; y: number; rotation: number; scale: number };
+  elapsed: number;
+  duration: number;
 }
 
 export default function Effects({ state, playerSide, width, height }: EffectsProps) {
@@ -105,6 +120,10 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const damageSequenceRef = useRef(0);
   const [damageTexture, setDamageTexture] = useState<Texture>(Texture.EMPTY);
   const damageTextureReady = damageTexture !== Texture.EMPTY;
+  const [drawAnimations, setDrawAnimations] = useState<DrawAnimation[]>([]);
+  const drawSequenceRef = useRef(0);
+  const [cardBackTexture, setCardBackTexture] = useState<Texture>(Texture.EMPTY);
+  const deckPositions = useMemo(() => getDeckPositions(width, height), [height, width]);
   useEffect(() => {
     prevHeroPositionsRef.current = heroPositions;
   }, [heroPositions]);
@@ -172,6 +191,21 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   }, []);
 
   useEffect(() => {
+    if (cardBackTexture !== Texture.EMPTY) {
+      return;
+    }
+    let cancelled = false;
+    Assets.load(CARD_BACK_TEXTURE).then((texture) => {
+      if (!cancelled) {
+        setCardBackTexture(texture);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [cardBackTexture]);
+
+  useEffect(() => {
     const previous = burnPrevStateRef.current;
     if (!previous) {
       burnPrevStateRef.current = state;
@@ -225,9 +259,55 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       return;
     }
 
-    const drawnCards = detectNewHandCards(previous, state, playerSide);
-    if (drawnCards.length > 0) {
-      drawnCards.forEach(() => playGameSound(GameSoundId.CardDraw));
+    const drawnBySide: Record<PlayerSide, string[]> = {
+      A: detectNewHandCards(previous, state, 'A'),
+      B: detectNewHandCards(previous, state, 'B')
+    };
+    const playerDrawn = drawnBySide[playerSide];
+    if (playerDrawn.length > 0) {
+      playerDrawn.forEach(() => playGameSound(GameSoundId.CardDraw));
+    }
+
+    const nextAnimations: DrawAnimation[] = [];
+    SIDES.forEach((side) => {
+      const drawnCards = drawnBySide[side];
+      if (drawnCards.length === 0) {
+        return;
+      }
+      const nextPlayer = state.players[side];
+      const handPositions = resolveHandPositions(side, playerSide, width, height, nextPlayer.hand.length);
+      const deckPosition = side === playerSide ? deckPositions.player : deckPositions.opponent;
+      drawnCards.forEach((cardId, index) => {
+        const handIndex = nextPlayer.hand.findIndex((card) => card.instanceId === cardId);
+        const target = handPositions[handIndex];
+        if (!target) {
+          return;
+        }
+        const sequence = drawSequenceRef.current;
+        drawSequenceRef.current += 1;
+        nextAnimations.push({
+          key: `${state.seq}:${side}:${sequence}`,
+          side,
+          from: {
+            x: deckPosition.x,
+            y: deckPosition.y,
+            rotation: 0,
+            scale: DECK_SCALE
+          },
+          to: {
+            x: target.x,
+            y: target.y,
+            rotation: target.rotation,
+            scale: target.scale
+          },
+          elapsed: -index * DRAW_STAGGER,
+          duration: DRAW_DURATION
+        });
+      });
+    });
+
+    if (nextAnimations.length > 0) {
+      setDrawAnimations((current) => [...current, ...nextAnimations]);
     }
 
     const placements = detectBoardPlacements(previous, state);
@@ -443,6 +523,20 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     damageIndicators.length > 0
   );
 
+  useMiniTicker(
+    (deltaMS) => {
+      setDrawAnimations((current) => {
+        if (current.length === 0) {
+          return current;
+        }
+        return current
+          .map((animation) => ({ ...animation, elapsed: animation.elapsed + deltaMS }))
+          .filter((animation) => animation.elapsed < animation.duration);
+      });
+    },
+    drawAnimations.length > 0
+  );
+
   const previousAnimationIdsRef = useRef<Set<string>>(new Set());
 
   useLayoutEffect(() => {
@@ -521,6 +615,29 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
           />
         </pixiContainer>
       ))}
+      {drawAnimations.map((animation) => {
+        const progress = Math.max(0, Math.min(1, animation.elapsed / animation.duration));
+        const eased = easeOutCubic(progress);
+        const x = lerp(animation.from.x, animation.to.x, eased);
+        const y = lerp(animation.from.y, animation.to.y, eased) - Math.sin(progress * Math.PI) * DRAW_LIFT;
+        const rotation = lerp(animation.from.rotation, animation.to.rotation, eased);
+        const scale = lerp(animation.from.scale, animation.to.scale, eased);
+        const fadeOut = progress > 0.85 ? 1 - (progress - 0.85) / 0.15 : 1;
+
+        return (
+          <pixiSprite
+            key={animation.key}
+            texture={cardBackTexture}
+            x={x}
+            y={y}
+            rotation={rotation}
+            scale={scale}
+            pivot={{ x: CARD_SIZE.width / 2, y: CARD_SIZE.height }}
+            alpha={fadeOut}
+            zIndex={2200}
+          />
+        );
+      })}
     </pixiContainer>
   );
 }
@@ -641,6 +758,34 @@ function detectNewHandCards(previous: GameState, next: GameState, side: PlayerSi
   return nextPlayer.hand
     .filter((card) => !previousIds.has(card.instanceId))
     .map((card) => card.instanceId);
+}
+
+function resolveHandPositions(
+  side: PlayerSide,
+  playerSide: PlayerSide,
+  width: number,
+  height: number,
+  count: number
+) {
+  if (count === 0) {
+    return [];
+  }
+  if (side === playerSide) {
+    return computeHandLayout(count, width, height, {
+      radiusScale: 1.25,
+      fanAngleScale: 0.7,
+      verticalOffset: HAND_CARD_DIMENSIONS.height * 0.3
+    });
+  }
+  const layout = computeHandLayout(count, width, height);
+  const verticalOffset = CARD_SIZE.height * HAND_BASE_SCALE * 0.5;
+  return layout.map((base) => ({
+    x: base.x,
+    y: CARD_SIZE.height * HAND_BASE_SCALE + (height - base.y) - verticalOffset,
+    rotation: -base.rotation,
+    scale: base.scale,
+    z: base.z
+  }));
 }
 
 function detectBoardPlacements(previous: GameState, next: GameState): string[] {
