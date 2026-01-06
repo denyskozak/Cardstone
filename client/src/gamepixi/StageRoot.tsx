@@ -9,6 +9,7 @@ import type {
 import type { Application } from 'pixi.js';
 import Background from './layers/Background';
 import Board from './layers/Board';
+import DecksLayer from './layers/Decks';
 import HandLayer from './layers/Hand';
 import OpponentHandLayer from './layers/OpponentHand';
 import Effects from './layers/Effects';
@@ -126,6 +127,13 @@ export default function StageRoot({
           onAttack={onAttack}
           canAttack={canAttack}
           onCastSpell={(card, target) => onPlayCard(card, { target })}
+        />
+        <DecksLayer
+          playerSide={playerSide}
+          playerCount={player.deck.length}
+          opponentCount={opponent.deck.length}
+          width={targetWidth}
+          height={targetHeight}
         />
         <HandLayer
           hand={player.hand}

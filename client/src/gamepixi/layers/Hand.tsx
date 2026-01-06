@@ -575,9 +575,13 @@ export default function HandLayer({
     const cardZIndex = isDraggingThisCard ? DRAG_Z_INDEX : baseTransform.z;
     const showHoverPreview = !isDraggingThisCard && state.intent === 'hover';
     const cardAlpha = showHoverPreview ? 0 : 1;
+    const containerZIndex = Math.max(
+      cardZIndex,
+      showHoverPreview ? state.current.z : baseTransform.z
+    );
 
     return (
-      <pixiContainer key={card.instanceId} sortableChildren>
+      <pixiContainer key={card.instanceId} sortableChildren zIndex={containerZIndex}>
         <Card
           card={card}
           x={cardX}
