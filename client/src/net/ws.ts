@@ -1,4 +1,5 @@
 import type { ClientToServer, ServerToClient } from '@cardstone/shared/types';
+import { getAuthToken } from './auth';
 
 type MessageListener = (message: ServerToClient) => void;
 type OpenListener = () => void;
@@ -40,9 +41,12 @@ export class GameSocket {
   private seq = 1;
   private url: string;
   private reconnectTimer?: number;
+  private authenticated = false;
+  private readonly tokenProvider: () => string | null;
 
-  constructor(url = resolveWsUrl()) {
+  constructor(url = resolveWsUrl(), tokenProvider: () => string | null = getAuthToken) {
     this.url = url;
+    this.tokenProvider = tokenProvider;
   }
 
   connect(): void {
@@ -51,29 +55,52 @@ export class GameSocket {
     }
     this.ws = new WebSocket(this.url);
     this.ws.onopen = () => {
-      while (this.pending.length > 0) {
-        const payload = this.pending.shift();
-        if (payload) {
-          this.ws?.send(payload);
-        }
+      this.authenticated = false;
+      const token = this.tokenProvider();
+      if (!token) {
+        console.warn('Missing auth token. Please sign in again.');
+        this.ws?.close();
+        return;
       }
-      for (const listener of this.openListeners) {
-        listener();
-      }
+      this.ws?.send(JSON.stringify({ type: 'auth', token }));
     };
     this.ws.onmessage = (event) => {
       try {
-        const payload: ServerToClient = JSON.parse(event.data as string);
+        const parsed = JSON.parse(event.data as string) as
+          | ServerToClient
+          | { type: 'auth_ok' }
+          | { type: 'auth_error'; message?: string };
+        if ('type' in parsed) {
+          if (parsed.type === 'auth_ok') {
+            this.authenticated = true;
+            while (this.pending.length > 0) {
+              const payload = this.pending.shift();
+              if (payload) {
+                this.ws?.send(payload);
+              }
+            }
+            for (const listener of this.openListeners) {
+              listener();
+            }
+          } else if (parsed.type === 'auth_error') {
+            console.warn(parsed.message ?? 'WebSocket auth failed.');
+            this.ws?.close();
+          }
+          return;
+        }
         for (const listener of this.listeners) {
-          listener(payload);
+          listener(parsed);
         }
       } catch (error) {
         console.warn('Failed to parse message', error);
       }
     };
     this.ws.onclose = () => {
+      this.authenticated = false;
       window.clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = window.setTimeout(() => this.connect(), RECONNECT_DELAY);
+      if (this.tokenProvider()) {
+        this.reconnectTimer = window.setTimeout(() => this.connect(), RECONNECT_DELAY);
+      }
     };
     this.ws.onerror = () => {
       this.ws?.close();
@@ -122,7 +149,7 @@ export class GameSocket {
 
   private dispatch(message: ClientToServer): void {
     const serialized = JSON.stringify(message);
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN && this.authenticated) {
       this.ws.send(serialized);
     } else {
       this.pending.push(serialized);
