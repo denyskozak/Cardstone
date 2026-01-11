@@ -1,9 +1,12 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import { URL } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { MatchJoinInfo, PlayerSide } from '@cardstone/shared/types.js';
 import { DOMAIN_IDS, type DomainId } from '@cardstone/shared/types.js';
+import { createAuthMessage } from '@cardstone/shared/auth.js';
+import { verifyPersonalMessageSignature } from '@mysten/sui/verify';
+import { normalizeSuiAddress } from '@mysten/sui/utils';
 import { clientMessageSchema, type ValidatedClientMessage } from './net/protocol.js';
 import { Lobby } from './lobby/Lobby.js';
 import { RateLimiter } from './util/rateLimit.js';
@@ -28,9 +31,11 @@ interface ConnectionContext {
   match?: Match;
   side?: PlayerSide;
   deckId?: string;
+  address?: string;
   rateLimiter: RateLimiter;
   queue: Promise<void>;
   alive: boolean;
+  authenticated: boolean;
 }
 
 const server = createServer();
@@ -47,6 +52,17 @@ const DEFAULT_DECK_ID = 'starter-deck';
 const DEFAULT_DECK_NAME = 'Starter Deck';
 const DEFAULT_DECK_HERO_CLASS: Deck['heroClass'] = 'Mage';
 const DEFAULT_DECK_DOMAIN: Deck['domainId'] = 'sui';
+const AUTH_NONCE_TTL_MS = 5 * 60 * 1000;
+const AUTH_TIMEOUT_MS = 5000;
+const JWT_TTL_SECONDS = 15 * 60;
+const JWT_ISSUER = 'cardstone';
+const JWT_AUDIENCE = 'cardstone:ws';
+const JWT_SECRET = process.env.JWT_SECRET ?? 'dev-secret';
+const authNonces = new Map<string, { expiresAt: number; used: boolean }>();
+
+if (!process.env.JWT_SECRET) {
+  console.warn('JWT_SECRET is not set; using insecure default for development.');
+}
 
 function createDeckEntriesFromCardIds(cardIds: readonly string[]): DeckCardEntry[] {
   const counts = new Map<string, number>();
@@ -106,6 +122,90 @@ async function readJsonBody<T>(req: IncomingMessage): Promise<T | undefined> {
   }
   const raw = Buffer.concat(chunks).toString('utf-8');
   return JSON.parse(raw) as T;
+}
+
+function issueAuthNonce(): { nonce: string; message: string } {
+  const nonce = randomUUID();
+  const expiresAt = Date.now() + AUTH_NONCE_TTL_MS;
+  authNonces.set(nonce, { expiresAt, used: false });
+  return { nonce, message: createAuthMessage(nonce) };
+}
+
+function consumeAuthNonce(nonce: string): boolean {
+  const entry = authNonces.get(nonce);
+  if (!entry) {
+    return false;
+  }
+  if (entry.used || entry.expiresAt < Date.now()) {
+    authNonces.delete(nonce);
+    return false;
+  }
+  entry.used = true;
+  authNonces.delete(nonce);
+  return true;
+}
+
+type JwtPayload = {
+  sub: string;
+  iss: string;
+  aud: string;
+  iat: number;
+  exp: number;
+};
+
+function base64UrlEncode(value: string): string {
+  return Buffer.from(value, 'utf-8').toString('base64url');
+}
+
+function base64UrlDecode(value: string): string {
+  return Buffer.from(value, 'base64url').toString('utf-8');
+}
+
+function signJwt(payload: JwtPayload): string {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const data = `${encodedHeader}.${encodedPayload}`;
+  const signature = createHmac('sha256', JWT_SECRET).update(data).digest('base64url');
+  return `${data}.${signature}`;
+}
+
+function verifyJwtToken(token: string): JwtPayload | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return null;
+  }
+  const [encodedHeader, encodedPayload, signature] = parts;
+  const data = `${encodedHeader}.${encodedPayload}`;
+  const expectedSignature = createHmac('sha256', JWT_SECRET).update(data).digest('base64url');
+  if (signature !== expectedSignature) {
+    return null;
+  }
+  let payload: JwtPayload;
+  try {
+    payload = JSON.parse(base64UrlDecode(encodedPayload)) as JwtPayload;
+  } catch (error) {
+    return null;
+  }
+  if (payload.iss !== JWT_ISSUER || payload.aud !== JWT_AUDIENCE) {
+    return null;
+  }
+  if (payload.exp * 1000 < Date.now()) {
+    return null;
+  }
+  return payload;
+}
+
+function createJwtToken(address: string): { token: string; expiresIn: number } {
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const payload: JwtPayload = {
+    sub: address,
+    iss: JWT_ISSUER,
+    aud: JWT_AUDIENCE,
+    iat: issuedAt,
+    exp: issuedAt + JWT_TTL_SECONDS
+  };
+  return { token: signJwt(payload), expiresIn: JWT_TTL_SECONDS };
 }
 
 function normalizeDeckCards(entries?: DeckCardEntry[]): DeckCardEntry[] {
@@ -209,6 +309,45 @@ server.on('request', async (req, res) => {
   }
 
   try {
+    if (url.pathname === '/api/auth/nonce' && req.method === 'GET') {
+      sendJson(res, 200, issueAuthNonce());
+      return;
+    }
+
+    if (url.pathname === '/api/auth/login' && req.method === 'POST') {
+      const body = await readJsonBody<{
+        address?: string;
+        nonce?: string;
+        signature?: string;
+      }>(req);
+      const address = body?.address?.trim();
+      const nonce = body?.nonce?.trim();
+      const signature = body?.signature?.trim();
+      if (!address || !nonce || !signature) {
+        sendJson(res, 400, { error: 'Missing login payload.' });
+        return;
+      }
+      if (!consumeAuthNonce(nonce)) {
+        sendJson(res, 401, { error: 'Nonce expired or invalid.' });
+        return;
+      }
+      const normalizedAddress = normalizeSuiAddress(address);
+      const message = createAuthMessage(nonce);
+      try {
+        await verifyPersonalMessageSignature(
+          new TextEncoder().encode(message),
+          signature,
+          { address: normalizedAddress }
+        );
+      } catch (error) {
+        sendJson(res, 401, { error: 'Signature verification failed.' });
+        return;
+      }
+      const { token, expiresIn } = createJwtToken(normalizedAddress);
+      sendJson(res, 200, { token, expiresIn, address: normalizedAddress });
+      return;
+    }
+
     if (url.pathname === '/api/cards' && req.method === 'GET') {
       sendJson(res, 200, catalogCards.map((card) => ({ ...card })));
       return;
@@ -489,15 +628,17 @@ wss.on('connection', (ws) => {
     ws,
     rateLimiter: new RateLimiter(20),
     queue: Promise.resolve(),
-    alive: true
+    alive: true,
+    authenticated: false
   };
 
+  const authTimeout = setTimeout(() => {
+    if (!context.authenticated) {
+      ws.close(4001, 'Unauthorized');
+    }
+  }, AUTH_TIMEOUT_MS);
 
   ws.on('message', (data) => {
-    if (!context.rateLimiter.allow()) {
-      sendToast(context, 'Slow down!');
-      return;
-    }
     context.queue = context.queue
       .then(async () => {
         let parsed: unknown;
@@ -505,6 +646,32 @@ wss.on('connection', (ws) => {
           parsed = JSON.parse(String(data));
         } catch (error) {
           sendToast(context, 'Malformed JSON');
+          return;
+        }
+        if (!context.authenticated) {
+          if (
+            typeof parsed === 'object' &&
+            parsed !== null &&
+            'type' in parsed &&
+            (parsed as { type?: string }).type === 'auth'
+          ) {
+            const token = String((parsed as { token?: string }).token ?? '');
+            const payload = verifyJwtToken(token);
+            if (!payload?.sub) {
+              ws.close(4001, 'Unauthorized');
+              return;
+            }
+            context.address = String(payload.sub);
+            context.authenticated = true;
+            clearTimeout(authTimeout);
+            ws.send(JSON.stringify({ type: 'auth_ok' }));
+            return;
+          }
+          ws.close(4001, 'Unauthorized');
+          return;
+        }
+        if (!context.rateLimiter.allow()) {
+          sendToast(context, 'Slow down!');
           return;
         }
         const result = clientMessageSchema.safeParse(parsed);
@@ -521,7 +688,9 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
+    clearTimeout(authTimeout);
     context.alive = false;
+    context.authenticated = false;
     if (context.playerId) {
       playerConnections.delete(context.playerId);
       lobby.leave(context.playerId);
