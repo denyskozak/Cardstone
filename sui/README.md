@@ -1,15 +1,15 @@
-# Cardstone Sui contracts
+# Metacards Sui contracts
 
-This package contains Sui Move modules that back the blockchain-facing parts of Cardstone:
+This package contains Sui Move modules that back the blockchain-facing parts of Metacards:
 
-- `cardstone_coin.move` creates a project-branded coin with mint and burn entry points.
+- `metacards_coin.move` creates a project-branded coin with mint and burn entry points.
 - `investment_capsule.move` defines a time-locked escrow that can hold any coin type until a specified release time.
 - `card_factory.move` stores card metadata on-chain using the same fields as the in-game definitions.
 
 ## Modules
 
-### cardstone_coin
-- `init` creates the `CardstoneCoin` currency, publishing the metadata and treasury cap to the initializer.
+### metacards_coin
+- `init` creates the `MetacardsCoin` currency, publishing the metadata and treasury cap to the initializer.
 - `mint` mints additional supply to the caller using the stored `TreasuryCap`.
 - `burn` reduces supply by destroying coins with the treasury capability.
 

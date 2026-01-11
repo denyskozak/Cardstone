@@ -44,10 +44,11 @@
 
 .cost {
   position: absolute;
-  top: 1%;
-  left: 12%;
-  font-size: 2rem;
+  top: 0;
+  left: 11%;
+  font-size: 2.2rem;
   font-weight: 700;
+    -webkit-text-stroke: 1px #000;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);
 }
 
@@ -65,16 +66,17 @@
 .attack,
 .health {
   position: absolute;
-  bottom: 5%;
-  font-size: 1.5rem;
+  bottom: 3%;
+  font-size: 2rem;
   font-weight: 700;
+    -webkit-text-stroke: 1px #000;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.65);
 }
 
 .attack {
-  left: 11%;
+  left: 10%;
 }
 
 .health {
-  right: 6%;
+  right: 4%;
 }

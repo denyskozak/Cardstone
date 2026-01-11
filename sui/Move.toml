@@ -1,12 +1,12 @@
 [package]
-name = "CardstoneContracts"
+name = "MetacardsContracts"
 version = "0.0.1"
 edition = "2024.beta"
 
-authors = ["Cardstone Contributors"]
+authors = ["Metacards Contributors"]
 
 [addresses]
-cardstone = "0x0"
+metacards = "0x0"
 sui = "0x2"
 std = "0x1"
 

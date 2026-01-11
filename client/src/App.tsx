@@ -12,8 +12,7 @@ import './styles.css';
 
 // Config options for the networks you want to connect to
 const { networkConfig } = createNetworkConfig({
-  localnet: { url: getFullnodeUrl('localnet') },
-  mainnet: { url: getFullnodeUrl('mainnet') },
+  testnet: { url: getFullnodeUrl('testnet') },
 })
 
 import { router } from './routes/routes'
@@ -25,7 +24,7 @@ export function App() {
   return (
     <Theme accentColor="amber"  radius="full" appearance="dark" panelBackground="translucent" className="theme-provider">
       <QueryClientProvider client={queryClient}>
-        <SuiClientProvider networks={networkConfig} defaultNetwork="mainnet">
+        <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
           <WalletProvider autoConnect>
             <RouterProvider router={router} />
           </WalletProvider>

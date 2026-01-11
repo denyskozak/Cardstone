@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@mysten/dapp-kit": "^0.18.0",
-    "@mysten/sui": "^1.38.0",
+    "@mysten/sui": "^1.45.2",
     "@pixi/filter-glow": "^5.2.1",
     "@pixi/particle-emitter": "^5.0.8",
     "@pixi/react": "^8.0.3",

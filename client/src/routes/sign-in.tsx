@@ -34,6 +34,8 @@ export function SignIn() {
       const signatureResult = await signPersonalMessage.mutateAsync({
         message: messageBytes
       })
+      console.log('message: ', message);
+      console.log('signatureResult: ', signatureResult);
       const loginResult = await loginWithSignature({
         address: account.address,
         nonce,

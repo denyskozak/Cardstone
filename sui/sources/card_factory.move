@@ -1,4 +1,4 @@
-module cardstone::card_factory {
+module metacards::card_factory {
     use sui::object;
     use sui::tx_context::TxContext;
     use sui::transfer;

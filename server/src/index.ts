@@ -138,6 +138,7 @@ function issueAuthNonce(): { nonce: string; message: string } {
   const nonce = randomUUID();
   const expiresAt = Date.now() + AUTH_NONCE_TTL_MS;
   authNonces.set(nonce, { expiresAt, used: false });
+  console.log('authNonces: ', authNonces, createAuthMessage(nonce));
   return { nonce, message: createAuthMessage(nonce) };
 }
 
@@ -355,6 +356,9 @@ server.on('request', async (req, res) => {
       }
       const normalizedAddress = normalizeSuiAddress(address);
       const message = createAuthMessage(nonce);
+      console.log('message: ', message);
+      console.log('signature: ', signature);
+      console.log('normalizedAddress: ', normalizedAddress);
       try {
         await verifyPersonalMessageSignature(
           new TextEncoder().encode(message),
@@ -362,6 +366,7 @@ server.on('request', async (req, res) => {
           { address: normalizedAddress }
         );
       } catch (error) {
+        console.log('error: ', error);
         sendJson(res, 401, { error: 'Signature verification failed.' });
         return;
       }

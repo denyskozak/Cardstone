@@ -1,4 +1,4 @@
-module cardstone::investment_capsule {
+module metacards::investment_capsule {
     use sui::balance;
     use sui::clock::Clock;
     use sui::coin;
