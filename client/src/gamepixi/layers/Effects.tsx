@@ -67,6 +67,7 @@ const DAMAGE_IMPACT_THRESHOLD = 0.5;
 const DRAW_DURATION = 480;
 const DRAW_LIFT = 26;
 const DRAW_STAGGER = 70;
+const PLACEMENT_FADE_DURATION = 250;
 const CARD_BACK_TEXTURE = '/assets/card_skins/1.webp';
 
 interface DamageIndicator {
@@ -82,6 +83,12 @@ interface DrawAnimation {
   side: PlayerSide;
   from: { x: number; y: number; rotation: number; scale: number };
   to: { x: number; y: number; rotation: number; scale: number };
+  elapsed: number;
+  duration: number;
+}
+
+interface PlacementFade {
+  id: string;
   elapsed: number;
   duration: number;
 }
@@ -123,6 +130,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const [drawAnimations, setDrawAnimations] = useState<DrawAnimation[]>([]);
   const drawSequenceRef = useRef(0);
   const [cardBackTexture, setCardBackTexture] = useState<Texture>(Texture.EMPTY);
+  const [placementFades, setPlacementFades] = useState<PlacementFade[]>([]);
   const deckPositions = useMemo(() => getDeckPositions(width, height), [height, width]);
   useEffect(() => {
     prevHeroPositionsRef.current = heroPositions;
@@ -147,6 +155,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       damageSequenceRef.current = 0;
       deathTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
       deathTimeoutsRef.current.clear();
+      setPlacementFades([]);
     };
   }, [resetMinionAnimations]);
 
@@ -166,7 +175,13 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         if (deathTimeoutsRef.current.has(id)) {
           return;
         }
-        setMinionAnimation(id, { offsetX: 0, offsetY: 0, grayscale: true });
+        const existing = minionAnimationsRef.current[id];
+        setMinionAnimation(id, {
+          offsetX: 0,
+          offsetY: 0,
+          grayscale: true,
+          opacity: existing?.opacity
+        });
         const timeout = window.setTimeout(() => {
           clearMinionAnimation(id);
           deathTimeoutsRef.current.delete(id);
@@ -313,6 +328,13 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     const placements = detectBoardPlacements(previous, state);
     if (placements.length > 0) {
       placements.forEach(() => playGameSound(GameSoundId.CardPlacement));
+      setPlacementFades((current) => {
+        const existing = new Set(current.map((fade) => fade.id));
+        const additions = placements
+          .filter((id) => !existing.has(id))
+          .map((id) => ({ id, elapsed: 0, duration: PLACEMENT_FADE_DURATION }));
+        return additions.length > 0 ? [...current, ...additions] : current;
+      });
     }
 
     const attackEvents = detectAttackEvents(previous, state);
@@ -537,6 +559,42 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     drawAnimations.length > 0
   );
 
+  useMiniTicker(
+    (deltaMS) => {
+      setPlacementFades((current) => {
+        if (current.length === 0) {
+          return current;
+        }
+        const next: PlacementFade[] = [];
+        current.forEach((fade) => {
+          const elapsed = fade.elapsed + deltaMS;
+          const progress = Math.min(elapsed / fade.duration, 1);
+          const existing = minionAnimationsRef.current[fade.id];
+          const baseTransform = existing ?? { offsetX: 0, offsetY: 0 };
+          setMinionAnimation(fade.id, { ...baseTransform, opacity: progress });
+          if (elapsed < fade.duration) {
+            next.push({ ...fade, elapsed });
+            return;
+          }
+          if (
+            baseTransform.offsetX === 0 &&
+            baseTransform.offsetY === 0 &&
+            baseTransform.rotation === undefined &&
+            baseTransform.scale === undefined &&
+            baseTransform.zIndex === undefined &&
+            baseTransform.grayscale === undefined
+          ) {
+            clearMinionAnimation(fade.id);
+          } else {
+            setMinionAnimation(fade.id, { ...baseTransform, opacity: 1 });
+          }
+        });
+        return next;
+      });
+    },
+    placementFades.length > 0
+  );
+
   const previousAnimationIdsRef = useRef<Set<string>>(new Set());
 
   useLayoutEffect(() => {
@@ -548,12 +606,14 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       nextIds.add(animation.attackerId);
       const progress = animation.duration === 0 ? 1 : animation.elapsed / animation.duration;
       const frame = computeAttackFrame(animation, progress);
+      const existing = currentMinionAnimations[animation.attackerId];
       setMinionAnimation(animation.attackerId, {
         offsetX: frame.x - animation.origin.x,
         offsetY: frame.y - animation.origin.y,
         rotation: 0,
         scale: frame.scale,
-        zIndex: 2000
+        zIndex: 2000,
+        opacity: existing?.opacity
       });
     });
 

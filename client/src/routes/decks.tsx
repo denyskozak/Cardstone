@@ -15,6 +15,7 @@ import { useDeckSelectionStore } from '../state/deck-selection';
 interface DeckRequestPayload {
   name: string;
   heroClass: HeroClass;
+  domainId: Deck['domainId'];
   cards: Deck['cards'];
 }
 
@@ -89,6 +90,7 @@ export function DecksPage() {
       const payload: DeckRequestPayload = {
         name: `Copy of ${deck.name}`,
         heroClass: deck.heroClass,
+        domainId: deck.domainId,
         cards: deck.cards
       };
       return fetchJson<Deck>(apiPath('/api/decks'), {
@@ -109,6 +111,7 @@ export function DecksPage() {
       const payload: DeckRequestPayload = {
         name,
         heroClass: deck.heroClass,
+        domainId: deck.domainId,
         cards: deck.cards
       };
       return fetchJson<Deck>(apiPath(`/api/decks/${deck.id}`), {

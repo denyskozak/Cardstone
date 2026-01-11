@@ -32,7 +32,11 @@ const placementSchema = z.enum(['left', 'right']);
 export const clientMessageSchema = z.discriminatedUnion('t', [
   z.object({
     t: z.literal('JoinMatch'),
-    payload: z.object({ matchId: z.string(), playerId: z.string().optional() })
+    payload: z.object({
+      matchId: z.string(),
+      playerId: z.string().optional(),
+      deckId: z.string().optional()
+    })
   }),
   z.object({
     t: z.literal('Ready'),

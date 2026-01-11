@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import type {
+  CardId,
   CardInHand,
+  DomainId,
   CardPlacement,
   GameState,
   PlayerSide,
@@ -27,16 +29,41 @@ export interface CommandResult {
   duplicate?: boolean;
 }
 
+function resolveDeckDomain(deck: CardId[]): DomainId | null {
+  let domain: DomainId | null = null;
+  deck.forEach((cardId) => {
+    const card = getCardDefinition(cardId);
+    if (!domain) {
+      domain = card.domainId;
+      return;
+    }
+    if (card.domainId !== domain) {
+      throw new Error(`Deck contains multiple domains: ${domain} and ${card.domainId}`);
+    }
+  });
+  return domain;
+}
+
+function assertMatchingDeckDomains(deckA: CardId[], deckB: CardId[]): void {
+  const domainA = resolveDeckDomain(deckA);
+  const domainB = resolveDeckDomain(deckB);
+  if (domainA && domainB && domainA !== domainB) {
+    throw new Error(`Deck domains must match (${domainA} vs ${domainB})`);
+  }
+}
+
 export class Match {
   public readonly id: string;
   public readonly seed: string;
   private readonly players: Record<PlayerSide, MatchPlayerMeta>;
   private readonly rng: RNG;
+  private readonly deckA: CardId[];
+  private readonly deckB: CardId[];
   private state: GameState;
   private started = false;
   private mulliganCountdownStarted = false;
 
-  private constructor(id: string, playerA: string, playerB: string) {
+  private constructor(id: string, playerA: string, playerB: string, deckA: CardId[], deckB: CardId[]) {
     this.id = id;
     this.seed = createSeed();
     this.rng = createRng(this.seed);
@@ -44,17 +71,20 @@ export class Match {
       A: { id: playerA, side: 'A', ready: false, lastSeq: 0, recentNonces: [] },
       B: { id: playerB, side: 'B', ready: false, lastSeq: 0, recentNonces: [] }
     };
+    this.deckA = deckA;
+    this.deckB = deckB;
     this.state = this.createInitialState();
     this.dealOpeningHands();
   }
 
-  static create(id: string, playerA: string, playerB: string): Match {
-    return new Match(id, playerA, playerB);
+  static create(id: string, playerA: string, playerB: string, deckA = DEFAULT_DECK, deckB = DEFAULT_DECK): Match {
+    assertMatchingDeckDomains(deckA, deckB);
+    return new Match(id, playerA, playerB, deckA, deckB);
   }
 
   private createInitialState(): GameState {
-    const deckA = [...DEFAULT_DECK];
-    const deckB = [...DEFAULT_DECK];
+    const deckA = [...this.deckA];
+    const deckB = [...this.deckB];
     shuffleInPlace(deckA, this.rng);
     shuffleInPlace(deckB, this.rng);
 

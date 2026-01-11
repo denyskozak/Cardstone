@@ -587,6 +587,7 @@ export default function Board({
         const rotation = animation?.rotation ?? 0;
         const zIndex = animation?.zIndex ?? defaultZIndex;
         const isGrayscale = Boolean(animation?.grayscale);
+        const opacity = animation?.opacity ?? 1;
 
         const hasBonusAttack = entity.attack > entity.card.attack;
         const hasBonusHealth = Math.max(entity.health, entity.maxHealth) > entity.card.health;
@@ -603,7 +604,7 @@ export default function Board({
             rotation={rotation}
             zIndex={zIndex}
             filters={isGrayscale ? [grayscaleFilter] : undefined}
-            alpha={isGrayscale ? 0.6 : 1}
+            alpha={opacity * (isGrayscale ? 0.6 : 1)}
             interactive={interactive}
             eventMode={interactive ? 'static' : undefined}
             cursor={

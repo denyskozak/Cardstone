@@ -50,6 +50,8 @@ export type Effect = {
 };
 
 export type CardType = 'Minion' | 'Spell' | 'Weapon' | 'Hero';
+export const DOMAIN_IDS = ['sui', 'greek', 'web3'] as const;
+export type DomainId = (typeof DOMAIN_IDS)[number];
 
 export type CardPlacement = 'left' | 'right';
 
@@ -58,6 +60,7 @@ interface CardDefinitionBase {
   name: string;
   type: CardType;
   cost: number;
+  domainId: DomainId;
   rarity?: 'Common' | 'Rare' | 'Epic' | 'Legendary';
   set?: string;
   tribe?: string;
@@ -215,7 +218,7 @@ export type ChatVisibilityPayload = {
 };
 
 export type ClientToServer =
-  | ClientMessageBase<'JoinMatch', { matchId: 'auto' | string; playerId?: string }>
+  | ClientMessageBase<'JoinMatch', { matchId: 'auto' | string; playerId?: string; deckId?: string }>
   | ClientMessageBase<'Ready', { playerId?: string }>
   | ClientMessageBase<'PlayCard', { cardId: EntityId; target?: TargetDescriptor; placement?: CardPlacement }>
   | ClientMessageBase<'EndTurn', Record<string, never>>

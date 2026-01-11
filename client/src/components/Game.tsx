@@ -22,6 +22,7 @@ import { GameSocket } from '../net/ws';
 import styles from './Game.module.css';
 import { MatchChat, type MatchChatEntry } from './MatchChat';
 import { InterfaceCard } from './InterfaceCard';
+import { useDeckSelectionStore } from '../state/deck-selection';
 
 import {
   Container,
@@ -80,6 +81,7 @@ export function Game() {
   const [stageBounds, setStageBounds] = useState({ width: 0, height: 0 });
   const [now, setNow] = useState(() => Date.now());
   const playerIdRef = useRef<string | undefined>(playerId);
+  const selectedDeckId = useDeckSelectionStore((state) => state.selectedDeckId);
 
   const appendLog = useCallback((entry: string) => {
     setLog((prev) => [entry, ...prev].slice(0, 10));
@@ -109,7 +111,11 @@ export function Game() {
   useEffect(() => {
     socket.connect();
     const unsubOpen = socket.onOpen(() => {
-      socket.send('JoinMatch', { matchId: 'auto', playerId: playerIdRef.current });
+      socket.send('JoinMatch', {
+        matchId: 'auto',
+        playerId: playerIdRef.current,
+        deckId: selectedDeckId
+      });
     });
     const unsubMessage = socket.onMessage((message: ServerToClient) => {
       switch (message.t) {
@@ -175,7 +181,7 @@ export function Game() {
       unsubMessage();
       socket.close();
     };
-  }, [appendLog, socket]);
+  }, [appendLog, selectedDeckId, socket]);
 
   useEffect(() => {
     if (playerId) {
