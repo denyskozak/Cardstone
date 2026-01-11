@@ -15,6 +15,8 @@
     "./effects.js": "./dist/effects.js",
     "./decks": "./dist/decks.js",
     "./decks.js": "./dist/decks.js",
+    "./quests": "./dist/quests.js",
+    "./quests.js": "./dist/quests.js",
     "./cards/*": "./dist/cards/*.js",
     "./cards/*.js": "./dist/cards/*.js"
   },

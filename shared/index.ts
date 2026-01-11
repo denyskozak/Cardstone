@@ -4,3 +4,4 @@ export * from "./cards/demo.js";
 export * from "./targeting.js";
 export * from "./decks.js";
 export * from "./auth.js";
+export * from "./quests.js";

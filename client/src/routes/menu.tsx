@@ -16,6 +16,13 @@ const menuItems = [
     cta: 'Quick Start',
     accent: 'rgba(192, 132, 252, 0.45)'
   },
+  {
+    title: 'Quests',
+    description: 'Track your progress and earn rewards.',
+    href: '/quests',
+    cta: 'View Quests',
+    accent: 'rgba(34, 197, 94, 0.45)'
+  },
   // {
   //   title: 'Spectate Match',
   //   description: 'Watch ongoing matches to study strategies and stay ahead of the evolving meta.',
