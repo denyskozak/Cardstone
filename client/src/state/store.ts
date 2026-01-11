@@ -19,6 +19,7 @@ export interface MinionAnimationTransform {
   scale?: number;
   zIndex?: number;
   grayscale?: boolean;
+  opacity?: number;
 }
 
 interface LocalAttackAnimation {
@@ -102,7 +103,8 @@ export const useUiStore = create<UiState>((set) => ({
         current.rotation === transform.rotation &&
         current.scale === transform.scale &&
         current.zIndex === transform.zIndex &&
-        current.grayscale === transform.grayscale
+        current.grayscale === transform.grayscale &&
+        current.opacity === transform.opacity
       ) {
         return state;
       }

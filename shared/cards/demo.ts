@@ -1,6 +1,7 @@
-import type { CardDefinition, MinionCard, SpellCard } from '../types.js';
+import type { CardDefinition, DomainId, MinionCard, SpellCard } from '../types.js';
 import { CARD_IDS } from '../constants.js';
-const minions: Record<string, MinionCard> = {
+const defaultDomainId: DomainId = 'sui';
+const minions: Record<string, Omit<MinionCard, 'domainId'>> = {
   [CARD_IDS.ika]: {
     id: CARD_IDS.ika,
     name: 'Ika',
@@ -339,7 +340,7 @@ const minions: Record<string, MinionCard> = {
 
 };
 
-const spells: Record<string, SpellCard> = {
+const spells: Record<string, Omit<SpellCard, 'domainId'>> = {
   [CARD_IDS.coin]: {
     id: CARD_IDS.coin,
     name: 'The Coin',
@@ -355,10 +356,12 @@ const spells: Record<string, SpellCard> = {
   }
 };
 
-export const DEMO_CARDS: Record<string, CardDefinition> = {
-  ...minions,
-  ...spells,
-};
+export const DEMO_CARDS: Record<string, CardDefinition> = Object.fromEntries(
+  Object.entries({ ...minions, ...spells }).map(([id, card]) => [
+    id,
+    { ...card, domainId: defaultDomainId }
+  ])
+);
 export const DEMO_CARD_POOL = Object.values(DEMO_CARDS);
 export function getCardDefinition(cardId: string): CardDefinition {
   const card = DEMO_CARDS[cardId];

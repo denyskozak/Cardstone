@@ -25,6 +25,7 @@ import {
   type DeckCardEntry,
   type HeroClass
 } from '@cardstone/shared/decks';
+import type { DomainId } from '@cardstone/shared/types';
 import {
   addCard,
   countDeckCards,
@@ -57,6 +58,7 @@ type CatalogTab = 'All' | 'Minions' | 'Spells' | 'Weapons';
 type DeckRequestPayload = {
   name: string;
   heroClass: HeroClass;
+  domainId: DomainId;
   cards: Deck['cards'];
 };
 
@@ -66,6 +68,17 @@ const iconBaseStyle: CSSProperties = {
   justifyContent: 'center',
   lineHeight: 1
 };
+
+const DOMAIN_OPTIONS: { id: DomainId; label: string }[] = [
+  { id: 'sui', label: 'Sui' },
+  { id: 'web3', label: 'Web3' },
+  { id: 'greek', label: 'Ancient Greek' }
+];
+
+const DOMAIN_LABELS = DOMAIN_OPTIONS.reduce(
+  (acc, option) => ({ ...acc, [option.id]: option.label }),
+  {} as Record<DomainId, string>
+);
 
 function Icon({ symbol, size = '1rem' }: { symbol: string; size?: string }) {
   return <span aria-hidden style={{ ...iconBaseStyle, fontSize: size }}>{symbol}</span>;
@@ -84,6 +97,7 @@ function createEmptyDeck(): Deck {
     id: `draft-${timestamp}`,
     name: 'New Deck',
     heroClass: HERO_CLASSES[0],
+    domainId: 'sui',
     cards: [],
     createdAt: timestamp,
     updatedAt: timestamp
@@ -188,14 +202,17 @@ export function DeckBuilderPage() {
   const [filterClass, setFilterClass] = useState<'All' | HeroClass>('All');
   const [ownedOnly, setOwnedOnly] = useState(false);
   const [deck, setDeck] = useState<Deck>(() => deckToDraft(deckData));
+  const [domainSelectionOpen, setDomainSelectionOpen] = useState(() => !deckData && !deckId);
 
   useEffect(() => {
     if (deckData) {
       setDeck(deckToDraft(deckData));
       setMode('edit');
+      setDomainSelectionOpen(false);
     } else if (!deckId && !deckQuery.isLoading) {
       setDeck(deckToDraft(undefined));
       setMode('create');
+      setDomainSelectionOpen(true);
     }
   }, [deckData, deckId, deckQuery.isLoading]);
 
@@ -206,6 +223,7 @@ export function DeckBuilderPage() {
 
   const filteredCards = useMemo(() => {
     const filtered = cards.filter((card) => {
+      if (card.domainId !== deck.domainId) return false;
       if (!cardMatchesTab(card, activeTab)) return false;
       if (!matchesManaRange(card, manaRange)) return false;
       if (rarities.size > 0 && !rarities.has(card.rarity)) return false;
@@ -229,12 +247,20 @@ export function DeckBuilderPage() {
       }
       return a.cost - b.cost;
     });
-  }, [cards, activeTab, manaRange, rarities, filterClass, ownedOnly, search]);
+  }, [cards, activeTab, deck.domainId, manaRange, rarities, filterClass, ownedOnly, search]);
 
   const onAddCard = useCallback(
     (card: CatalogCard) => {
+      if (domainSelectionOpen) {
+        setToastMessage('Select a deck domain before adding cards.');
+        return;
+      }
       if (!isCardAllowed(card, deck.heroClass)) {
         setToastMessage(`${card.name} cannot be added to a ${deck.heroClass} deck.`);
+        return;
+      }
+      if (card.domainId !== deck.domainId) {
+        setToastMessage(`${card.name} belongs to ${DOMAIN_LABELS[card.domainId]}.`);
         return;
       }
       setDeck((current) => {
@@ -245,7 +271,7 @@ export function DeckBuilderPage() {
         return addCard(current, card, collection);
       });
     },
-    [collection, deck.heroClass]
+    [collection, deck.domainId, deck.heroClass, domainSelectionOpen]
   );
 
   const handleHeroClassChange = useCallback(
@@ -274,6 +300,31 @@ export function DeckBuilderPage() {
     [cards]
   );
 
+  const handleDomainChange = useCallback(
+    (nextDomain: DomainId) => {
+      setDeck((current) => {
+        if (current.domainId === nextDomain) {
+          return current;
+        }
+        const nextCollection = createCardCollection(cards);
+        const allowed = current.cards.filter((entry) => {
+          const card = nextCollection.get(entry.cardId);
+          return card?.domainId === nextDomain;
+        });
+        const removed = current.cards.length - allowed.length;
+        if (removed > 0) {
+          setToastMessage(`Removed ${removed} card${removed === 1 ? '' : 's'} not matching ${DOMAIN_LABELS[nextDomain]}.`);
+        }
+        return {
+          ...current,
+          domainId: nextDomain,
+          cards: sortDeckEntries(allowed, nextCollection)
+        };
+      });
+    },
+    [cards]
+  );
+
   const onCardDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -291,6 +342,7 @@ export function DeckBuilderPage() {
       const payload: DeckRequestPayload = {
         name: input.deck.name,
         heroClass: input.deck.heroClass,
+        domainId: input.deck.domainId,
         cards: input.deck.cards
       };
       if (input.mode === 'create') {
@@ -355,7 +407,11 @@ export function DeckBuilderPage() {
 
   const groupedEntries = useMemo(() => groupDeckByMana(deck.cards, collection), [deck.cards, collection]);
 
-  const saveDisabled = validation.totalCards !== MAX_DECK_SIZE || !validation.ok || saveDeckMutation.isPending;
+  const saveDisabled =
+    validation.totalCards !== MAX_DECK_SIZE ||
+    !validation.ok ||
+    saveDeckMutation.isPending ||
+    domainSelectionOpen;
 
   const isLoading = cardsQuery.isLoading || (deckId ? deckQuery.isLoading : false);
   const loadError = (cardsQuery.error ?? deckQuery.error) as Error | undefined;
@@ -414,6 +470,58 @@ export function DeckBuilderPage() {
               </Button>
             </div>
           </header>
+          {domainSelectionOpen && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(3,7,18,0.8)',
+                display: 'grid',
+                placeItems: 'center',
+                zIndex: 50
+              }}
+            >
+              <div
+                style={{
+                  background: 'rgba(15,23,42,0.95)',
+                  borderRadius: '18px',
+                  padding: '24px',
+                  width: 'min(480px, 90vw)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'grid',
+                  gap: '16px',
+                  textAlign: 'center'
+                }}
+              >
+                <h2 style={{ margin: 0 }}>Choose a deck domain</h2>
+                <p style={{ margin: 0, color: 'rgba(255,255,255,0.7)' }}>
+                  Pick a theme before adding cards.
+                </p>
+                <div style={{ display: 'grid', gap: '10px' }}>
+                  {DOMAIN_OPTIONS.map((domain) => (
+                    <Button
+                      key={domain.id}
+                      onClick={() => {
+                        handleDomainChange(domain.id);
+                        setDomainSelectionOpen(false);
+                      }}
+                      style={{
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: 'rgba(30,41,59,0.8)',
+                        color: 'white',
+                        cursor: 'pointer',
+                        fontWeight: 600
+                      }}
+                    >
+                      {domain.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div
             onDragOver={(event) => event.preventDefault()}
@@ -777,10 +885,24 @@ export function DeckBuilderPage() {
                           color: 'white'
                         }}
                       >
-                        <DropdownMenu.Item onSelect={() => setDeck(deckToDraft(deckData))} style={menuItemStyle}>
+                        <DropdownMenu.Item
+                          onSelect={() => {
+                            setDeck(deckToDraft(deckData));
+                            setMode(deckData ? 'edit' : 'create');
+                            setDomainSelectionOpen(!deckData);
+                          }}
+                          style={menuItemStyle}
+                        >
                           <Icon symbol="⟳" /> Reset to saved
                         </DropdownMenu.Item>
-                        <DropdownMenu.Item onSelect={() => setDeck(deckToDraft(undefined))} style={menuItemStyle}>
+                        <DropdownMenu.Item
+                          onSelect={() => {
+                            setDeck(deckToDraft(undefined));
+                            setMode('create');
+                            setDomainSelectionOpen(true);
+                          }}
+                          style={menuItemStyle}
+                        >
                           <Icon symbol="🆕" /> New deck
                         </DropdownMenu.Item>
                       </DropdownMenu.Content>
@@ -808,6 +930,23 @@ export function DeckBuilderPage() {
                         ))}
                       </select>
                     {/*</label>*/}
+                    <select
+                      value={deck.domainId}
+                      onChange={(event) => handleDomainChange(event.target.value as DomainId)}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        background: 'rgba(17,24,39,0.8)',
+                        color: 'white'
+                      }}
+                    >
+                      {DOMAIN_OPTIONS.map((domain) => (
+                        <option key={domain.id} value={domain.id}>
+                          {domain.label}
+                        </option>
+                      ))}
+                    </select>
                     <Button
                       onClick={() => setDeck(deckToDraft(deckData))}
                       style={{

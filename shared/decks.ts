@@ -1,4 +1,4 @@
-import type { CardDefinition } from './types.js';
+import type { CardDefinition, DomainId } from './types.js';
 import { MAX_DECK_SIZE } from './constants.js';
 
 export type HeroClass =
@@ -21,6 +21,7 @@ export interface DeckCardEntry {
 export interface DeckMeta {
   name: string;
   heroClass: HeroClass;
+  domainId: DomainId;
 }
 
 export interface Deck extends DeckMeta {
@@ -58,7 +59,8 @@ export type DeckValidationErrorCode =
   | 'MAX_CARDS'
   | 'CLASS_RESTRICTION'
   | 'COPIES_LIMIT'
-  | 'LEGENDARY_LIMIT';
+  | 'LEGENDARY_LIMIT'
+  | 'DOMAIN_RESTRICTION';
 
 export interface DeckValidationIssue {
   code: DeckValidationErrorCode;
@@ -80,6 +82,7 @@ export interface SerializedDeckPayload {
 export type DeckUpdatePayload = {
   name: string;
   heroClass: HeroClass;
+  domainId: DomainId;
   cards: DeckCardEntry[];
 };
 

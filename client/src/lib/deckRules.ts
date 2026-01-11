@@ -121,6 +121,13 @@ export function validateDeck(deck: Deck, cards: CatalogCard[]): DeckValidationRe
         cardId: card.id
       });
     }
+    if (card.domainId !== deck.domainId) {
+      issues.push({
+        code: 'DOMAIN_RESTRICTION',
+        message: `${card.name} is not available for the selected domain.`,
+        cardId: card.id
+      });
+    }
     const limit = getCardLimit(card);
     if (entry.count > limit) {
       issues.push({

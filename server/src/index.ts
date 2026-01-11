@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { URL } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
 import type { MatchJoinInfo, PlayerSide } from '@cardstone/shared/types.js';
+import { DOMAIN_IDS, type DomainId } from '@cardstone/shared/types.js';
 import { clientMessageSchema, type ValidatedClientMessage } from './net/protocol.js';
 import { Lobby } from './lobby/Lobby.js';
 import { RateLimiter } from './util/rateLimit.js';
@@ -26,6 +27,7 @@ interface ConnectionContext {
   playerId?: string;
   match?: Match;
   side?: PlayerSide;
+  deckId?: string;
   rateLimiter: RateLimiter;
   queue: Promise<void>;
   alive: boolean;
@@ -44,6 +46,7 @@ const deckStore = new Map<string, Deck>();
 const DEFAULT_DECK_ID = 'starter-deck';
 const DEFAULT_DECK_NAME = 'Starter Deck';
 const DEFAULT_DECK_HERO_CLASS: Deck['heroClass'] = 'Mage';
+const DEFAULT_DECK_DOMAIN: Deck['domainId'] = 'sui';
 
 function createDeckEntriesFromCardIds(cardIds: readonly string[]): DeckCardEntry[] {
   const counts = new Map<string, number>();
@@ -53,6 +56,10 @@ function createDeckEntriesFromCardIds(cardIds: readonly string[]): DeckCardEntry
   return Array.from(counts.entries())
     .map(([cardId, count]) => ({ cardId, count }))
     .sort((a, b) => a.cardId.localeCompare(b.cardId));
+}
+
+function expandDeckEntries(entries: DeckCardEntry[]): string[] {
+  return entries.flatMap((entry) => Array.from({ length: entry.count }).map(() => entry.cardId));
 }
 
 function seedDefaultDeck(): void {
@@ -65,6 +72,7 @@ function seedDefaultDeck(): void {
     id: DEFAULT_DECK_ID,
     name: DEFAULT_DECK_NAME,
     heroClass: DEFAULT_DECK_HERO_CLASS,
+    domainId: DEFAULT_DECK_DOMAIN,
     cards,
     createdAt: now,
     updatedAt: now
@@ -122,6 +130,10 @@ function isHeroClass(value: string): value is Deck['heroClass'] {
   return HERO_CLASSES.includes(value as Deck['heroClass']);
 }
 
+function isDomainId(value: string): value is DomainId {
+  return DOMAIN_IDS.includes(value as DomainId);
+}
+
 function evaluateDeckPayload(payload: DeckUpdatePayload): {
   errors: string[];
   cards: DeckCardEntry[];
@@ -133,6 +145,9 @@ function evaluateDeckPayload(payload: DeckUpdatePayload): {
   }
   if (!payload.heroClass || !isHeroClass(payload.heroClass)) {
     errors.push('A valid hero class is required.');
+  }
+  if (!payload.domainId || !isDomainId(payload.domainId)) {
+    errors.push('A valid deck domain is required.');
   }
   const normalized = normalizeDeckCards(payload.cards);
   let total = 0;
@@ -147,6 +162,9 @@ function evaluateDeckPayload(payload: DeckUpdatePayload): {
       if (card.heroClass !== 'Neutral' && card.heroClass !== payload.heroClass) {
         errors.push(`Card ${card.name} is not available for ${payload.heroClass}.`);
       }
+    }
+    if (payload.domainId && card.domainId !== payload.domainId) {
+      errors.push(`Card ${card.name} is not available in the ${payload.domainId} domain.`);
     }
     const maxCopies = card.rarity === 'Legendary' ? MAX_LEGENDARY_COPIES : MAX_CARD_COPIES;
     if (entry.count > maxCopies) {
@@ -210,13 +228,14 @@ server.on('request', async (req, res) => {
           sendJson(res, 400, { message: 'Request body is required.' });
           return;
         }
-        if (!payload.name || !payload.heroClass || !payload.cards) {
-          sendJson(res, 400, { message: 'name, heroClass and cards are required.' });
+        if (!payload.name || !payload.heroClass || !payload.domainId || !payload.cards) {
+          sendJson(res, 400, { message: 'name, heroClass, domainId and cards are required.' });
           return;
         }
         const updatePayload: DeckUpdatePayload = {
           name: payload.name,
           heroClass: payload.heroClass,
+          domainId: payload.domainId,
           cards: payload.cards
         };
         const result = evaluateDeckPayload(updatePayload);
@@ -229,6 +248,7 @@ server.on('request', async (req, res) => {
           id: randomUUID(),
           name: updatePayload.name.trim(),
           heroClass: updatePayload.heroClass,
+          domainId: updatePayload.domainId,
           cards: result.cards,
           createdAt: now,
           updatedAt: now
@@ -271,13 +291,14 @@ server.on('request', async (req, res) => {
           sendJson(res, 400, { message: 'Request body is required.' });
           return;
         }
-        if (!payload.name || !payload.heroClass || !payload.cards) {
-          sendJson(res, 400, { message: 'name, heroClass and cards are required.' });
+        if (!payload.name || !payload.heroClass || !payload.domainId || !payload.cards) {
+          sendJson(res, 400, { message: 'name, heroClass, domainId and cards are required.' });
           return;
         }
         const updatePayload: DeckUpdatePayload = {
           name: payload.name,
           heroClass: payload.heroClass,
+          domainId: payload.domainId,
           cards: payload.cards
         };
         const result = evaluateDeckPayload(updatePayload);
@@ -289,6 +310,7 @@ server.on('request', async (req, res) => {
           ...existing,
           name: updatePayload.name.trim(),
           heroClass: updatePayload.heroClass,
+          domainId: updatePayload.domainId,
           cards: result.cards,
           updatedAt: new Date().toISOString()
         };
@@ -548,7 +570,17 @@ async function handleClientMessage(
       context.playerId = playerId;
       playerConnections.set(playerId, context);
       if (message.payload.matchId === 'auto') {
-        const match = lobby.join(playerId, (m, side) => {
+        if (!message.payload.deckId) {
+          sendToast(context, 'Select a deck before joining a match.');
+          return;
+        }
+        const deck = deckStore.get(message.payload.deckId);
+        if (!deck) {
+          sendToast(context, 'Selected deck not found.');
+          return;
+        }
+        context.deckId = deck.id;
+        const match = lobby.join(playerId, deck.domainId, expandDeckEntries(deck.cards), (m, side) => {
           const existing = playerConnections.get(playerId);
           if (existing) {
             attachToMatch(existing, m, side);
