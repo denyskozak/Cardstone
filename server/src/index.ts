@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createHmac, randomUUID } from 'node:crypto';
 import { URL } from 'node:url';
@@ -24,6 +25,8 @@ import {
 import { DEFAULT_DECK } from '@cardstone/shared/constants.js';
 import { cardsById, catalogCards } from './data/cards.js';
 import { sanitizeAttachmentName } from './util/download.js';
+import { initDataSource } from './db/dataSource.js';
+import { ensureDefaultQuests, ensureProfile, getQuestStatus, recordWin } from './quests/questService.js';
 
 interface ConnectionContext {
   ws: WebSocket;
@@ -47,6 +50,7 @@ const playerConnections = new Map<string, ConnectionContext>();
 const matchConnections = new Map<string, Set<ConnectionContext>>();
 const chatVisibilityByMatch = new Map<string, boolean>();
 const deckStore = new Map<string, Deck>();
+const processedMatches = new Set<string>();
 
 const DEFAULT_DECK_ID = 'starter-deck';
 const DEFAULT_DECK_NAME = 'Starter Deck';
@@ -96,6 +100,12 @@ function seedDefaultDeck(): void {
 }
 
 seedDefaultDeck();
+
+initDataSource()
+  .then(() => ensureDefaultQuests())
+  .catch((error) => {
+    console.error('Failed to initialize database', error);
+  });
 
 interface MatchTimerEntry {
   mulligan?: NodeJS.Timeout;
@@ -196,6 +206,18 @@ function verifyJwtToken(token: string): JwtPayload | null {
   return payload;
 }
 
+function getBearerToken(req: IncomingMessage): string | null {
+  const header = req.headers.authorization;
+  if (!header) {
+    return null;
+  }
+  const [scheme, token] = header.split(' ');
+  if (scheme !== 'Bearer' || !token) {
+    return null;
+  }
+  return token;
+}
+
 function createJwtToken(address: string): { token: string; expiresIn: number } {
   const issuedAt = Math.floor(Date.now() / 1000);
   const payload: JwtPayload = {
@@ -290,7 +312,7 @@ server.on('request', async (req, res) => {
   }
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
     res.end();
@@ -344,6 +366,7 @@ server.on('request', async (req, res) => {
         return;
       }
       const { token, expiresIn } = createJwtToken(normalizedAddress);
+      await ensureProfile(normalizedAddress);
       sendJson(res, 200, { token, expiresIn, address: normalizedAddress });
       return;
     }
@@ -397,6 +420,22 @@ server.on('request', async (req, res) => {
         return;
       }
       sendJson(res, 405, { message: 'Method not allowed' });
+      return;
+    }
+
+    if (url.pathname === '/api/quests' && req.method === 'GET') {
+      const token = getBearerToken(req);
+      if (!token) {
+        sendJson(res, 401, { error: 'Missing auth token.' });
+        return;
+      }
+      const payload = verifyJwtToken(token);
+      if (!payload?.sub) {
+        sendJson(res, 401, { error: 'Invalid auth token.' });
+        return;
+      }
+      const status = await getQuestStatus(payload.sub);
+      sendJson(res, 200, status);
       return;
     }
 
@@ -616,6 +655,30 @@ function sendStateSync(match: Match): void {
         conn.ws.send(JSON.stringify(gameOver));
       }
     }
+    void handleMatchCompleted(match);
+  }
+}
+
+async function handleMatchCompleted(match: Match): Promise<void> {
+  const state = match.getState();
+  if (!state.winner) {
+    return;
+  }
+  if (processedMatches.has(match.id)) {
+    return;
+  }
+  processedMatches.add(match.id);
+  const winnerId = state.players[state.winner].id;
+  const winnerConnection = playerConnections.get(winnerId);
+  const address = winnerConnection?.address;
+  if (!address) {
+    console.warn(`Winner address not found for match ${match.id}`);
+    return;
+  }
+  try {
+    await recordWin(address);
+  } catch (error) {
+    console.error('Failed to record quest progress', error);
   }
 }
 

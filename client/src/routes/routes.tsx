@@ -6,6 +6,7 @@ import { GameRoute } from './game';
 import { DecksPage } from './decks';
 import { DeckBuilderPage } from './deck-builder';
 import { MenuPage } from './menu';
+import { QuestsPage } from './quests';
 
 export const router = createBrowserRouter([
   {
@@ -35,5 +36,9 @@ export const router = createBrowserRouter([
   {
     path: '/menu',
     element: <MenuPage />,
+  },
+  {
+    path: '/quests',
+    element: <QuestsPage />,
   },
 ])

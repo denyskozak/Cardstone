@@ -7,6 +7,8 @@
     "moduleResolution": "Node16",
     "module": "NodeNext",
     "target": "ES2022",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "paths": {
       "@cardstone/shared": ["../shared/index.ts"],
       "@cardstone/shared/*": ["../shared/*"]
