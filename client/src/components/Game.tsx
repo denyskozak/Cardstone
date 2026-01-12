@@ -328,6 +328,63 @@ export function Game() {
   const canEndTurn = Boolean(
     state && side && state.stage === 'Play' && state.turn.current === side && state.turn.phase === 'Main'
   );
+  const MULLIGAN_FADE_DURATION = 300;
+  const MULLIGAN_REPLACE_DELAY = 2000;
+  const mulliganTimeoutsRef = useRef(new Map<number, ReturnType<typeof window.setTimeout>[]>());
+  const mulliganHandRef = useRef<CardInHand[]>([]);
+  type MulliganCardPhase = 'visible' | 'fadingOut' | 'hidden' | 'fadingIn';
+  type MulliganDisplayCard = {
+    card: CardInHand;
+    phase: MulliganCardPhase;
+    pendingCard?: CardInHand;
+  };
+  const [mulliganDisplay, setMulliganDisplay] = useState<MulliganDisplayCard[]>([]);
+
+  useEffect(() => {
+    if (player?.hand) {
+      mulliganHandRef.current = player.hand;
+    }
+  }, [player?.hand]);
+
+  useEffect(() => {
+    if (!isMulligan || !player) {
+      mulliganTimeoutsRef.current.forEach((timeouts) => timeouts.forEach((timeout) => window.clearTimeout(timeout)));
+      mulliganTimeoutsRef.current.clear();
+      setMulliganDisplay([]);
+      return;
+    }
+    setMulliganDisplay((current) => {
+      if (current.length !== player.hand.length || current.length === 0) {
+        return player.hand.map((card) => ({ card, phase: 'visible' }));
+      }
+      return current.map((entry, index) => {
+        const nextCard = player.hand[index];
+        if (!nextCard) {
+          return entry;
+        }
+        if (entry.card.instanceId === nextCard.instanceId) {
+          return entry;
+        }
+        if (entry.phase === 'visible') {
+          return { card: nextCard, phase: 'visible' };
+        }
+        return { ...entry, pendingCard: nextCard };
+      });
+    });
+  }, [isMulligan, player]);
+
+  useEffect(() => {
+    return () => {
+      mulliganTimeoutsRef.current.forEach((timeouts) => timeouts.forEach((timeout) => window.clearTimeout(timeout)));
+      mulliganTimeoutsRef.current.clear();
+    };
+  }, []);
+
+  const scheduleMulliganTimeout = useCallback((index: number, timeout: ReturnType<typeof window.setTimeout>) => {
+    const store = mulliganTimeoutsRef.current;
+    const existing = store.get(index) ?? [];
+    store.set(index, [...existing, timeout]);
+  }, []);
 
   const handleSendChat = useCallback(
     (text: string) => {
@@ -349,7 +406,7 @@ export function Game() {
   );
 
   const handleMulliganReplace = useCallback(
-    (card: CardInHand) => {
+    (card: CardInHand, index: number) => {
       if (!state || !side) {
         return;
       }
@@ -365,9 +422,64 @@ export function Game() {
       if (card.card.id === CARD_IDS.coin) {
         return;
       }
+      setMulliganDisplay((current) => {
+        const entry = current[index];
+        if (!entry || entry.phase !== 'visible') {
+          return current;
+        }
+        const next = [...current];
+        next[index] = { ...entry, phase: 'fadingOut' };
+        return next;
+      });
+      const existing = mulliganTimeoutsRef.current.get(index);
+      existing?.forEach((timeout) => window.clearTimeout(timeout));
+      mulliganTimeoutsRef.current.delete(index);
+      scheduleMulliganTimeout(
+        index,
+        window.setTimeout(() => {
+          setMulliganDisplay((current) => {
+            const entry = current[index];
+            if (!entry || entry.phase !== 'fadingOut') {
+              return current;
+            }
+            const next = [...current];
+            next[index] = { ...entry, phase: 'hidden' };
+            return next;
+          });
+        }, MULLIGAN_FADE_DURATION)
+      );
+      scheduleMulliganTimeout(
+        index,
+        window.setTimeout(() => {
+          setMulliganDisplay((current) => {
+            const entry = current[index];
+            if (!entry || entry.phase !== 'hidden') {
+              return current;
+            }
+            const nextCard = entry.pendingCard ?? mulliganHandRef.current[index] ?? entry.card;
+            const next = [...current];
+            next[index] = { card: nextCard, phase: 'fadingIn' };
+            return next;
+          });
+        }, MULLIGAN_FADE_DURATION + MULLIGAN_REPLACE_DELAY)
+      );
+      scheduleMulliganTimeout(
+        index,
+        window.setTimeout(() => {
+          setMulliganDisplay((current) => {
+            const entry = current[index];
+            if (!entry || entry.phase !== 'fadingIn') {
+              return current;
+            }
+            const next = [...current];
+            next[index] = { ...entry, phase: 'visible' };
+            return next;
+          });
+        }, MULLIGAN_FADE_DURATION * 2 + MULLIGAN_REPLACE_DELAY)
+      );
       socket.sendWithAck('MulliganReplace', { cardId: card.instanceId });
     },
-    [side, socket, state]
+    [MULLIGAN_FADE_DURATION, MULLIGAN_REPLACE_DELAY, scheduleMulliganTimeout, side, socket, state]
   );
 
   const handleMulliganApply = useCallback(() => {
@@ -412,19 +524,23 @@ export function Game() {
                 : 'Click a card to replace it and press Apply'}
             </div>
             <div className={styles.mulliganCards}>
-              {player?.hand.map((card) => {
+              {mulliganDisplay.map((entry, index) => {
+                const card = entry.card;
                 const disabled =
+                  entry.phase !== 'visible' ||
                   Boolean(card.mulliganReplaced) ||
                   card.card.id === CARD_IDS.coin ||
                   state.mulligan.applied[side];
                 return (
                   <button
-                    key={card.instanceId}
+                    key={index}
                     type="button"
                     className={`${styles.mulliganCard} ${
                       card.mulliganReplaced ? styles.mulliganCardReplacedSlot : ''
-                    }`}
-                    onClick={() => handleMulliganReplace(card)}
+                    } ${entry.phase === 'fadingOut' ? styles.mulliganCardFadingOut : ''} ${
+                      entry.phase === 'hidden' ? styles.mulliganCardHidden : ''
+                    } ${entry.phase === 'fadingIn' ? styles.mulliganCardFadingIn : ''}`}
+                    onClick={() => handleMulliganReplace(card, index)}
                     disabled={disabled}
                     style={{
                       cursor: disabled  ? 'block' : 'pointer'

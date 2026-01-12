@@ -63,11 +63,13 @@ const ATTACK_ARC_HEIGHT = 36;
 const ATTACK_LUNGE_SCALE = 0.08;
 const SIDES: PlayerSide[] = ['A', 'B'];
 const DAMAGE_DISPLAY_DURATION = 2000;
+const DAMAGE_FADE_OUT_DURATION = 350;
 const DAMAGE_IMPACT_THRESHOLD = 0.5;
-const DRAW_DURATION = 480;
+const DRAW_DURATION = 620;
 const DRAW_LIFT = 26;
 const DRAW_STAGGER = 70;
 const PLACEMENT_FADE_DURATION = 250;
+const MINION_DEATH_FADE_DURATION = 800;
 const CARD_BACK_TEXTURE = '/assets/card_skins/1.webp';
 
 interface DamageIndicator {
@@ -76,6 +78,8 @@ interface DamageIndicator {
   y: number;
   amount: number;
   remaining: number;
+  duration: number;
+  target?: TargetDescriptor;
 }
 
 interface DrawAnimation {
@@ -108,7 +112,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
 
   const pendingLocalAttackersRef = useRef(new Map<string, number>());
   const pendingImpactResultsRef = useRef(new Map<string, PendingImpactResult[]>());
-  const deathTimeoutsRef = useRef(new Map<string, ReturnType<typeof window.setTimeout>>());
+  const destroyedMinionsRef = useRef(new Set<string>());
   const prevDeathStateRef = useRef<GameState | null>(null);
 
   const layout = useMemo(
@@ -131,6 +135,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const drawSequenceRef = useRef(0);
   const [cardBackTexture, setCardBackTexture] = useState<Texture>(Texture.EMPTY);
   const [placementFades, setPlacementFades] = useState<PlacementFade[]>([]);
+  const [deathFades, setDeathFades] = useState<PlacementFade[]>([]);
   const deckPositions = useMemo(() => getDeckPositions(width, height), [height, width]);
   useEffect(() => {
     prevHeroPositionsRef.current = heroPositions;
@@ -153,9 +158,9 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       pendingImpactResultsRef.current.clear();
       setDamageIndicators([]);
       damageSequenceRef.current = 0;
-      deathTimeoutsRef.current.forEach((timeout) => window.clearTimeout(timeout));
-      deathTimeoutsRef.current.clear();
+      destroyedMinionsRef.current.clear();
       setPlacementFades([]);
+      setDeathFades([]);
     };
   }, [resetMinionAnimations]);
 
@@ -172,9 +177,10 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     const destroyed = detectDestroyedMinions(previous, state);
     if (destroyed.length > 0) {
       destroyed.forEach((id) => {
-        if (deathTimeoutsRef.current.has(id)) {
+        if (destroyedMinionsRef.current.has(id)) {
           return;
         }
+        destroyedMinionsRef.current.add(id);
         const existing = minionAnimationsRef.current[id];
         setMinionAnimation(id, {
           offsetX: 0,
@@ -182,11 +188,12 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
           grayscale: true,
           opacity: existing?.opacity
         });
-        const timeout = window.setTimeout(() => {
-          clearMinionAnimation(id);
-          deathTimeoutsRef.current.delete(id);
-        }, 3000);
-        deathTimeoutsRef.current.set(id, timeout);
+        setDeathFades((current) => {
+          const exists = current.some((fade) => fade.id === id);
+          return exists
+            ? current
+            : [...current, { id, elapsed: 0, duration: MINION_DEATH_FADE_DURATION }];
+        });
       });
     }
     prevDeathStateRef.current = state;
@@ -505,12 +512,18 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
             playGameSound(GameSoundId.AttackImpact);
             const key = `${animation.key}:impact:${damageSequenceRef.current}`;
             damageSequenceRef.current += 1;
+            const isDestroyedTarget =
+              updated.target.type === 'minion' &&
+              destroyedMinionsRef.current.has(updated.target.entityId);
+            const duration = isDestroyedTarget ? MINION_DEATH_FADE_DURATION : DAMAGE_DISPLAY_DURATION;
             additions.push({
               key,
               x: updated.targetPoint.x,
               y: updated.targetPoint.y,
               amount: updated.damageAmount,
-              remaining: DAMAGE_DISPLAY_DURATION
+              remaining: duration,
+              duration,
+              target: updated.target
             });
           }
           if (elapsed < updated.duration) {
@@ -595,6 +608,36 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     placementFades.length > 0
   );
 
+  useMiniTicker(
+    (deltaMS) => {
+      setDeathFades((current) => {
+        if (current.length === 0) {
+          return current;
+        }
+        const next: PlacementFade[] = [];
+        current.forEach((fade) => {
+          const elapsed = fade.elapsed + deltaMS;
+          const progress = Math.min(elapsed / fade.duration, 1);
+          const existing = minionAnimationsRef.current[fade.id];
+          const baseTransform = existing ?? { offsetX: 0, offsetY: 0 };
+          setMinionAnimation(fade.id, {
+            ...baseTransform,
+            grayscale: true,
+            opacity: 1 - progress
+          });
+          if (elapsed < fade.duration) {
+            next.push({ ...fade, elapsed });
+            return;
+          }
+          clearMinionAnimation(fade.id);
+          destroyedMinionsRef.current.delete(fade.id);
+        });
+        return next;
+      });
+    },
+    deathFades.length > 0
+  );
+
   const previousAnimationIdsRef = useRef<Set<string>>(new Set());
 
   useLayoutEffect(() => {
@@ -660,7 +703,20 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
           />
         ))}
       {damageIndicators.map((indicator) => (
-        <pixiContainer key={indicator.key} x={indicator.x} y={indicator.y}>
+        <pixiContainer
+          key={indicator.key}
+          x={indicator.x}
+          y={indicator.y}
+          alpha={
+            indicator.duration === MINION_DEATH_FADE_DURATION
+              ? indicator.remaining / indicator.duration
+              : indicator.duration <= DAMAGE_FADE_OUT_DURATION
+              ? indicator.remaining / indicator.duration
+              : indicator.remaining <= DAMAGE_FADE_OUT_DURATION
+                ? indicator.remaining / DAMAGE_FADE_OUT_DURATION
+                : 1
+          }
+        >
           <pixiSprite
             texture={damageTexture}
             width={120}
@@ -677,7 +733,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       ))}
       {drawAnimations.map((animation) => {
         const progress = Math.max(0, Math.min(1, animation.elapsed / animation.duration));
-        const eased = easeOutCubic(progress);
+        const eased = easeInOutCubic(progress);
         const x = lerp(animation.from.x, animation.to.x, eased);
         const y = lerp(animation.from.y, animation.to.y, eased) - Math.sin(progress * Math.PI) * DRAW_LIFT;
         const rotation = lerp(animation.from.rotation, animation.to.rotation, eased);
@@ -693,6 +749,8 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
             rotation={rotation}
             scale={scale}
             pivot={{ x: CARD_SIZE.width / 2, y: CARD_SIZE.height }}
+            width={CARD_SIZE.width}
+            height={CARD_SIZE.height}
             alpha={fadeOut}
             zIndex={2200}
           />
@@ -734,6 +792,10 @@ function lerp(a: number, b: number, t: number) {
 
 function easeOutCubic(t: number) {
   return 1 - Math.pow(1 - t, 3);
+}
+
+function easeInOutCubic(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 function easeInCubic(t: number) {
