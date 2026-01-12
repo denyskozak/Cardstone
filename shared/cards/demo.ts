@@ -12,8 +12,8 @@ const minions: Record<string, MinionCard> = {
     name: 'Suilend',
     type: 'Minion',
     cost: 3,
-    attack: 0,
-    health: 3,
+    attack: 1,
+    health: 4,
     text: 'At the end of your turn, draw a card.',
     effects: [{ trigger: { type: 'TurnEnd' }, action: { type: 'DrawCard', amount: 1 } }]
   },
@@ -24,15 +24,8 @@ const minions: Record<string, MinionCard> = {
     name: 'Blub',
     type: 'Minion',
     cost: 2,
-    attack: 0,
+    attack: 2,
     health: 2,
-    text: 'Adjacent minions have +1 Attack.',
-    effects: [
-      {
-        trigger: { type: 'Aura' },
-        action: { type: 'Custom', key: 'AdjacentBuff', data: { stats: { attack: 1 } } }
-      }
-    ]
   },
 
   [CARD_IDS.hipo]: {
@@ -44,7 +37,6 @@ const minions: Record<string, MinionCard> = {
     attack: 0,
     health: 2,
     text: 'On end of turn, restore 1 Health to all friendly characters.',
-    // В вашем DSL есть только AllFriendlies; считаю, что это включает героя и миньонов.
     effects: [
       { trigger: { type: 'TurnEnd' }, action: { type: 'Heal', amount: 1, target: 'AllFriendlies' } }
     ]
@@ -81,13 +73,13 @@ const minions: Record<string, MinionCard> = {
     name: 'Cetus',
     type: 'Minion',
     cost: 6,
-    attack: 6,
+    attack: 3,
     health: 5,
-    text: 'Battlecry: Deal 3 damage to a random enemy.',
+    text: 'Deal 2 damage to all enemy.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Damage', amount: 3, target: 'RandomEnemy' }
+        action: { type: 'Damage', amount: 2, target: 'AllEnemies' }
       }
     ]
   },
@@ -100,12 +92,12 @@ const minions: Record<string, MinionCard> = {
     cost: 4,
     attack: 3,
     health: 4,
-    text: 'Battlecry: Deal 2 damage to all enemy minions.',
+    text: 'Deal 1 damage to all enemy minions.',
     // У вас AllEnemies — если это включает героя, поменяйте на кастом-таргет "AllEnemyMinions".
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Damage', amount: 2, target: 'AllEnemies' }
+        action: { type: 'Damage', amount: 1, target: 'AllEnemies' }
       }
     ]
   },
@@ -160,13 +152,13 @@ const minions: Record<string, MinionCard> = {
     name: 'DeepBook',
     type: 'Minion',
     cost: 3,
-    attack: 3,
-    health: 3,
-    text: 'Whenever a minion dies, gain +1 Attack.',
+    attack: 2,
+    health: 4,
+    text: 'Heal +1 hp all friendly characters',
     effects: [
       {
-        trigger: { type: 'Custom', key: 'AnyMinionDied' },
-        action: { type: 'Buff', stats: { attack: 1 }, target: 'Self' }
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Heal', amount: 1, target: 'AllFriendlies' }
       }
     ]
   },
@@ -179,12 +171,12 @@ const minions: Record<string, MinionCard> = {
     cost: 3,
     attack: 2,
     health: 4,
-    text: 'Taunt. Has +3 Attack while damaged.',
+    text: 'Taunt. Has +2 Attack while damaged.',
     effects: [
       { trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Taunt' } },
       {
         trigger: { type: 'Aura' },
-        action: { type: 'Custom', key: 'AttackWhileDamaged', data: { amount: 3 } }
+        action: { type: 'Custom', key: 'AttackWhileDamaged', data: { amount: 2 } }
       }
     ]
   },
@@ -208,12 +200,12 @@ const minions: Record<string, MinionCard> = {
     type: 'Minion',
     cost: 3,
     attack: 2,
-    health: 3,
-    text: 'Battlecry: Deal 1 damage to a minion',
+    health: 5,
+    text: 'Deal 2 damage to random minion',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Damage', amount: 1, target: 'AnyMinion' }
+        action: { type: 'Damage', amount: 2, target: 'AnyMinion' }
       },
     ]
   },
@@ -224,16 +216,15 @@ const minions: Record<string, MinionCard> = {
     name: 'Matteo',
     type: 'Minion',
     cost: 2,
-    attack: 3,
-    health: 2,
-    text: 'Battlecry: Return a friendly minion to your hand.',
+    attack: 1,
+    health: 1,
+    text: 'Draw one card',
     effects: [
       {
         trigger: { type: 'Battlecry' },
         action: {
-          type: 'Custom',
-          key: 'ReturnFriendlyMinionToHand',
-          data: { target: 'FriendlyMinion' }
+          type: 'DrawCard',
+          amount: 1
         }
       }
     ]
@@ -247,7 +238,7 @@ const minions: Record<string, MinionCard> = {
     cost: 5,
     attack: 4,
     health: 4,
-    text: 'Battlecry: Summon one 2/2 Seals.',
+    text: 'Summon one 2/2 Seals.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
@@ -270,12 +261,12 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.lofi]: {
     id: CARD_IDS.lofi,
     domainId: 'sui',
-    name: 'Lofi Healer',
+    name: 'Lofi',
     type: 'Minion',
     cost: 3,
     attack: 3,
     health: 3,
-    text: 'Battlecry: Restore 3 Health to your hero.',
+    text: 'Restore 3 Health to your hero.',
     effects: [
       { trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 3, target: 'Hero' } }
     ]
@@ -294,8 +285,6 @@ const minions: Record<string, MinionCard> = {
     effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Taunt' } }]
   },
 
-  // === ЯВНО НЕШАМАНСКИЕ МЕХАНИКИ: Divine Shield/Freeze — убираю или переименовываю ===
-
   [CARD_IDS.evan]: {
     id: CARD_IDS.evan,
     domainId: 'sui',
@@ -304,8 +293,8 @@ const minions: Record<string, MinionCard> = {
     cost: 3,
     attack: 3,
     health: 3,
-    text: 'Give 1 mana cristal',
-    effects: [{ trigger: { type: 'Aura' }, action: { type: 'ManaCrystal', amount: 1 } }]
+    text: 'Heal all friendlies 1 hp',
+    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Buff',  stats: {  health: 1 }, target: 'AllFriendlies' } }]
   },
 
   [CARD_IDS.devIntern]: {
@@ -326,13 +315,13 @@ const minions: Record<string, MinionCard> = {
     name: 'Sam',
     type: 'Minion',
     cost: 6,
-    attack: 5,
-    health: 5,
-    text: 'Battlecry: Freeze all enemies.',
+    attack: 4,
+    health: 6,
+    text: 'Heal all friendlies 2 hp.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Custom', key: 'Freeze', data: { target: 'AllEnemies' } }
+        action: { type: 'Heal', target: 'AllFriendlies', amount: 2 }
       }
     ]
   },
@@ -344,12 +333,12 @@ const minions: Record<string, MinionCard> = {
     name: 'Ancestral Watcher',
     type: 'Minion',
     cost: 4,
-    attack: 4,
-    health: 2,
-    text: 'After a friendly minion dies, draw a card.',
+    attack: 1,
+    health: 5,
+    text: 'Draw 1 card',
     effects: [
       {
-        trigger: { type: 'Custom', key: 'FriendlyMinionDied' },
+        trigger: { type: 'Battlecry' },
         action: { type: 'DrawCard', amount: 1 }
       }
     ]
@@ -363,13 +352,13 @@ const minions: Record<string, MinionCard> = {
     name: 'Adeniyi Warden',
     type: 'Minion',
     cost: 5,
-    attack: 5,
-    health: 5,
-    text: 'Battlecry: Give a friendly minion +2/+2.',
+    attack: 2,
+    health: 2,
+    text: 'Give a all friendlies +1/+1.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Buff', stats: { attack: 2, health: 2 }, target: 'FriendlyMinion' }
+        action: { type: 'Buff', stats: { attack: 1, health: 1 }, target: 'AllFriendlies' }
       }
     ]
   }
@@ -389,7 +378,18 @@ const spells: Record<string, Omit<SpellCard, 'domainId'> & Partial<Pick<SpellCar
         action: { type: 'ManaCrystal', amount: 1 }
       }
     ]
-  }
+  },
+  [CARD_IDS.lightningBolt]: {
+    id: CARD_IDS.lightningBolt,
+    domainId: 'sui',
+    name: 'Move Burst',
+    type: 'Spell',
+    cost: 1,
+    text: 'Deal 3 damage to a minion.',
+    effects: [{ trigger: { type: 'SpellCast' }, action: { type: 'Damage', amount: 3, target: 'AnyMinion' } }],
+  },
+
+
 };
 
 export const DEMO_CARDS: Record<string, CardDefinition> = Object.fromEntries(

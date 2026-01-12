@@ -44,6 +44,7 @@ export const CARD_IDS = {
   miniWalrus: 'miniWalrus',
   devIntern: 'devIntern',
   robot: 'robot',
+  lightningBolt: 'lightningBolt',
   coin: 'coin',
 } as const;
 
