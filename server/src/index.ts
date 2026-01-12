@@ -697,9 +697,9 @@ wss.on('connection', (ws) => {
     rateLimiter: new RateLimiter(20),
     queue: Promise.resolve(),
     alive: true,
-    authenticated: true
+    authenticated: false
   };
-
+  console.log('connection: ', ws);
   // const authTimeout = setTimeout(() => {
   //   if (!context.authenticated) {
   //     ws.close(4001, 'Unauthorized');
@@ -707,6 +707,7 @@ wss.on('connection', (ws) => {
   // }, AUTH_TIMEOUT_MS);
 
   ws.on('message', (data) => {
+    console.log('data: ', data);
     context.queue = context.queue
       .then(async () => {
         let parsed: unknown;
@@ -738,11 +739,14 @@ wss.on('connection', (ws) => {
         //   ws.close(4001, 'Unauthorized');
         //   return;
         // }
+        console.log('!context.rateLimiter.allow(): ', !context.rateLimiter.allow());
         if (!context.rateLimiter.allow()) {
           sendToast(context, 'Slow down!');
           return;
         }
+        console.log('parsed: ', parsed);
         const result = clientMessageSchema.safeParse(parsed);
+        console.log('result: ', result);
         if (!result.success) {
           sendToast(context, 'Invalid message');
           return;

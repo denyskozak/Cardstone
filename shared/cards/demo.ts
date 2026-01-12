@@ -9,8 +9,7 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.suilend]: {
     id: CARD_IDS.suilend,
     domainId: 'sui',
-    name: 'Suilend Totem',
-
+    name: 'Suilend',
     type: 'Minion',
     cost: 3,
     attack: 0,
@@ -22,16 +21,16 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.blub]: {
     id: CARD_IDS.blub,
     domainId: 'sui',
-    name: 'Blub Totem',
+    name: 'Blub',
     type: 'Minion',
-    cost: 3,
+    cost: 2,
     attack: 0,
-    health: 3,
-    text: 'Adjacent minions have +2 Attack.',
+    health: 2,
+    text: 'Adjacent minions have +1 Attack.',
     effects: [
       {
         trigger: { type: 'Aura' },
-        action: { type: 'Custom', key: 'AdjacentBuff', data: { stats: { attack: 2 } } }
+        action: { type: 'Custom', key: 'AdjacentBuff', data: { stats: { attack: 1 } } }
       }
     ]
   },
@@ -39,7 +38,7 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.hipo]: {
     id: CARD_IDS.hipo,
     domainId: 'sui',
-    name: 'Healing Totem',
+    name: 'Hipo',
     type: 'Minion',
     cost: 1,
     attack: 0,
@@ -54,11 +53,11 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.walrus]: {
     id: CARD_IDS.walrus,
     domainId: 'sui',
-    name: 'Stoneclaw Totem',
+    name: 'Walrus',
     type: 'Minion',
-    cost: 1,
-    attack: 0,
-    health: 2,
+    cost: 2,
+    attack: 2,
+    health: 3,
     text: 'Taunt.',
     effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Taunt' } }]
   },
@@ -66,7 +65,7 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.miniWalrus]: {
     id: CARD_IDS.miniWalrus,
     domainId: 'sui',
-    name: 'Searing Totem',
+    name: 'Mini Walrus',
     type: 'Minion',
     cost: 1,
     attack: 1,
@@ -96,7 +95,7 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.axol]: {
     id: CARD_IDS.axol,
     domainId: 'sui',
-    name: 'Axol Adept',
+    name: 'Axol',
     type: 'Minion',
     cost: 4,
     attack: 3,
@@ -114,16 +113,16 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.manifest]: {
     id: CARD_IDS.manifest,
     domainId: 'sui',
-    name: 'Raging Manifest',
+    name: 'Manifest',
     type: 'Minion',
     cost: 2,
     attack: 2,
     health: 3,
-    text: 'Has +3 Attack while damaged.',
+    text: 'Has +1 Attack while damaged.',
     effects: [
       {
         trigger: { type: 'Aura' },
-        action: { type: 'Custom', key: 'AttackWhileDamaged', data: { amount: 3 } }
+        action: { type: 'Custom', key: 'AttackWhileDamaged', data: { amount: 1 } }
       }
     ]
   },
@@ -131,32 +130,34 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.scallop]: {
     id: CARD_IDS.scallop,
     domainId: 'sui',
-    name: 'Earth Scallop',
+    name: 'Scallop',
     type: 'Minion',
     cost: 6,
-    attack: 7,
-    health: 8,
+    attack: 6,
+    health: 7,
     text: 'Taunt.',
-    // В классике у него Overload(3); я компенсировал повышенной стоимостью.
     effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Taunt' } }]
   },
 
   [CARD_IDS.georgeDanezis]: {
     id: CARD_IDS.georgeDanezis,
     domainId: 'sui',
-    name: 'Air George',
+    name: 'George',
     type: 'Minion',
-    cost: 6,
-    attack: 4,
+    cost: 5,
+    attack: 5,
     health: 5,
-    text: 'Windfury.',
-    effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Windfury' } }]
+    text: 'Summon 2 Dev Interns.',
+    effects: [ {
+      trigger: { type: 'Battlecry' },
+      action: { type: 'Summon', cardId: CARD_IDS.devIntern, count: 2, target: 'Board' }
+    }]
   },
 
   [CARD_IDS.deepBook]: {
     id: CARD_IDS.deepBook,
     domainId: 'sui',
-    name: 'DeepBook Adept',
+    name: 'DeepBook',
     type: 'Minion',
     cost: 3,
     attack: 3,
@@ -173,7 +174,7 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.robot]: {
     id: CARD_IDS.robot,
     domainId: 'sui',
-    name: 'Golem',
+    name: 'Robot',
     type: 'Minion',
     cost: 3,
     attack: 2,
@@ -193,49 +194,34 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.fud]: {
     id: CARD_IDS.fud,
     domainId: 'sui',
-    name: 'Rockbiter Mystic',
+    name: 'Fud',
     type: 'Minion',
     cost: 1,
     attack: 1,
-    health: 1,
-    text: 'Battlecry: Give a minion +3 Attack this turn.',
-    effects: [
-      {
-        trigger: { type: 'Battlecry' },
-        action: {
-          type: 'Custom',
-          key: 'BuffTargetThisTurn',
-          data: { stats: { attack: 3 }, target: 'AnyMinion' }
-        }
-      }
-    ]
+    health: 2,
   },
 
   [CARD_IDS.miu]: {
     id: CARD_IDS.miu,
     domainId: 'sui',
-    name: 'Miu Adept',
+    name: 'Miu',
     type: 'Minion',
     cost: 3,
     attack: 2,
     health: 3,
-    text: 'Battlecry: Deal 1 damage to a minion and Silence it.',
+    text: 'Battlecry: Deal 1 damage to a minion',
     effects: [
       {
         trigger: { type: 'Battlecry' },
         action: { type: 'Damage', amount: 1, target: 'AnyMinion' }
       },
-      {
-        trigger: { type: 'Battlecry' },
-        action: { type: 'Custom', key: 'Silence', data: { target: 'AnyMinion' } }
-      }
     ]
   },
 
   [CARD_IDS.matteo]: {
     id: CARD_IDS.matteo,
     domainId: 'sui',
-    name: 'Matteo Brewmaster',
+    name: 'Matteo',
     type: 'Minion',
     cost: 2,
     attack: 3,
@@ -256,16 +242,16 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.kostasKryptos]: {
     id: CARD_IDS.kostasKryptos,
     domainId: 'sui',
-    name: 'Kostas Wolf Caller',
+    name: 'Kostas',
     type: 'Minion',
     cost: 5,
     attack: 4,
     health: 4,
-    text: 'Battlecry: Summon two 2/2 Seals.',
+    text: 'Battlecry: Summon one 2/2 Seals.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Summon', cardId: CARD_IDS.seal, count: 2, target: 'Board' }
+        action: { type: 'Summon', cardId: CARD_IDS.seal, count: 1, target: 'Board' }
       }
     ]
   },
@@ -317,26 +303,19 @@ const minions: Record<string, MinionCard> = {
     type: 'Minion',
     cost: 3,
     attack: 3,
-    health: 1,
-    text: 'Windfury.',
-    effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Windfury' } }]
+    health: 3,
+    text: 'Give 1 mana cristal',
+    effects: [{ trigger: { type: 'Aura' }, action: { type: 'ManaCrystal', amount: 1 } }]
   },
 
   [CARD_IDS.devIntern]: {
     id: CARD_IDS.devIntern,
     domainId: 'sui',
-    name: 'Totemic Intern',
+    name: 'Intern',
     type: 'Minion',
     cost: 1,
     attack: 1,
-    health: 2,
-    text: 'Battlecry: Summon a 1/1 Searing Totem.',
-    effects: [
-      {
-        trigger: { type: 'Battlecry' },
-        action: { type: 'Summon', cardId: CARD_IDS.miniWalrus, count: 1, target: 'Board' }
-      }
-    ]
+    health: 2
   },
 
   // Если хотите оставить “Freeze all enemies” как около-шаманский (Frost Shock-style),
@@ -344,7 +323,7 @@ const minions: Record<string, MinionCard> = {
   [CARD_IDS.samBlackshear]: {
     id: CARD_IDS.samBlackshear,
     domainId: 'sui',
-    name: 'Frost Sam',
+    name: 'Sam',
     type: 'Minion',
     cost: 6,
     attack: 5,
