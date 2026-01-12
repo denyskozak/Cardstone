@@ -134,18 +134,6 @@ async function readJsonBody<T>(req: IncomingMessage): Promise<T | undefined> {
   return JSON.parse(raw) as T;
 }
 
-function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-  for (let i = 0; i < a.length; i += 1) {
-    if (a[i] !== b[i]) {
-      return false;
-    }
-  }
-  return true;
-}
-
 function issueAuthNonce(): { nonce: string; message: string } {
   const nonce = randomUUID();
   const expiresAt = Date.now() + AUTH_NONCE_TTL_MS;
@@ -354,12 +342,10 @@ server.on('request', async (req, res) => {
         address?: string;
         nonce?: string;
         signature?: string;
-        messageBytes?: string;
       }>(req);
       const address = body?.address?.trim();
       const nonce = body?.nonce?.trim();
       const signature = body?.signature?.trim();
-      const messageBytesBase64 = body?.messageBytes?.trim();
       if (!address || !nonce || !signature) {
         sendJson(res, 400, { error: 'Missing login payload.' });
         return;
@@ -370,22 +356,17 @@ server.on('request', async (req, res) => {
       }
       const normalizedAddress = normalizeSuiAddress(address);
       const message = createAuthMessage(nonce);
-      const expectedMessageBytes = new TextEncoder().encode(message);
-      let signedMessageBytes = expectedMessageBytes;
-      if (messageBytesBase64) {
-        signedMessageBytes = Uint8Array.from(Buffer.from(messageBytesBase64, 'base64'));
-        if (!bytesEqual(signedMessageBytes, expectedMessageBytes)) {
-          sendJson(res, 401, { error: 'Signed message payload mismatch.' });
-          return;
-        }
-      }
+      console.log('message: ', message);
+      console.log('signature: ', signature);
+      console.log('normalizedAddress: ', normalizedAddress);
       try {
         await verifyPersonalMessageSignature(
-          signedMessageBytes,
+          new TextEncoder().encode(message),
           signature,
           { address: normalizedAddress }
         );
       } catch (error) {
+        console.log('error: ', error);
         sendJson(res, 401, { error: 'Signature verification failed.' });
         return;
       }
