@@ -10,3 +10,4 @@
 /shared/dist
 
 /client/.env
+/server/data/cardstone.sqlite
