@@ -57,6 +57,7 @@ export function startTurn(state: GameState, side: PlayerSide): void {
   for (const minion of state.board[side]) {
     minion.attacksRemaining = 1;
   }
+  triggerTurnEffects(state, side, 'TurnStart');
   state.turn.phase = 'Main';
 }
 
@@ -71,6 +72,7 @@ export function endTurn(state: GameState, side: PlayerSide): void {
     player.mana.current = Math.max(0, player.mana.current - temporary);
     player.mana.temporary = 0;
   }
+  triggerTurnEffects(state, side, 'TurnEnd');
   state.turn.phase = 'End';
   state.turn.current = side === 'A' ? 'B' : 'A';
   state.turn.turnNumber += 1;
@@ -153,7 +155,7 @@ function applySummonEffects(
     const action = effect.action;
     let target = providedTarget;
     if (actionRequiresTarget(action)) {
-      target = target ?? getDefaultSummonTarget(action, side, minion);
+      target = target ?? getDefaultEffectTarget(action, side, minion);
       if (!target) {
         throw new Error('Summon effect requires a target which is not supported yet');
       }
@@ -162,7 +164,7 @@ function applySummonEffects(
   }
 }
 
-function getDefaultSummonTarget(
+function getDefaultEffectTarget(
   action: EffectAction,
   side: PlayerSide,
   minion: MinionEntity
@@ -178,6 +180,27 @@ function getDefaultSummonTarget(
     }
   }
   return undefined;
+}
+
+function triggerTurnEffects(
+  state: GameState,
+  side: PlayerSide,
+  triggerType: 'TurnStart' | 'TurnEnd'
+): void {
+  for (const minion of state.board[side]) {
+    const effects = getEffectsByTrigger(minion.card, triggerType);
+    for (const effect of effects) {
+      const action = effect.action;
+      let target: TargetDescriptor | undefined;
+      if (actionRequiresTarget(action)) {
+        target = getDefaultEffectTarget(action, side, minion);
+        if (!target) {
+          throw new Error(`${triggerType} effect requires a target which is not supported yet`);
+        }
+      }
+      executeEffectAction(state, side, action, target, minion);
+    }
+  }
 }
 
 function applyExistingAurasToMinion(state: GameState, side: PlayerSide, minion: MinionEntity): void {
@@ -323,16 +346,24 @@ function executeEffectAction(
 ): void {
   switch (action.type) {
     case 'Damage':
-      if (!target) {
+      if (target) {
+        applyDamage(state, target, action.amount, side);
+        return;
+      }
+      if (actionRequiresTarget(action)) {
         throw new Error('Target required for damage effect');
       }
-      applyDamage(state, target, action.amount, side);
+      applyDamageToSelector(state, side, action.target, action.amount);
       return;
     case 'Heal':
-      if (!target) {
+      if (target) {
+        applyHeal(state, target, action.amount);
+        return;
+      }
+      if (actionRequiresTarget(action)) {
         throw new Error('Target required for heal effect');
       }
-      applyHeal(state, target, action.amount);
+      applyHealToSelector(state, side, action.target, action.amount);
       return;
     case 'DrawCard':
       for (let i = 0; i < action.amount; i += 1) {
@@ -467,9 +498,6 @@ function applyBuffToSelector(
     case 'AllFriendlies':
     case 'FriendlyMinion': {
       for (const entity of state.board[side]) {
-        if (selector === 'AllFriendlies' && source && entity.instanceId === source.instanceId) {
-          continue;
-        }
         const descriptor: TargetDescriptor = { type: 'minion', side, entityId: entity.instanceId };
         applyBuff(state, descriptor, stats);
       }
@@ -611,6 +639,101 @@ function applyHeal(state: GameState, target: TargetDescriptor, amount: number): 
   const maxHealth = entity.maxHealth ?? entity.card.health;
   entity.health = Math.min(maxHealth, entity.health + amount);
   updateBerserkState(entity);
+}
+
+function applyDamageToSelector(
+  state: GameState,
+  side: PlayerSide,
+  selector: TargetSelector,
+  amount: number
+): void {
+  const targets = getTargetsForSelector(state, side, selector);
+  targets.forEach((entry) => applyDamage(state, entry, amount, side));
+}
+
+function applyHealToSelector(
+  state: GameState,
+  side: PlayerSide,
+  selector: TargetSelector,
+  amount: number
+): void {
+  const targets = getTargetsForSelector(state, side, selector);
+  targets.forEach((entry) => applyHeal(state, entry, amount));
+}
+
+function getTargetsForSelector(
+  state: GameState,
+  side: PlayerSide,
+  selector: TargetSelector
+): TargetDescriptor[] {
+  switch (selector) {
+    case 'AllFriendlies':
+      return [
+        { type: 'hero', side },
+        ...state.board[side].map((entity) => ({ type: 'minion', side, entityId: entity.instanceId }))
+      ];
+    case 'AllEnemies': {
+      const opponent = getOpponentSide(side);
+      return [
+        { type: 'hero', side: opponent },
+        ...state.board[opponent].map((entity) => ({
+          type: 'minion',
+          side: opponent,
+          entityId: entity.instanceId
+        }))
+      ];
+    }
+    case 'FriendlyMinion':
+      return state.board[side].map((entity) => ({
+        type: 'minion',
+        side,
+        entityId: entity.instanceId
+      }));
+    case 'EnemyMinion': {
+      const opponent = getOpponentSide(side);
+      return state.board[opponent].map((entity) => ({
+        type: 'minion',
+        side: opponent,
+        entityId: entity.instanceId
+      }));
+    }
+    case 'AnyMinion':
+      return [
+        ...state.board.A.map((entity) => ({ type: 'minion', side: 'A' as PlayerSide, entityId: entity.instanceId })),
+        ...state.board.B.map((entity) => ({ type: 'minion', side: 'B' as PlayerSide, entityId: entity.instanceId }))
+      ];
+    case 'RandomEnemy': {
+      const opponent = getOpponentSide(side);
+      const pool: TargetDescriptor[] = [
+        { type: 'hero', side: opponent },
+        ...state.board[opponent].map((entity) => ({
+          type: 'minion',
+          side: opponent,
+          entityId: entity.instanceId
+        }))
+      ];
+      return pickRandomTargets(pool);
+    }
+    case 'RandomMinion': {
+      const pool: TargetDescriptor[] = [
+        ...state.board.A.map((entity) => ({ type: 'minion', side: 'A' as PlayerSide, entityId: entity.instanceId })),
+        ...state.board.B.map((entity) => ({ type: 'minion', side: 'B' as PlayerSide, entityId: entity.instanceId }))
+      ];
+      return pickRandomTargets(pool);
+    }
+    case 'Hero':
+      return [{ type: 'hero', side }];
+    default:
+      return [];
+  }
+}
+
+function pickRandomTargets(pool: TargetDescriptor[]): TargetDescriptor[] {
+  if (pool.length === 0) {
+    return [];
+  }
+  const index = Math.floor(Math.random() * pool.length);
+  return [pool[index]];
 }
 
 function applyManaCrystal(state: GameState, side: PlayerSide, amount: number): void {

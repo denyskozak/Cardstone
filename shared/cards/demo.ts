@@ -75,7 +75,7 @@ const minions: Record<string, MinionCard> = {
     cost: 6,
     attack: 3,
     health: 5,
-    text: 'Deal 2 damage to all enemy.',
+    text: 'Deal 2 damage to all enemies.',
     effects: [
       {
         trigger: { type: 'Battlecry' },
@@ -92,8 +92,8 @@ const minions: Record<string, MinionCard> = {
     cost: 4,
     attack: 3,
     health: 4,
-    text: 'Deal 1 damage to all enemy minions.',
-    // У вас AllEnemies — если это включает героя, поменяйте на кастом-таргет "AllEnemyMinions".
+    text: 'Deal 1 damage to all enemies.',
+    // AllEnemies affects the enemy hero and minions.
     effects: [
       {
         trigger: { type: 'Battlecry' },
@@ -114,7 +114,7 @@ const minions: Record<string, MinionCard> = {
     effects: [
       {
         trigger: { type: 'Aura' },
-        action: { type: 'Custom', key: 'AttackWhileDamaged', data: { amount: 1 } }
+        action: { type: 'Custom', key: 'Berserk', data: { attack: 1 } }
       }
     ]
   },
@@ -176,7 +176,7 @@ const minions: Record<string, MinionCard> = {
       { trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Taunt' } },
       {
         trigger: { type: 'Aura' },
-        action: { type: 'Custom', key: 'AttackWhileDamaged', data: { amount: 2 } }
+        action: { type: 'Custom', key: 'Berserk', data: { attack: 2 } }
       }
     ]
   },
@@ -205,7 +205,7 @@ const minions: Record<string, MinionCard> = {
     effects: [
       {
         trigger: { type: 'Battlecry' },
-        action: { type: 'Damage', amount: 2, target: 'AnyMinion' }
+        action: { type: 'Damage', amount: 2, target: 'RandomMinion' }
       },
     ]
   },
@@ -294,7 +294,7 @@ const minions: Record<string, MinionCard> = {
     attack: 3,
     health: 3,
     text: 'Heal all friendlies 1 hp',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Buff',  stats: {  health: 1 }, target: 'AllFriendlies' } }]
+    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 1, target: 'AllFriendlies' } }]
   },
 
   [CARD_IDS.devIntern]: {
@@ -386,7 +386,7 @@ const spells: Record<string, Omit<SpellCard, 'domainId'> & Partial<Pick<SpellCar
     type: 'Spell',
     cost: 1,
     text: 'Deal 3 damage to a minion.',
-    effects: [{ trigger: { type: 'SpellCast' }, action: { type: 'Damage', amount: 3, target: 'AnyMinion' } }],
+    effects: [{ trigger: { type: 'Play' }, action: { type: 'Damage', amount: 3, target: 'AnyMinion' } }],
   },
   [CARD_IDS.moveBurst]: {
     id: CARD_IDS.moveBurst,
@@ -395,7 +395,7 @@ const spells: Record<string, Omit<SpellCard, 'domainId'> & Partial<Pick<SpellCar
     type: 'Spell',
     cost: 1,
     text: 'Deal 3 damage to a minion.',
-    effects: [{ trigger: { type: 'SpellCast' }, action: { type: 'Damage', amount: 3, target: 'AnyMinion' } }],
+    effects: [{ trigger: { type: 'Play' }, action: { type: 'Damage', amount: 3, target: 'AnyMinion' } }],
   },
   [CARD_IDS.suiWave]: {
     id: CARD_IDS.suiWave,
@@ -404,7 +404,7 @@ const spells: Record<string, Omit<SpellCard, 'domainId'> & Partial<Pick<SpellCar
     type: 'Spell',
     cost: 2,
     text: 'Heal 5 to a your hero.',
-    effects: [{ trigger: { type: 'SpellCast' }, action: { type: 'Heal', amount: 5, target: 'Hero' } }],
+    effects: [{ trigger: { type: 'Play' }, action: { type: 'Heal', amount: 5, target: 'Hero' } }],
   },
 };
 

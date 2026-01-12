@@ -119,6 +119,7 @@ function selectorNeedsManualTarget(selector: TargetSelector): boolean {
   switch (selector) {
     case 'FriendlyMinion':
     case 'EnemyMinion':
+    case 'AnyMinion':
       return true;
     default:
       return false;
