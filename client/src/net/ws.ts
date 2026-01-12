@@ -42,6 +42,7 @@ export class GameSocket {
   private url: string;
   private reconnectTimer?: number;
   private authenticated = false;
+  private shouldReconnect = true;
   private readonly tokenProvider: () => string | null;
 
   constructor(url = resolveWsUrl(), tokenProvider: () => string | null = getAuthToken) {
@@ -53,13 +54,13 @@ export class GameSocket {
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
+    this.shouldReconnect = true;
     this.ws = new WebSocket(this.url);
     this.ws.onopen = () => {
       this.authenticated = false;
       const token = this.tokenProvider();
       if (!token) {
-        console.warn('Missing auth token. Please sign in again.');
-        this.ws?.close();
+        this.markAuthenticated();
         return;
       }
       this.ws?.send(JSON.stringify({ type: 'auth', token }));
@@ -72,16 +73,7 @@ export class GameSocket {
           | { type: 'auth_error'; message?: string };
         if ('type' in parsed) {
           if (parsed.type === 'auth_ok') {
-            this.authenticated = true;
-            while (this.pending.length > 0) {
-              const payload = this.pending.shift();
-              if (payload) {
-                this.ws?.send(payload);
-              }
-            }
-            for (const listener of this.openListeners) {
-              listener();
-            }
+            this.markAuthenticated();
           } else if (parsed.type === 'auth_error') {
             console.warn(parsed.message ?? 'WebSocket auth failed.');
             this.ws?.close();
@@ -98,7 +90,7 @@ export class GameSocket {
     this.ws.onclose = () => {
       this.authenticated = false;
       window.clearTimeout(this.reconnectTimer);
-      if (this.tokenProvider()) {
+      if (this.shouldReconnect) {
         this.reconnectTimer = window.setTimeout(() => this.connect(), RECONNECT_DELAY);
       }
     };
@@ -108,6 +100,7 @@ export class GameSocket {
   }
 
   close(): void {
+    this.shouldReconnect = false;
     window.clearTimeout(this.reconnectTimer);
     this.ws?.close();
   }
@@ -153,6 +146,19 @@ export class GameSocket {
       this.ws.send(serialized);
     } else {
       this.pending.push(serialized);
+    }
+  }
+
+  private markAuthenticated(): void {
+    this.authenticated = true;
+    while (this.pending.length > 0) {
+      const payload = this.pending.shift();
+      if (payload) {
+        this.ws?.send(payload);
+      }
+    }
+    for (const listener of this.openListeners) {
+      listener();
     }
   }
 }
