@@ -697,14 +697,14 @@ wss.on('connection', (ws) => {
     rateLimiter: new RateLimiter(20),
     queue: Promise.resolve(),
     alive: true,
-    authenticated: false
+    authenticated: true
   };
 
-  const authTimeout = setTimeout(() => {
-    if (!context.authenticated) {
-      ws.close(4001, 'Unauthorized');
-    }
-  }, AUTH_TIMEOUT_MS);
+  // const authTimeout = setTimeout(() => {
+  //   if (!context.authenticated) {
+  //     ws.close(4001, 'Unauthorized');
+  //   }
+  // }, AUTH_TIMEOUT_MS);
 
   ws.on('message', (data) => {
     context.queue = context.queue
@@ -716,28 +716,28 @@ wss.on('connection', (ws) => {
           sendToast(context, 'Malformed JSON');
           return;
         }
-        if (!context.authenticated) {
-          if (
-            typeof parsed === 'object' &&
-            parsed !== null &&
-            'type' in parsed &&
-            (parsed as { type?: string }).type === 'auth'
-          ) {
-            const token = String((parsed as { token?: string }).token ?? '');
-            const payload = verifyJwtToken(token);
-            if (!payload?.sub) {
-              ws.close(4001, 'Unauthorized');
-              return;
-            }
-            context.address = String(payload.sub);
-            context.authenticated = true;
-            clearTimeout(authTimeout);
-            ws.send(JSON.stringify({ type: 'auth_ok' }));
-            return;
-          }
-          ws.close(4001, 'Unauthorized');
-          return;
-        }
+        // if (!context.authenticated) {
+        //   if (
+        //     typeof parsed === 'object' &&
+        //     parsed !== null &&
+        //     'type' in parsed &&
+        //     (parsed as { type?: string }).type === 'auth'
+        //   ) {
+        //     const token = String((parsed as { token?: string }).token ?? '');
+        //     const payload = verifyJwtToken(token);
+        //     if (!payload?.sub) {
+        //       ws.close(4001, 'Unauthorized');
+        //       return;
+        //     }
+        //     context.address = String(payload.sub);
+        //     context.authenticated = true;
+        //     clearTimeout(authTimeout);
+        //     ws.send(JSON.stringify({ type: 'auth_ok' }));
+        //     return;
+        //   }
+        //   ws.close(4001, 'Unauthorized');
+        //   return;
+        // }
         if (!context.rateLimiter.allow()) {
           sendToast(context, 'Slow down!');
           return;
@@ -756,7 +756,7 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    clearTimeout(authTimeout);
+    // clearTimeout(authTimeout);
     context.alive = false;
     context.authenticated = false;
     if (context.playerId) {
