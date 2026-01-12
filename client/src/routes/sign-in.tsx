@@ -39,8 +39,7 @@ export function SignIn() {
       const loginResult = await loginWithSignature({
         address: account.address,
         nonce,
-        signature: signatureResult.signature,
-        messageBytes: signatureResult.bytes
+        signature: signatureResult.signature
       })
       setAuthToken(loginResult.token)
       navigate('/menu')

@@ -66,7 +66,6 @@ export async function loginWithSignature(payload: {
   address: string;
   nonce: string;
   signature: string;
-  messageBytes?: string;
 }): Promise<AuthLoginResponse> {
   const response = await fetch(buildApiUrl('/api/auth/login'), {
     method: 'POST',
