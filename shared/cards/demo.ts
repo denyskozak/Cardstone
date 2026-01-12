@@ -388,8 +388,24 @@ const spells: Record<string, Omit<SpellCard, 'domainId'> & Partial<Pick<SpellCar
     text: 'Deal 3 damage to a minion.',
     effects: [{ trigger: { type: 'SpellCast' }, action: { type: 'Damage', amount: 3, target: 'AnyMinion' } }],
   },
-
-
+  [CARD_IDS.moveBurst]: {
+    id: CARD_IDS.moveBurst,
+    domainId: 'sui',
+    name: 'Move Burst',
+    type: 'Spell',
+    cost: 1,
+    text: 'Deal 3 damage to a minion.',
+    effects: [{ trigger: { type: 'SpellCast' }, action: { type: 'Damage', amount: 3, target: 'AnyMinion' } }],
+  },
+  [CARD_IDS.suiWave]: {
+    id: CARD_IDS.suiWave,
+    domainId: 'sui',
+    name: 'Wave',
+    type: 'Spell',
+    cost: 2,
+    text: 'Heal 5 to a your hero.',
+    effects: [{ trigger: { type: 'SpellCast' }, action: { type: 'Heal', amount: 5, target: 'Hero' } }],
+  },
 };
 
 export const DEMO_CARDS: Record<string, CardDefinition> = Object.fromEntries(
