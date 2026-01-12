@@ -24,11 +24,11 @@ export function MainRoute() {
 
   const slides = [
     {
-      titles: ['Collective', 'Card Game'],
+      titles: ['Online Collective', 'Cards Game'],
       subtitle: 'WEB Collective Card Game'
     },
     {
-      titles: ['Own your', 'Cards'],
+      titles: ['Be Owner of', 'Your Cards'],
       subtitle: 'Innovative technology'
     },
     {
