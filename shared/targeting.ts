@@ -68,6 +68,8 @@ export function targetMatchesSelector(
     case 'AllEnemies':
     case 'RandomEnemy':
       return target.side !== actingSide;
+    case 'RandomMinion':
+      return target.type === 'minion';
     case 'AllFriendlies':
       return target.side === actingSide;
     default:

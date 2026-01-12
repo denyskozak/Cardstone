@@ -14,7 +14,8 @@ export type TargetSelector =
   | 'Hero'
   | 'AllEnemies'
   | 'AllFriendlies'
-  | 'RandomEnemy';
+  | 'RandomEnemy'
+  | 'RandomMinion';
 
 export type EffectTrigger =
   | { type: 'Battlecry' }

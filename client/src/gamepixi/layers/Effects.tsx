@@ -53,6 +53,15 @@ interface DamageSummary {
   heroDamage: number;
 }
 
+interface StatChange {
+  target: TargetDescriptor;
+  kind: 'damage' | 'heal' | 'buff';
+  amount?: number;
+  attackDelta?: number;
+  healthDelta?: number;
+  destroyed?: boolean;
+}
+
 interface BurnBurst {
   key: string;
   side: PlayerSide;
@@ -64,6 +73,9 @@ const ATTACK_LUNGE_SCALE = 0.08;
 const SIDES: PlayerSide[] = ['A', 'B'];
 const DAMAGE_DISPLAY_DURATION = 2000;
 const DAMAGE_FADE_OUT_DURATION = 350;
+const HEAL_DISPLAY_DURATION = 1800;
+const BUFF_DISPLAY_DURATION = 1600;
+const INDICATOR_FLOAT_DISTANCE = 24;
 const DAMAGE_IMPACT_THRESHOLD = 0.5;
 const DRAW_DURATION = 620;
 const DRAW_LIFT = 26;
@@ -72,13 +84,14 @@ const PLACEMENT_FADE_DURATION = 250;
 const MINION_DEATH_FADE_DURATION = 800;
 const CARD_BACK_TEXTURE = '/assets/card_skins/1.webp';
 
-interface DamageIndicator {
+interface StatusIndicator {
   key: string;
   x: number;
   y: number;
-  amount: number;
+  text: string;
   remaining: number;
   duration: number;
+  kind: 'damage' | 'heal' | 'buff';
   target?: TargetDescriptor;
 }
 
@@ -127,8 +140,8 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const burnPrevStateRef = useRef<GameState | null>(null);
   const burnSequenceRef = useRef(0);
   const [burnBursts, setBurnBursts] = useState<BurnBurst[]>([]);
-  const [damageIndicators, setDamageIndicators] = useState<DamageIndicator[]>([]);
-  const damageSequenceRef = useRef(0);
+  const [statusIndicators, setStatusIndicators] = useState<StatusIndicator[]>([]);
+  const indicatorSequenceRef = useRef(0);
   const [damageTexture, setDamageTexture] = useState<Texture>(Texture.EMPTY);
   const damageTextureReady = damageTexture !== Texture.EMPTY;
   const [drawAnimations, setDrawAnimations] = useState<DrawAnimation[]>([]);
@@ -156,8 +169,8 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       burnSequenceRef.current = 0;
       pendingLocalAttackersRef.current.clear();
       pendingImpactResultsRef.current.clear();
-      setDamageIndicators([]);
-      damageSequenceRef.current = 0;
+      setStatusIndicators([]);
+      indicatorSequenceRef.current = 0;
       destroyedMinionsRef.current.clear();
       setPlacementFades([]);
       setDeathFades([]);
@@ -345,11 +358,71 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     }
 
     const attackEvents = detectAttackEvents(previous, state);
+    const attackTargetKeys = new Set<string>();
+    attackEvents.forEach((event) => {
+      if (event.damage > 0) {
+        attackTargetKeys.add(getTargetKey(event.target));
+      }
+    });
 
-    if (attackEvents.length === 0) {
-      prevStateRef.current = state;
-      prevLayoutRef.current = layout;
-      return;
+    const statChanges = detectStatChanges(previous, state, attackTargetKeys);
+    if (statChanges.length > 0) {
+      const additions: StatusIndicator[] = [];
+      statChanges.forEach((change) => {
+        const targetPoint = resolveTargetPoint(
+          change.target,
+          layout,
+          previousLayout,
+          heroPositions,
+          prevHeroPositionsRef.current
+        );
+        if (!targetPoint) {
+          return;
+        }
+        const key = `${state.seq}:stat:${indicatorSequenceRef.current}`;
+        indicatorSequenceRef.current += 1;
+        if (change.kind === 'buff') {
+          const attackPart = change.attackDelta ? `+${change.attackDelta}` : '';
+          const healthPart = change.healthDelta ? `+${change.healthDelta}` : '';
+          const text = attackPart && healthPart ? `${attackPart}/${healthPart}` : attackPart || healthPart;
+          if (!text) {
+            return;
+          }
+          additions.push({
+            key,
+            x: targetPoint.x,
+            y: targetPoint.y,
+            text,
+            remaining: BUFF_DISPLAY_DURATION,
+            duration: BUFF_DISPLAY_DURATION,
+            kind: 'buff',
+            target: change.target
+          });
+          return;
+        }
+        const amount = change.amount ?? 0;
+        if (amount <= 0) {
+          return;
+        }
+        const duration =
+          change.kind === 'damage' && change.destroyed ? MINION_DEATH_FADE_DURATION : change.kind === 'heal'
+            ? HEAL_DISPLAY_DURATION
+            : DAMAGE_DISPLAY_DURATION;
+        const text = change.kind === 'heal' ? `+${amount}` : `-${amount}`;
+        additions.push({
+          key,
+          x: targetPoint.x,
+          y: targetPoint.y,
+          text,
+          remaining: duration,
+          duration,
+          kind: change.kind,
+          target: change.target
+        });
+      });
+      if (additions.length > 0) {
+        setStatusIndicators((current) => [...current, ...additions]);
+      }
     }
 
     const pendingLocalAttackers = pendingLocalAttackersRef.current;
@@ -358,61 +431,63 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
     const newAnimations: AttackAnimation[] = [];
     const busyAttackers = new Set<string>();
 
-    attackEvents.forEach((event, index) => {
-      const origin =
-        layout.minions[event.side]?.[event.attackerId] ??
-        previousLayout?.minions[event.side]?.[event.attackerId];
-      if (!origin) {
-        return;
-      }
-
-      const targetPoint = resolveTargetPoint(
-        event.target,
-        layout,
-        previousLayout,
-        heroPositions,
-        prevHeroPositionsRef.current
-      );
-      if (!targetPoint) {
-        return;
-      }
-
-      const pending = pendingLocalAttackers.get(event.attackerId) ?? 0;
-      if (pending > 0) {
-        const existing = pendingImpactResults.get(event.attackerId) ?? [];
-        pendingImpactResults.set(event.attackerId, [
-          ...existing,
-          { target: event.target, targetPoint, damage: event.damage }
-        ]);
-        if (pending === 1) {
-          pendingLocalAttackers.delete(event.attackerId);
-        } else {
-          pendingLocalAttackers.set(event.attackerId, pending - 1);
+    if (attackEvents.length > 0) {
+      attackEvents.forEach((event, index) => {
+        const origin =
+          layout.minions[event.side]?.[event.attackerId] ??
+          previousLayout?.minions[event.side]?.[event.attackerId];
+        if (!origin) {
+          return;
         }
-        return;
+
+        const targetPoint = resolveTargetPoint(
+          event.target,
+          layout,
+          previousLayout,
+          heroPositions,
+          prevHeroPositionsRef.current
+        );
+        if (!targetPoint) {
+          return;
+        }
+
+        const pending = pendingLocalAttackers.get(event.attackerId) ?? 0;
+        if (pending > 0) {
+          const existing = pendingImpactResults.get(event.attackerId) ?? [];
+          pendingImpactResults.set(event.attackerId, [
+            ...existing,
+            { target: event.target, targetPoint, damage: event.damage }
+          ]);
+          if (pending === 1) {
+            pendingLocalAttackers.delete(event.attackerId);
+          } else {
+            pendingLocalAttackers.set(event.attackerId, pending - 1);
+          }
+          return;
+        }
+
+        busyAttackers.add(event.attackerId);
+        const key = `${state.seq}:${event.attackerId}:${index}`;
+        newAnimations.push({
+          key,
+          attackerId: event.attackerId,
+          side: event.side,
+          target: event.target,
+          origin,
+          targetPoint,
+          elapsed: 0,
+          duration: ATTACK_DURATION,
+          damageAmount: event.damage,
+          impactEmitted: false
+        });
+      });
+
+      if (newAnimations.length > 0) {
+        setAnimations((current) => {
+          const survivors = current.filter((animation) => !busyAttackers.has(animation.attackerId));
+          return [...survivors, ...newAnimations];
+        });
       }
-
-      busyAttackers.add(event.attackerId);
-      const key = `${state.seq}:${event.attackerId}:${index}`;
-      newAnimations.push({
-        key,
-        attackerId: event.attackerId,
-        side: event.side,
-        target: event.target,
-        origin,
-        targetPoint,
-        elapsed: 0,
-        duration: ATTACK_DURATION,
-        damageAmount: event.damage,
-        impactEmitted: false
-      });
-    });
-
-    if (newAnimations.length > 0) {
-      setAnimations((current) => {
-        const survivors = current.filter((animation) => !busyAttackers.has(animation.attackerId));
-        return [...survivors, ...newAnimations];
-      });
     }
     prevStateRef.current = state;
     prevLayoutRef.current = layout;
@@ -482,7 +557,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         if (current.length === 0) {
           return current;
         }
-        const additions: DamageIndicator[] = [];
+        const additions: StatusIndicator[] = [];
         const next: AttackAnimation[] = [];
         current.forEach((animation) => {
           let updated = animation;
@@ -510,8 +585,8 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
             !updated.impactEmitted && progress >= DAMAGE_IMPACT_THRESHOLD && updated.damageAmount > 0;
           if (impactReady) {
             playGameSound(GameSoundId.AttackImpact);
-            const key = `${animation.key}:impact:${damageSequenceRef.current}`;
-            damageSequenceRef.current += 1;
+            const key = `${animation.key}:impact:${indicatorSequenceRef.current}`;
+            indicatorSequenceRef.current += 1;
             const isDestroyedTarget =
               updated.target.type === 'minion' &&
               destroyedMinionsRef.current.has(updated.target.entityId);
@@ -520,9 +595,10 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
               key,
               x: updated.targetPoint.x,
               y: updated.targetPoint.y,
-              amount: updated.damageAmount,
+              text: `-${updated.damageAmount}`,
               remaining: duration,
               duration,
+              kind: 'damage',
               target: updated.target
             });
           }
@@ -535,7 +611,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
           }
         });
         if (additions.length > 0) {
-          setDamageIndicators((currentIndicators) => [...currentIndicators, ...additions]);
+          setStatusIndicators((currentIndicators) => [...currentIndicators, ...additions]);
         }
         return next;
       });
@@ -545,7 +621,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
 
   useMiniTicker(
     (deltaMS) => {
-      setDamageIndicators((current) => {
+      setStatusIndicators((current) => {
         if (current.length === 0) {
           return current;
         }
@@ -555,7 +631,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         return next;
       });
     },
-    damageIndicators.length > 0
+    statusIndicators.length > 0
   );
 
   useMiniTicker(
@@ -702,35 +778,41 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
             onComplete={() => handleBurnComplete(burst.key)}
           />
         ))}
-      {damageIndicators.map((indicator) => (
-        <pixiContainer
-          key={indicator.key}
-          x={indicator.x}
-          y={indicator.y}
-          alpha={
-            indicator.duration === MINION_DEATH_FADE_DURATION
-              ? indicator.remaining / indicator.duration
-              : indicator.duration <= DAMAGE_FADE_OUT_DURATION
-              ? indicator.remaining / indicator.duration
-              : indicator.remaining <= DAMAGE_FADE_OUT_DURATION
-                ? indicator.remaining / DAMAGE_FADE_OUT_DURATION
-                : 1
-          }
-        >
-          <pixiSprite
-            texture={damageTexture}
-            width={120}
-            height={120}
-            anchor={{ x: 0.5, y: 0.5 }}
-            alpha={damageTextureReady ? 1 : 0}
-          />
-          <pixiText
-            text={`${indicator.amount}`}
-            anchor={{ x: 0.5, y: 0.5 }}
-            style={{ fill: 0xffffff, fontSize: 40, fontWeight: 'bold', align: 'center' }}
-          />
-        </pixiContainer>
-      ))}
+      {statusIndicators.map((indicator) => {
+        const progress = Math.min(1, 1 - indicator.remaining / indicator.duration);
+        const floatY = indicator.y - INDICATOR_FLOAT_DISTANCE * progress;
+        const fadeWindow = Math.min(DAMAGE_FADE_OUT_DURATION, indicator.duration);
+        const alpha =
+          indicator.duration === MINION_DEATH_FADE_DURATION
+            ? indicator.remaining / indicator.duration
+            : indicator.remaining <= fadeWindow
+              ? indicator.remaining / fadeWindow
+              : 1;
+        const palette = getIndicatorPalette(indicator.kind);
+
+        return (
+          <pixiContainer
+            key={indicator.key}
+            x={indicator.x}
+            y={floatY}
+            alpha={alpha}
+          >
+            <pixiSprite
+              texture={damageTexture}
+              width={120}
+              height={120}
+              anchor={{ x: 0.5, y: 0.5 }}
+              alpha={damageTextureReady ? 1 : 0}
+              tint={palette.tint}
+            />
+            <pixiText
+              text={indicator.text}
+              anchor={{ x: 0.5, y: 0.5 }}
+              style={{ fill: palette.textColor, fontSize: 40, fontWeight: 'bold', align: 'center' }}
+            />
+          </pixiContainer>
+        );
+      })}
       {drawAnimations.map((animation) => {
         const progress = Math.max(0, Math.min(1, animation.elapsed / animation.duration));
         const eased = easeInOutCubic(progress);
@@ -802,6 +884,18 @@ function easeInCubic(t: number) {
   return t * t * t;
 }
 
+function getIndicatorPalette(kind: StatusIndicator['kind']): { tint: number; textColor: number } {
+  switch (kind) {
+    case 'heal':
+      return { tint: 0x1dd1a1, textColor: 0xffffff };
+    case 'buff':
+      return { tint: 0x74b9ff, textColor: 0xffffff };
+    case 'damage':
+    default:
+      return { tint: 0xff6b6b, textColor: 0xffffff };
+  }
+}
+
 function resolveTargetPoint(
   target: TargetDescriptor,
   layout: ReturnType<typeof computeBoardLayout>,
@@ -868,6 +962,86 @@ function detectAttackEvents(previous: GameState, next: GameState) {
   });
 
   return events;
+}
+
+function getTargetKey(target: TargetDescriptor): string {
+  return target.type === 'hero' ? `hero:${target.side}` : `minion:${target.side}:${target.entityId}`;
+}
+
+function detectStatChanges(
+  previous: GameState,
+  next: GameState,
+  excludedDamageTargets: Set<string>
+): StatChange[] {
+  const changes: StatChange[] = [];
+
+  SIDES.forEach((side) => {
+    const prevHero = previous.players[side].hero;
+    const nextHero = next.players[side].hero;
+    const heroDelta = nextHero.hp - prevHero.hp;
+    if (heroDelta !== 0) {
+      const target: TargetDescriptor = { type: 'hero', side };
+      const key = getTargetKey(target);
+      if (!excludedDamageTargets.has(key)) {
+        changes.push({
+          target,
+          kind: heroDelta > 0 ? 'heal' : 'damage',
+          amount: Math.abs(heroDelta)
+        });
+      }
+    }
+  });
+
+  SIDES.forEach((side) => {
+    const prevMap = new Map(previous.board[side].map((minion) => [minion.instanceId, minion]));
+    const nextMap = new Map(next.board[side].map((minion) => [minion.instanceId, minion]));
+
+    prevMap.forEach((prevMinion, id) => {
+      const target: TargetDescriptor = { type: 'minion', side, entityId: id };
+      const key = getTargetKey(target);
+      const nextMinion = nextMap.get(id);
+      if (!nextMinion) {
+        if (!excludedDamageTargets.has(key) && prevMinion.health > 0) {
+          changes.push({
+            target,
+            kind: 'damage',
+            amount: prevMinion.health,
+            destroyed: true
+          });
+        }
+        return;
+      }
+
+      const attackDelta = nextMinion.attack - prevMinion.attack;
+      const maxHealthDelta = nextMinion.maxHealth - prevMinion.maxHealth;
+      const healthDelta = nextMinion.health - prevMinion.health;
+
+      if (attackDelta > 0 || maxHealthDelta > 0) {
+        changes.push({
+          target,
+          kind: 'buff',
+          attackDelta: attackDelta > 0 ? attackDelta : undefined,
+          healthDelta: maxHealthDelta > 0 ? maxHealthDelta : undefined
+        });
+      }
+
+      if (healthDelta < 0 && !excludedDamageTargets.has(key)) {
+        changes.push({
+          target,
+          kind: 'damage',
+          amount: Math.abs(healthDelta)
+        });
+      } else if (healthDelta > 0 && maxHealthDelta <= 0) {
+        changes.push({
+          target,
+          kind: 'heal',
+          amount: healthDelta
+        });
+      }
+    });
+  });
+
+  return changes;
 }
 
 function detectNewHandCards(previous: GameState, next: GameState, side: PlayerSide): string[] {
