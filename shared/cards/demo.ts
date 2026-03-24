@@ -379,15 +379,7 @@ const spells: Record<string, Omit<SpellCard, 'domainId'> & Partial<Pick<SpellCar
       }
     ]
   },
-  [CARD_IDS.lightningBolt]: {
-    id: CARD_IDS.lightningBolt,
-    domainId: 'sui',
-    name: 'Move Burst',
-    type: 'Spell',
-    cost: 1,
-    text: 'Deal 3 damage to a minion.',
-    effects: [{ trigger: { type: 'Play' }, action: { type: 'Damage', amount: 3, target: 'AnyMinion' } }],
-  },
+
   [CARD_IDS.moveBurst]: {
     id: CARD_IDS.moveBurst,
     domainId: 'sui',

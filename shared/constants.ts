@@ -18,6 +18,7 @@ export const MAX_DECK_SIZE = 15;
 export const STARTING_SEQ = 1;
 
 export const CARD_IDS = {
+  coin: 'coin',
   ika: 'ika',
   walrus: 'walrus',
   cetus: 'cetus',
@@ -46,7 +47,7 @@ export const CARD_IDS = {
   robot: 'robot',
   moveBurst: 'moveBurst',
   fix: 'fix',
-  suiWave: 'suiWave',
+  suiWave: 'suiWave'
 } as const;
 
 

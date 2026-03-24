@@ -49,11 +49,16 @@ export function MainRoute() {
           src="/assets/images/logo_big.webp"
         />
 
-
         <img
-          alt="Turtle Art"
+          alt="Background Cosmos"
           className="absolute top-0 left-0 w-full h-full object-fit z-[0]"
           src="/assets/images/background.webp"
+        />
+
+        <img
+          alt="Meta Wars Players"
+          className="max-w-280 absolute bottom-0 left-1/2 -translate-x-1/2 object-fit z-[0]"
+          src="/assets/images/team.webp"
         />
 
         <main className="z-[2] gap-5 flex  items-center flex-col w-full h-full overflow-y-auto">
@@ -89,10 +94,8 @@ export function MainRoute() {
               </div>
             </div>
           </div>
-          <div style={{ position: 'absolute', bottom: '5vh'}}>
-            <Button
-              size='4'
-              onClick={() => navigate(account ? '/decks' : '/sign-in')}>
+          <div style={{ position: 'absolute', bottom: '5vh' }}>
+            <Button size="4" onClick={() => navigate(account ? '/decks' : '/sign-in')}>
               {/*<span className="absolute inset-0 bg-gradient-to-r from-[#1E3A8A] via-[#38BDF8] to-[#FBBF24] animate-pulse opacity-100 group-hover:opacity-100 blur-md" />*/}
               Play
             </Button>
