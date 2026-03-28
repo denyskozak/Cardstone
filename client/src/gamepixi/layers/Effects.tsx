@@ -80,7 +80,8 @@ const DAMAGE_IMPACT_THRESHOLD = 0.5;
 const DRAW_DURATION = 900;
 const DRAW_LIFT = 26;
 const DRAW_STAGGER = 100;
-const DRAW_CARD_SCALE_MULTIPLIER = 0.5;
+const DRAW_CARD_SCALE_MULTIPLIER = 0.3;
+const DRAW_CARD_SCALE_MULTIPLIER_END = 0.15;
 const PLACEMENT_FADE_DURATION = 250;
 const MINION_DEATH_FADE_DURATION = 800;
 const CARD_BACK_TEXTURE = '/assets/card_skins/1.webp';
@@ -334,7 +335,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
             x: target.x,
             y: target.y,
             rotation: target.rotation,
-            scale: target.scale * DRAW_CARD_SCALE_MULTIPLIER
+            scale: target.scale * DRAW_CARD_SCALE_MULTIPLIER_END
           },
           elapsed: -index * DRAW_STAGGER,
           duration: DRAW_DURATION

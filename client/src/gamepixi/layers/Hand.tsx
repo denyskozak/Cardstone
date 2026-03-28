@@ -11,7 +11,7 @@ import { GameSoundId, playGameSound } from '../sounds';
 const MAX_FAN_DEG = 50;
 const FAN_MIX_WEIGHT = 0.72;
 const CARD_OVERLAP = 0.42;
-const BASE_CARD_SCALE = 1;
+const BASE_CARD_SCALE = 1.2;
 export const HAND_BASE_SCALE = BASE_CARD_SCALE;
 export const HAND_CARD_DIMENSIONS = {
   width: CARD_SIZE.width * BASE_CARD_SCALE,
