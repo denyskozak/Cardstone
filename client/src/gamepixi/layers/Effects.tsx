@@ -16,6 +16,7 @@ import { GameSoundId, playGameSound } from '../sounds';
 import { CARD_SIZE } from '../Card';
 import { computeHandLayout, HAND_BASE_SCALE, HAND_CARD_DIMENSIONS } from './Hand';
 import { getCardBackFrame } from '../cardBackFrame';
+import HealingBurstEmitter from '../effects/HealingBurstEmitter';
 
 interface EffectsProps {
   state: GameState;
@@ -66,6 +67,12 @@ interface StatChange {
 interface BurnBurst {
   key: string;
   side: PlayerSide;
+}
+
+interface HealingBurst {
+  key: string;
+  x: number;
+  y: number;
 }
 
 const ATTACK_DURATION = 420;
@@ -144,6 +151,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const burnPrevStateRef = useRef<GameState | null>(null);
   const burnSequenceRef = useRef(0);
   const [burnBursts, setBurnBursts] = useState<BurnBurst[]>([]);
+  const [healingBursts, setHealingBursts] = useState<HealingBurst[]>([]);
   const [statusIndicators, setStatusIndicators] = useState<StatusIndicator[]>([]);
   const indicatorSequenceRef = useRef(0);
   const [damageTexture, setDamageTexture] = useState<Texture>(Texture.EMPTY);
@@ -175,6 +183,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       pendingLocalAttackersRef.current.clear();
       pendingImpactResultsRef.current.clear();
       setStatusIndicators([]);
+      setHealingBursts([]);
       indicatorSequenceRef.current = 0;
       destroyedMinionsRef.current.clear();
       setPlacementFades([]);
@@ -281,6 +290,10 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
 
   const handleBurnComplete = useCallback((key: string) => {
     setBurnBursts((current) => current.filter((burst) => burst.key !== key));
+  }, []);
+
+  const handleHealingBurstComplete = useCallback((key: string) => {
+    setHealingBursts((current) => current.filter((burst) => burst.key !== key));
   }, []);
 
   useEffect(() => {
@@ -431,6 +444,13 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       });
       if (additions.length > 0) {
         setStatusIndicators((current) => [...current, ...additions]);
+      }
+
+      const healAdditions = additions
+        .filter((entry) => entry.kind === 'heal')
+        .map((entry) => ({ key: `${entry.key}:burst`, x: entry.x, y: entry.y }));
+      if (healAdditions.length > 0) {
+        setHealingBursts((current) => [...current, ...healAdditions]);
       }
     }
 
@@ -787,6 +807,14 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
             onComplete={() => handleBurnComplete(burst.key)}
           />
         ))}
+      {healingBursts.map((burst) => (
+        <HealingBurstEmitter
+          key={burst.key}
+          x={burst.x}
+          y={burst.y}
+          onComplete={() => handleHealingBurstComplete(burst.key)}
+        />
+      ))}
       {statusIndicators.map((indicator) => {
         const progress = Math.min(1, 1 - indicator.remaining / indicator.duration);
         const floatY = indicator.y - INDICATOR_FLOAT_DISTANCE * progress;

@@ -7,6 +7,7 @@ import { Card, CARD_SIZE } from '../Card';
 import { useUiStore } from '../../state/store';
 import { getBoardLaneGeometry } from '../layout';
 import { GameSoundId, playGameSound } from '../sounds';
+import HoverCardMagicEmitter from '../effects/HoverCardMagicEmitter';
 
 const MAX_FAN_DEG = 50;
 const FAN_MIX_WEIGHT = 0.72;
@@ -610,16 +611,30 @@ export default function HandLayer({
           zIndex={cardZIndex}
         />
         {showHoverPreview ? (
-          <Card
-            card={card}
-            x={state.current.x}
-            y={state.current.y}
-            rotation={state.current.rotation}
-            scale={state.current.scale}
-            zIndex={state.current.z}
-            eventMode="none"
-            disabled={disabled}
-          />
+          <>
+            <HoverCardMagicEmitter
+              x={state.current.x}
+              y={state.current.y}
+              side="left"
+              scale={state.current.scale}
+            />
+            <HoverCardMagicEmitter
+              x={state.current.x}
+              y={state.current.y}
+              side="right"
+              scale={state.current.scale}
+            />
+            <Card
+              card={card}
+              x={state.current.x}
+              y={state.current.y}
+              rotation={state.current.rotation}
+              scale={state.current.scale}
+              zIndex={state.current.z}
+              eventMode="none"
+              disabled={disabled}
+            />
+          </>
         ) : null}
       </pixiContainer>
     );
