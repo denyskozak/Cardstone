@@ -35,12 +35,15 @@
 }
 
 .endTurnButton {
-    padding: 8px 16px;
+    padding: 16px 32px;
     border: none;
     border-radius: 8px;
     background: linear-gradient(135deg, #74b9ff, #0984e3);
     color: #fff;
     font-weight: 600;
+    font-size: 28px;
+    min-width: 260px;
+    min-height: 92px;
     cursor: pointer;
 }
 

@@ -583,7 +583,7 @@ export function Game() {
         </div>
         <div className={styles.controls}>
           <button className={styles.endTurnButton} onClick={handleEndTurn} disabled={!canEndTurn}>
-            End Turn
+            End Turn {turnSecondsLeft !== null ? `(${turnSecondsLeft}s)` : ''}
           </button>
           {player ? <span>{`Deck: ${player.deck.length} | Hand: ${player.hand.length}`}</span> : null}
           {player ? <span>{`Hero HP: ${player.hero.hp}`}</span> : null}

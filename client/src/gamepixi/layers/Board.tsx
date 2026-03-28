@@ -40,6 +40,7 @@ interface BoardProps {
 }
 
 const blurFilter = new BlurFilter(6);
+const BASE_MINION_SCALE = 1.43;
 function MinionCardArt({ cardId, domainId }: { cardId: string; domainId: DomainId }) {
   const [innerTexture, setInnerTexture] = useState<Texture>(Texture.EMPTY);
   const [texture, setTexture] = useState(Texture.EMPTY);
@@ -585,7 +586,7 @@ export default function Board({
         const animation: MinionAnimationTransform | undefined = minionAnimations[entity.instanceId];
         const offsetX = animation?.offsetX ?? 0;
         const offsetY = animation?.offsetY ?? 0;
-        const scale = animation?.scale ?? 1.3;
+        const scale = animation?.scale ?? BASE_MINION_SCALE;
         const rotation = animation?.rotation ?? 0;
         const zIndex = animation?.zIndex ?? defaultZIndex;
         const isGrayscale = Boolean(animation?.grayscale);
@@ -800,7 +801,7 @@ export default function Board({
       const animation = minionAnimations[entity.instanceId];
       const offsetX = animation?.offsetX ?? 0;
       const offsetY = animation?.offsetY ?? 0;
-      const scale = animation?.scale ?? 1;
+      const scale = animation?.scale ?? BASE_MINION_SCALE;
 
       const widthWithScale = MINION_WIDTH * scale;
       const heightWithScale = MINION_HEIGHT * scale;
