@@ -7,6 +7,7 @@ import { DecksPage } from './decks';
 import { DeckBuilderPage } from './deck-builder';
 import { MenuPage } from './menu';
 import { QuestsPage } from './quests';
+import { MarketplacePage } from './marketplace';
 
 export const router = createBrowserRouter([
   {
@@ -40,5 +41,9 @@ export const router = createBrowserRouter([
   {
     path: '/quests',
     element: <QuestsPage />,
+  },
+  {
+    path: '/marketplace',
+    element: <MarketplacePage />,
   },
 ])

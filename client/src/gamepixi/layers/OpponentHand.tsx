@@ -3,6 +3,7 @@ import { Assets, Texture } from 'pixi.js';
 
 import { CARD_SIZE } from '../Card';
 import { computeHandLayout, HAND_BASE_SCALE } from './Hand';
+import { getCardBackFrame } from '../cardBackFrame';
 
 interface OpponentHandProps {
   count: number;
@@ -41,6 +42,7 @@ export default function OpponentHandLayer({ count, width, height }: OpponentHand
       z: base.z,
     }));
   }, [count, height, width]);
+  const cardBackFrame = useMemo(() => getCardBackFrame(texture), [texture]);
 
   if (count === 0) {
     return null;
@@ -58,7 +60,13 @@ export default function OpponentHandLayer({ count, width, height }: OpponentHand
           pivot={{ x: CARD_SIZE.width / 2, y: CARD_SIZE.height }}
           zIndex={pos.z}
         >
-          <pixiSprite texture={texture} width={CARD_SIZE.width} height={CARD_SIZE.height} />
+          <pixiSprite
+            texture={texture}
+            width={cardBackFrame.width}
+            height={cardBackFrame.height}
+            x={cardBackFrame.x}
+            y={cardBackFrame.y}
+          />
         </pixiContainer>
       ))}
     </pixiContainer>

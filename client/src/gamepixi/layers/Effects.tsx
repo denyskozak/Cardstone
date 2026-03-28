@@ -15,6 +15,7 @@ import CardBurnEmitter from '../effects/CardBurnEmitter';
 import { GameSoundId, playGameSound } from '../sounds';
 import { CARD_SIZE } from '../Card';
 import { computeHandLayout, HAND_BASE_SCALE, HAND_CARD_DIMENSIONS } from './Hand';
+import { getCardBackFrame } from '../cardBackFrame';
 
 interface EffectsProps {
   state: GameState;
@@ -78,10 +79,10 @@ const BUFF_DISPLAY_DURATION = 1600;
 const INDICATOR_FLOAT_DISTANCE = 24;
 const DAMAGE_IMPACT_THRESHOLD = 0.5;
 const DRAW_DURATION = 900;
-const DRAW_LIFT = 26;
 const DRAW_STAGGER = 100;
 const DRAW_CARD_SCALE_MULTIPLIER = 0.3;
-const DRAW_CARD_SCALE_MULTIPLIER_END = 0.15;
+const DRAW_CARD_SCALE_MULTIPLIER_END = 0.2;
+const DRAW_CARD_SCALE_TO_PLAYER = 0.95;
 const PLACEMENT_FADE_DURATION = 250;
 const MINION_DEATH_FADE_DURATION = 800;
 const CARD_BACK_TEXTURE = '/assets/card_skins/1.webp';
@@ -102,6 +103,7 @@ interface DrawAnimation {
   side: PlayerSide;
   from: { x: number; y: number; rotation: number; scale: number };
   to: { x: number; y: number; rotation: number; scale: number };
+  control?: { x: number; y: number };
   elapsed: number;
   duration: number;
 }
@@ -149,6 +151,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const [drawAnimations, setDrawAnimations] = useState<DrawAnimation[]>([]);
   const drawSequenceRef = useRef(0);
   const [cardBackTexture, setCardBackTexture] = useState<Texture>(Texture.EMPTY);
+  const cardBackFrame = useMemo(() => getCardBackFrame(cardBackTexture), [cardBackTexture]);
   const [placementFades, setPlacementFades] = useState<PlacementFade[]>([]);
   const [deathFades, setDeathFades] = useState<PlacementFade[]>([]);
   const deckPositions = useMemo(() => getDeckPositions(width, height), [height, width]);
@@ -322,6 +325,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         }
         const sequence = drawSequenceRef.current;
         drawSequenceRef.current += 1;
+        const animatesTowardPlayer = side === playerSide;
         nextAnimations.push({
           key: `${state.seq}:${side}:${sequence}`,
           side,
@@ -332,11 +336,14 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
             scale: DECK_SCALE * DRAW_CARD_SCALE_MULTIPLIER
           },
           to: {
-            x: target.x,
-            y: target.y,
-            rotation: target.rotation,
-            scale: target.scale * DRAW_CARD_SCALE_MULTIPLIER_END
+            x: animatesTowardPlayer ? width / 2 : target.x,
+            y: animatesTowardPlayer ? height + CARD_SIZE.height * 0.35 : target.y,
+            rotation: animatesTowardPlayer ? 0 : target.rotation,
+            scale: animatesTowardPlayer
+              ? DECK_SCALE * DRAW_CARD_SCALE_TO_PLAYER
+              : target.scale * DRAW_CARD_SCALE_MULTIPLIER_END
           },
+          control: animatesTowardPlayer ? { x: width / 2, y: height * 0.65 } : undefined,
           elapsed: -index * DRAW_STAGGER,
           duration: DRAW_DURATION
         });
@@ -818,26 +825,32 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
       {drawAnimations.map((animation) => {
         const progress = Math.max(0, Math.min(1, animation.elapsed / animation.duration));
         const eased = easeInOutCubic(progress);
-        const x = lerp(animation.from.x, animation.to.x, eased);
-        const y = lerp(animation.from.y, animation.to.y, eased) - Math.sin(progress * Math.PI) * DRAW_LIFT;
+        const drawPosition = animation.control
+          ? quadraticBezierPoint(animation.from, animation.control, animation.to, eased)
+          : { x: lerp(animation.from.x, animation.to.x, eased), y: lerp(animation.from.y, animation.to.y, eased) };
         const rotation = lerp(animation.from.rotation, animation.to.rotation, eased);
         const scale = lerp(animation.from.scale, animation.to.scale, eased);
         const fadeOut = progress > 0.85 ? 1 - (progress - 0.85) / 0.15 : 1;
 
         return (
-          <pixiSprite
+          <pixiContainer
             key={animation.key}
-            texture={cardBackTexture}
-            x={x}
-            y={y}
+            x={drawPosition.x}
+            y={drawPosition.y}
             rotation={rotation}
             scale={scale}
             pivot={{ x: CARD_SIZE.width / 2, y: CARD_SIZE.height }}
-            width={CARD_SIZE.width}
-            height={CARD_SIZE.height}
             alpha={fadeOut}
             zIndex={2200}
-          />
+          >
+            <pixiSprite
+              texture={cardBackTexture}
+              width={cardBackFrame.width}
+              height={cardBackFrame.height}
+              x={cardBackFrame.x}
+              y={cardBackFrame.y}
+            />
+          </pixiContainer>
         );
       })}
     </pixiContainer>
@@ -872,6 +885,19 @@ function computeAttackFrame(animation: AttackAnimation, progress: number) {
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
+}
+
+function quadraticBezierPoint(
+  from: { x: number; y: number },
+  control: { x: number; y: number },
+  to: { x: number; y: number },
+  t: number
+) {
+  const oneMinusT = 1 - t;
+  return {
+    x: oneMinusT * oneMinusT * from.x + 2 * oneMinusT * t * control.x + t * t * to.x,
+    y: oneMinusT * oneMinusT * from.y + 2 * oneMinusT * t * control.y + t * t * to.y
+  };
 }
 
 function easeOutCubic(t: number) {

@@ -1,17 +1,14 @@
 import { TabNav } from '@radix-ui/themes'
-import { useNavigate } from 'react-router'
 
 
 export const Navigation = () => {
-  const navigate =  useNavigate();
-
   return (
     <TabNav.Root  justify="center" className="h-[98px] bg-black" color="gold"  >
       <div className="flex items-center space-x-6">
         <a href="/">
           <img src="/assets/logo.webp" alt="Mw-logo" className="w-16 h-16" />
         </a>
-        <TabNav.Link href="#">
+        <TabNav.Link href="/marketplace">
           <span className="text-lg">Card Market</span>
         </TabNav.Link>
         {/*<TabNav.Link href="#" >FAQ</TabNav.Link>*/}
