@@ -45,8 +45,8 @@ export function getBoardLaneGeometry(width: number, height: number): BoardLaneGe
 }
 
 export function getDeckPositions(width: number, height: number): DeckPositions {
-  const { boardTopY, boardBottomY, laneX } = getBoardLaneGeometry(width, height);
-  const deckX = Math.max(40, laneX - 70);
+  const { boardTopY, boardBottomY, laneX, laneWidth } = getBoardLaneGeometry(width, height);
+  const deckX = Math.min(width - 40, laneX + laneWidth + 70);
   const opponentY = Math.max(80, boardTopY - 30);
   const playerY = Math.min(height - 40, boardBottomY + MINION_HEIGHT + 50);
 

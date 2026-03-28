@@ -14,8 +14,9 @@ import HandLayer from './layers/Hand';
 import OpponentHandLayer from './layers/OpponentHand';
 import Effects from './layers/Effects';
 import { useApplication } from '@pixi/react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { preloadGameSounds } from './sounds';
+import useMiniTicker from './hooks/useMiniTicker';
 
 declare global {
   interface Window {
@@ -39,6 +40,9 @@ interface StageRootProps {
 
 const BASE_WIDTH = 1024;
 const BASE_HEIGHT = 640;
+const HEAVY_HIT_DAMAGE_THRESHOLD = 5;
+const SCREEN_SHAKE_DURATION = 380;
+const SCREEN_SHAKE_INTENSITY = 7;
 
 export default function StageRoot({
   state,
@@ -51,6 +55,10 @@ export default function StageRoot({
   height
 }: StageRootProps) {
   const { app } = useApplication();
+  const previousStateRef = useRef<GameState | null>(null);
+  const [shakeOffset, setShakeOffset] = useState({ x: 0, y: 0 });
+  const [isShaking, setIsShaking] = useState(false);
+  const shakeStateRef = useRef<{ elapsed: number; duration: number; intensity: number } | null>(null);
   const { targetWidth, targetHeight } = useMemo(() => {
     const hasWidth = typeof width === 'number' && width > 0;
     const hasHeight = typeof height === 'number' && height > 0;
@@ -95,6 +103,55 @@ export default function StageRoot({
   }, []);
 
   useEffect(() => {
+    if (!state || !playerSide) {
+      previousStateRef.current = state;
+      shakeStateRef.current = null;
+      setIsShaking(false);
+      setShakeOffset({ x: 0, y: 0 });
+      return;
+    }
+    const previous = previousStateRef.current;
+    if (previous && previous.seq < state.seq && shouldShakeOnHeavyHit(previous, state, playerSide)) {
+      shakeStateRef.current = {
+        elapsed: 0,
+        duration: SCREEN_SHAKE_DURATION,
+        intensity: SCREEN_SHAKE_INTENSITY
+      };
+      setIsShaking(true);
+    }
+    previousStateRef.current = state;
+  }, [playerSide, state]);
+
+  useMiniTicker(
+    (deltaMS) => {
+      const activeShake = shakeStateRef.current;
+      if (!activeShake) {
+        return;
+      }
+      const nextElapsed = Math.min(activeShake.elapsed + deltaMS, activeShake.duration);
+      const progress = nextElapsed / activeShake.duration;
+      const damping = 1 - progress;
+      const wave = Math.sin(nextElapsed * 0.06) * activeShake.intensity * damping;
+      const jitter = (Math.random() - 0.5) * activeShake.intensity * 0.7 * damping;
+      setShakeOffset({
+        x: wave * 0.9 + jitter,
+        y: wave * 0.35
+      });
+      if (nextElapsed >= activeShake.duration) {
+        shakeStateRef.current = null;
+        setIsShaking(false);
+        setShakeOffset({ x: 0, y: 0 });
+        return;
+      }
+      shakeStateRef.current = {
+        ...activeShake,
+        elapsed: nextElapsed
+      };
+    },
+    isShaking
+  );
+
+  useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
@@ -118,7 +175,7 @@ export default function StageRoot({
   return (
     <pixiContainer width={targetWidth} height={targetHeight} options={{ backgroundAlpha: 0 }}>
       <Background width={targetWidth} height={targetHeight} />
-      <pixiContainer>
+      <pixiContainer x={shakeOffset.x} y={shakeOffset.y}>
         <Board
           state={state}
           playerSide={playerSide}
@@ -158,4 +215,35 @@ export default function StageRoot({
       </pixiContainer>
     </pixiContainer>
   );
+}
+
+function shouldShakeOnHeavyHit(previous: GameState, next: GameState, playerSide: PlayerSide) {
+  const playerHeroDamage = Math.max(0, previous.players[playerSide].hero.hp - next.players[playerSide].hero.hp);
+  if (playerHeroDamage > HEAVY_HIT_DAMAGE_THRESHOLD && hasAttackingMinion(previous, next, playerSide)) {
+    return true;
+  }
+  const nextMinions = new Map(next.board[playerSide].map((minion) => [minion.instanceId, minion]));
+  const highestMinionDamage = previous.board[playerSide].reduce((maxDamage, minion) => {
+    const updated = nextMinions.get(minion.instanceId);
+    if (!updated) {
+      return Math.max(maxDamage, minion.health);
+    }
+    return Math.max(maxDamage, minion.health - updated.health);
+  }, 0);
+  if (highestMinionDamage > HEAVY_HIT_DAMAGE_THRESHOLD && hasAttackingMinion(previous, next, playerSide)) {
+    return true;
+  }
+  return false;
+}
+
+function hasAttackingMinion(previous: GameState, next: GameState, defendingSide: PlayerSide) {
+  const attackerSide: PlayerSide = defendingSide === 'A' ? 'B' : 'A';
+  const nextById = new Map(next.board[attackerSide].map((minion) => [minion.instanceId, minion]));
+  return previous.board[attackerSide].some((minion) => {
+    const nextMinion = nextById.get(minion.instanceId);
+    if (!nextMinion) {
+      return false;
+    }
+    return nextMinion.attacksRemaining < minion.attacksRemaining;
+  });
 }
