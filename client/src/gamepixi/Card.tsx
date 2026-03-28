@@ -1,6 +1,7 @@
 import type { CardInHand } from '@cardstone/shared/types';
 import { Assets, BlurFilter, Graphics, Rectangle, Texture, type FederatedPointerEvent } from 'pixi.js';
 import { useEffect, useMemo, useState } from 'react';
+import { getCardAssetPath } from '../lib/cardAssets';
 
 
 const CARD_WIDTH = 160;
@@ -75,7 +76,7 @@ export function Card({
     let cancelled = false
     setInnerTexture(Texture.EMPTY)
     Assets
-      .load(`/assets/cards/${card.card.id}.webp`)
+      .load(getCardAssetPath(card.card))
       .then((result) => {
         if (!cancelled) {
           setInnerTexture(result)

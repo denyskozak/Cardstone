@@ -71,7 +71,6 @@ const iconBaseStyle: CSSProperties = {
 
 const DOMAIN_OPTIONS: { id: DomainId; label: string }[] = [
   { id: 'sui', label: 'Sui' },
-  { id: 'web3', label: 'Web3' },
   { id: 'greek', label: 'Ancient Greek' }
 ];
 

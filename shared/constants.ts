@@ -18,7 +18,10 @@ export const MAX_DECK_SIZE = 15;
 export const STARTING_SEQ = 1;
 
 export const CARD_IDS = {
+  // shared
   coin: 'coin',
+
+  // sui cards
   ika: 'ika',
   walrus: 'walrus',
   cetus: 'cetus',
@@ -41,37 +44,53 @@ export const CARD_IDS = {
   adeniyi: 'adeniyi',
   georgeDanezis: 'georgeDanezis',
 
-  // Вспомогательные токены
+  // helper tokens
   miniWalrus: 'miniWalrus',
   devIntern: 'devIntern',
   robot: 'robot',
   moveBurst: 'moveBurst',
   fix: 'fix',
-  suiWave: 'suiWave'
-} as const;
+  suiWave: 'suiWave',
 
+  // greek cards
+  hermes: 'hermes',
+  hoplite: 'hoplite',
+  oracle: 'oracle',
+  satyr: 'satyr',
+  nymph: 'nymph',
+  aegisBearer: 'aegisBearer',
+  fisherman: 'fisherman',
+  triton: 'triton',
+  lyrePlayer: 'lyrePlayer',
+  oliveKeeper: 'oliveKeeper',
+  medusa: 'medusa',
+  minotaur: 'minotaur',
+  artemis: 'artemis',
+  hephaestus: 'hephaestus',
+  odysseus: 'odysseus',
+  zeus: 'zeus',
+  hades: 'hades',
+  poseidon: 'poseidon',
+  athena: 'athena',
+  achilles: 'achilles'
+} as const;
 
 export type DemoCardId = (typeof CARD_IDS)[keyof typeof CARD_IDS];
 
 export const DEFAULT_DECK: DemoCardId[] = [
-  // 🔹 1–2 маны — ранняя поддержка и контроль
   CARD_IDS.hipo,
   CARD_IDS.samBlackshear,
   CARD_IDS.blub,
   CARD_IDS.ika,
   CARD_IDS.matteo,
-
-  // 🔹 2–3 маны — синергия и гибкость
   CARD_IDS.axol,
   CARD_IDS.manifest,
   CARD_IDS.walrus,
   CARD_IDS.evan,
   CARD_IDS.lofi,
-
-  // 🔹 4–6 маны — силовые пики и финиш
   CARD_IDS.noodls,
   CARD_IDS.cetus,
   CARD_IDS.scallop,
   CARD_IDS.suilend,
-  CARD_IDS.adeniyi,
+  CARD_IDS.adeniyi
 ];
