@@ -3,7 +3,8 @@ import type {
   GameState,
   MinionEntity,
   PlayerSide,
-  TargetDescriptor
+  TargetDescriptor,
+  DomainId
 } from '@cardstone/shared/types';
 import { getTargetingPredicate } from '@cardstone/shared/targeting';
 import { actionRequiresTarget, getPrimaryPlayAction } from '@cardstone/shared/effects';
@@ -17,6 +18,7 @@ import {
   type TargetingState
 } from '../../state/store';
 import { Card, CARD_SIZE } from '../Card';
+import { getCardAssetPathFromId } from '../../lib/cardAssets';
 import {
   MINION_ART_INSET_X,
   MINION_ART_INSET_Y,
@@ -38,7 +40,7 @@ interface BoardProps {
 }
 
 const blurFilter = new BlurFilter(6);
-function MinionCardArt({ cardId }: { cardId: string }) {
+function MinionCardArt({ cardId, domainId }: { cardId: string; domainId: DomainId }) {
   const [innerTexture, setInnerTexture] = useState<Texture>(Texture.EMPTY);
   const [texture, setTexture] = useState(Texture.EMPTY);
 
@@ -47,7 +49,7 @@ function MinionCardArt({ cardId }: { cardId: string }) {
   useEffect(() => {
     let cancelled = false;
     if (innerTexture === Texture.EMPTY) {
-      Assets.load(`/assets/cards/${cardId}.webp`).then((result) => {
+      Assets.load(getCardAssetPathFromId(cardId, domainId)).then((result) => {
         if (!cancelled) {
           setInnerTexture(result);
         }
@@ -63,7 +65,7 @@ function MinionCardArt({ cardId }: { cardId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [cardId]);
+  }, [cardId, domainId]);
 
   const handleMaskRef = useCallback((instance: Graphics | null) => {
     setMask(instance);
@@ -670,7 +672,7 @@ export default function Board({
                 }}
               />
             ) : null}
-            <MinionCardArt cardId={entity.card.id} />
+            <MinionCardArt cardId={entity.card.id} domainId={entity.card.domainId} />
             <pixiText
               text={`${entity.attack}`}
               x={MINION_WIDTH * 0.09}

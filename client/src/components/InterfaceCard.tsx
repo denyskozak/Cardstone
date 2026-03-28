@@ -1,6 +1,7 @@
 import type { CardDefinition } from '@cardstone/shared/types';
 import type { CatalogCard } from '@cardstone/shared/decks';
 import styles from './InterfaceCard.module.css';
+import { getCardAssetPath } from '../lib/cardAssets';
 
 type InterfaceCardData = CardDefinition | CatalogCard;
 
@@ -34,7 +35,7 @@ export function InterfaceCard({
       </div>
       <img
         className={styles.art}
-        src={`/assets/cards/${card.id}.webp`}
+        src={getCardAssetPath(card)}
         alt={card.name}
         loading="lazy"
       />

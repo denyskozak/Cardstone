@@ -51,7 +51,7 @@ export type Effect = {
 };
 
 export type CardType = 'Minion' | 'Spell' | 'Weapon' | 'Hero';
-export const DOMAIN_IDS = ['sui', 'greek', 'web3'] as const;
+export const DOMAIN_IDS = ['sui', 'greek'] as const;
 export type DomainId = (typeof DOMAIN_IDS)[number];
 
 export type CardPlacement = 'left' | 'right';
