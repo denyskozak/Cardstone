@@ -28,7 +28,7 @@ export interface DeckPositions {
   opponent: EntityPosition;
 }
 
-export const DECK_SCALE = 0.38;
+export const DECK_SCALE = 1;
 export const DECK_STACK_COUNT = 3;
 export const DECK_STACK_OFFSET = { x: -6, y: -4 };
 
@@ -46,9 +46,9 @@ export function getBoardLaneGeometry(width: number, height: number): BoardLaneGe
 
 export function getDeckPositions(width: number, height: number): DeckPositions {
   const { boardTopY, boardBottomY, laneX, laneWidth } = getBoardLaneGeometry(width, height);
-  const deckX = Math.min(width - 40, laneX + laneWidth + 70);
-  const opponentY = Math.max(80, boardTopY - 30);
-  const playerY = Math.min(height - 40, boardBottomY + MINION_HEIGHT + 50);
+  const deckX = Math.min(width - 200, laneX + laneWidth + 70 + DECK_STACK_OFFSET.x);
+  const opponentY = Math.max(90, boardTopY + MINION_HEIGHT / 2 + DECK_STACK_OFFSET.y);
+  const playerY = Math.min(height - 40, boardBottomY + MINION_HEIGHT * 3);
 
   return {
     player: { x: deckX, y: playerY },

@@ -200,7 +200,7 @@ const SUI_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.noodls]: {
     id: CARD_IDS.noodls,
     domainId: 'sui',
-    name: 'Noodls Protector',
+    name: 'Noodls',
     type: 'Minion',
     cost: 4,
     attack: 3,
@@ -211,7 +211,7 @@ const SUI_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.evan]: {
     id: CARD_IDS.evan,
     domainId: 'sui',
-    name: 'Evan Raider',
+    name: 'Evan',
     type: 'Minion',
     cost: 3,
     attack: 3,
@@ -242,7 +242,7 @@ const SUI_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.ika]: {
     id: CARD_IDS.ika,
     domainId: 'sui',
-    name: 'Ancestral Watcher',
+    name: 'Ika',
     type: 'Minion',
     cost: 4,
     attack: 1,
@@ -253,7 +253,7 @@ const SUI_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.adeniyi]: {
     id: CARD_IDS.adeniyi,
     domainId: 'sui',
-    name: 'Adeniyi Warden',
+    name: 'Adeniyi',
     type: 'Minion',
     cost: 5,
     attack: 2,
@@ -267,7 +267,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.hermes]: {
     id: CARD_IDS.hermes,
     domainId: 'greek',
-    name: 'Hermes Messenger',
+    name: 'Hermes',
     type: 'Minion',
     cost: 1,
     attack: 1,
@@ -278,7 +278,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.hoplite]: {
     id: CARD_IDS.hoplite,
     domainId: 'greek',
-    name: 'Hoplite Recruit',
+    name: 'Hoplite',
     type: 'Minion',
     cost: 1,
     attack: 1,
@@ -300,7 +300,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.oracle]: {
     id: CARD_IDS.oracle,
     domainId: 'greek',
-    name: 'Delphi Oracle',
+    name: 'Oracle',
     type: 'Minion',
     cost: 2,
     attack: 1,
@@ -311,7 +311,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.satyr]: {
     id: CARD_IDS.satyr,
     domainId: 'greek',
-    name: 'Satyr Skirmisher',
+    name: 'Satyr',
     type: 'Minion',
     cost: 2,
     attack: 3,
@@ -322,7 +322,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.nymph]: {
     id: CARD_IDS.nymph,
     domainId: 'greek',
-    name: 'Sacred Nymph',
+    name: 'Nymph',
     type: 'Minion',
     cost: 2,
     attack: 2,
@@ -333,7 +333,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.aegisBearer]: {
     id: CARD_IDS.aegisBearer,
     domainId: 'greek',
-    name: 'Aegis Bearer',
+    name: 'Aegis',
     type: 'Minion',
     cost: 2,
     attack: 2,
@@ -344,7 +344,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.fisherman]: {
     id: CARD_IDS.fisherman,
     domainId: 'greek',
-    name: 'Aegean Fisherman',
+    name: 'Fisherman',
     type: 'Minion',
     cost: 2,
     attack: 2,
@@ -355,7 +355,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.lyrePlayer]: {
     id: CARD_IDS.lyrePlayer,
     domainId: 'greek',
-    name: 'Lyre Player',
+    name: 'Bard',
     type: 'Minion',
     cost: 2,
     attack: 1,
@@ -366,7 +366,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.triton]: {
     id: CARD_IDS.triton,
     domainId: 'greek',
-    name: 'Triton Guardian',
+    name: 'Triton',
     type: 'Minion',
     cost: 3,
     attack: 3,
@@ -388,7 +388,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.hephaestus]: {
     id: CARD_IDS.hephaestus,
     domainId: 'greek',
-    name: 'Hephaestus Smith',
+    name: 'Hephaestus',
     type: 'Minion',
     cost: 3,
     attack: 2,
@@ -399,7 +399,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.artemis]: {
     id: CARD_IDS.artemis,
     domainId: 'greek',
-    name: 'Artemis Huntress',
+    name: 'Artemis',
     type: 'Minion',
     cost: 3,
     attack: 3,
@@ -410,7 +410,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.odysseus]: {
     id: CARD_IDS.odysseus,
     domainId: 'greek',
-    name: 'Odysseus Voyager',
+    name: 'Odysseus',
     type: 'Minion',
     cost: 4,
     attack: 3,
@@ -424,7 +424,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.minotaur]: {
     id: CARD_IDS.minotaur,
     domainId: 'greek',
-    name: 'Labyrinth Minotaur',
+    name: 'Minotaur',
     type: 'Minion',
     cost: 4,
     attack: 4,
@@ -435,7 +435,7 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
   [CARD_IDS.athena]: {
     id: CARD_IDS.athena,
     domainId: 'greek',
-    name: 'Athena Strategist',
+    name: 'Athena',
     type: 'Minion',
     cost: 4,
     attack: 3,
@@ -499,24 +499,24 @@ const spells: Record<string, SpellCard> = {
     text: 'Gain 1 temporary mana crystal',
     effects: [{ trigger: { type: 'Play' }, action: { type: 'ManaCrystal', amount: 1 } }]
   },
-  [CARD_IDS.moveBurst]: {
-    id: CARD_IDS.moveBurst,
-    domainId: 'sui',
-    name: 'Move Burst',
-    type: 'Spell',
-    cost: 1,
-    text: 'Deal 3 damage to a minion.',
-    effects: [{ trigger: { type: 'Play' }, action: { type: 'Damage', amount: 3, target: 'AnyMinion' } }]
-  },
-  [CARD_IDS.suiWave]: {
-    id: CARD_IDS.suiWave,
-    domainId: 'sui',
-    name: 'Wave',
-    type: 'Spell',
-    cost: 2,
-    text: 'Heal 5 to your hero.',
-    effects: [{ trigger: { type: 'Play' }, action: { type: 'Heal', amount: 5, target: 'Hero' } }]
-  }
+  // [CARD_IDS.moveBurst]: {
+  //   id: CARD_IDS.moveBurst,
+  //   domainId: 'sui',
+  //   name: 'Move Burst',
+  //   type: 'Spell',
+  //   cost: 1,
+  //   text: 'Deal 3 damage to a minion.',
+  //   effects: [{ trigger: { type: 'Play' }, action: { type: 'Damage', amount: 3, target: 'AnyMinion' } }]
+  // },
+  // [CARD_IDS.suiWave]: {
+  //   id: CARD_IDS.suiWave,
+  //   domainId: 'sui',
+  //   name: 'Wave',
+  //   type: 'Spell',
+  //   cost: 2,
+  //   text: 'Heal 5 to your hero.',
+  //   effects: [{ trigger: { type: 'Play' }, action: { type: 'Heal', amount: 5, target: 'Hero' } }]
+  // }
 };
 
 export const DEMO_CARDS: Record<string, CardDefinition> = {

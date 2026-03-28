@@ -157,9 +157,9 @@ export function Card({
       {/* Иллюстрация карты (внутренний арт). */}
       <pixiSprite
         texture={innerTexture}
-        width={CARD_WIDTH * 0.6}
+        width={CARD_WIDTH * 0.65}
         height={CARD_HEIGHT * 0.5}
-        x={CARD_WIDTH * 0.2}
+        x={CARD_WIDTH * 0.23}
         y={CARD_HEIGHT * 0.05}
       />
       {/* Внешняя рамка/шаблон карты (фон, декоративный бордер). */}

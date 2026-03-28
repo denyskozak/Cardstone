@@ -76,7 +76,7 @@ export function Game() {
   const [state, setState] = useState<GameState | null>(null);
   const [log, setLog] = useState<string[]>([]);
   const [chatMessages, setChatMessages] = useState<MatchChatEntry[]>([]);
-  const [chatCollapsed, setChatCollapsed] = useState(false);
+  const [chatCollapsed, setChatCollapsed] = useState(true);
   const [chatCollapseReason, setChatCollapseReason] = useState<string | undefined>();
   const [stageBounds, setStageBounds] = useState({ width: 0, height: 0 });
   const [now, setNow] = useState(() => Date.now());
@@ -585,9 +585,9 @@ export function Game() {
           <button className={styles.endTurnButton} onClick={handleEndTurn} disabled={!canEndTurn}>
             End Turn {turnSecondsLeft !== null ? `(${turnSecondsLeft}s)` : ''}
           </button>
-          {player ? <span>{`Deck: ${player.deck.length} | Hand: ${player.hand.length}`}</span> : null}
-          {player ? <span>{`Hero HP: ${player.hero.hp}`}</span> : null}
-          {opponent ? <span>{`Opponent HP: ${opponent.hero.hp}`}</span> : null}
+          {/*{player ? <span>{`Deck: ${player.deck.length} | Hand: ${player.hand.length}`}</span> : null}*/}
+          {/*{player ? <span>{`Hero HP: ${player.hero.hp}`}</span> : null}*/}
+          {/*{opponent ? <span>{`Opponent HP: ${opponent.hero.hp}`}</span> : null}*/}
         </div>
         <div className={styles.log}>
           <strong>Log</strong>

@@ -865,7 +865,7 @@ export default function Board({
       {/* Контейнер героя оппонента (аватар + зона таргетинга). */}
       <pixiContainer
         x={laneX + laneWidth * 0.1}
-        y={boardTopY - 100}
+        y={boardTopY - 70}
         name={`hero:${opponentSide}`}
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: opponentSide })
@@ -890,7 +890,7 @@ export default function Board({
       {/* Контейнер героя игрока (аватар + зона таргетинга). */}
       <pixiContainer
         x={laneX + laneWidth * 0.1}
-        y={boardBottomY + MINION_HEIGHT + 70}
+        y={boardBottomY + MINION_HEIGHT }
         name={`hero:${playerSide}`}
         interactive={Boolean(
           targetingPredicate && targetingPredicate({ type: 'hero', side: playerSide })

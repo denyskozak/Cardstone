@@ -25,6 +25,8 @@
     display: flex;
     justify-content: space-between;
     pointer-events: none;
+    width: 100%;
+    height: 100%;
 }
 
 .controls {
@@ -32,18 +34,23 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    position: absolute;
+    right: 10vw;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .endTurnButton {
-    padding: 16px 32px;
+    padding: 8px;
+
     border: none;
     border-radius: 8px;
     background: linear-gradient(135deg, #74b9ff, #0984e3);
     color: #fff;
     font-weight: 600;
     font-size: 28px;
-    min-width: 260px;
-    min-height: 92px;
+    /*min-width: 260px;*/
+    /*min-height: 92px;*/
     cursor: pointer;
 }
 
@@ -53,6 +60,7 @@
 }
 
 .log {
+    display: none;
     pointer-events: auto;
     max-width: 320px;
     max-height: 200px;
@@ -68,9 +76,13 @@
     background: rgba(0, 0, 0, 0.35);
     padding: 12px 18px;
     border-radius: 12px;
-    display: flex;
+    display: none;
+    /*display: flex;*/
+
     flex-direction: column;
     gap: 6px;
+    max-width: 320px;
+    max-height: 200px;
 }
 
 .mulliganOverlay {
