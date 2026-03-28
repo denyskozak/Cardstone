@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Emitter } from '@pixi/particle-emitter';
-import { Texture, Ticker, type Container } from 'pixi.js';
+import { useMemo, useRef } from 'react';
+import { useTick } from '@pixi/react';
+import { Texture, type Sprite } from 'pixi.js';
 
 interface HoverCardMagicEmitterProps {
   x: number;
@@ -9,7 +9,32 @@ interface HoverCardMagicEmitterProps {
   scale?: number;
 }
 
+type HoverParticle = {
+  baseY: number;
+  wobble: number;
+  speed: number;
+  drift: number;
+  size: number;
+  phase: number;
+  tint: number;
+};
+
 const BASE_SIDE_OFFSET = 66;
+const PARTICLE_COUNT = 16;
+
+const PALETTE = [0xfff8cf, 0xdff7ff, 0xbdeaff, 0x7fd6ff];
+
+function createParticles(): HoverParticle[] {
+  return Array.from({ length: PARTICLE_COUNT }, () => ({
+    baseY: -58 + Math.random() * 116,
+    wobble: 3 + Math.random() * 10,
+    speed: 28 + Math.random() * 48,
+    drift: 5 + Math.random() * 10,
+    size: 0.06 + Math.random() * 0.12,
+    phase: Math.random() * Math.PI * 2,
+    tint: PALETTE[Math.floor(Math.random() * PALETTE.length)] ?? 0xbdeaff
+  }));
+}
 
 export default function HoverCardMagicEmitter({
   x,
@@ -17,149 +42,55 @@ export default function HoverCardMagicEmitter({
   side,
   scale = 1
 }: HoverCardMagicEmitterProps) {
-  const [container, setContainer] = useState<Container | null>(null);
+  const particles = useMemo(() => createParticles(), []);
+  const spriteRefs = useRef<Array<Sprite | null>>([]);
+  const timeMs = useRef(0);
 
-  const config = useMemo(() => {
+  useTick((ticker) => {
+    timeMs.current += ticker.deltaMS;
+    const time = timeMs.current / 1000;
     const direction = side === 'left' ? -1 : 1;
-    return {
-      lifetime: { min: 0.35, max: 0.85 },
-      frequency: 0.022,
-      spawnChance: 1,
-      particlesPerWave: 1,
-      emitterLifetime: -1,
-      maxParticles: 90,
-      addAtBack: false,
-      behaviors: [
-        {
-          type: 'alpha',
-          config: {
-            alpha: {
-              list: [
-                { time: 0, value: 0 },
-                { time: 0.12, value: 0.8 },
-                { time: 1, value: 0 }
-              ]
-            }
-          }
-        },
-        {
-          type: 'scale',
-          config: {
-            scale: {
-              list: [
-                { time: 0, value: 0.28 },
-                { time: 1, value: 0.06 }
-              ]
-            },
-            minMult: 1
-          }
-        },
-        {
-          type: 'color',
-          config: {
-            color: {
-              list: [
-                { time: 0, value: '#fff8cf' },
-                { time: 0.45, value: '#c9f3ff' },
-                { time: 1, value: '#7fd6ff' }
-              ]
-            }
-          }
-        },
-        {
-          type: 'rotationStatic',
-          config: { min: 0, max: 360 }
-        },
-        {
-          type: 'moveSpeed',
-          config: {
-            speed: {
-              list: [
-                { time: 0, value: 210 },
-                { time: 1, value: 60 }
-              ]
-            }
-          }
-        },
-        {
-          type: 'spawnShape',
-          config: {
-            type: 'rect',
-            data: {
-              x: direction * 4,
-              y: 0,
-              w: 6,
-              h: 126,
-              affectRotation: false
-            }
-          }
-        },
-        {
-          type: 'rotation',
-          config: {
-            accel: 0,
-            minSpeed: 0,
-            maxSpeed: 0,
-            minStart: direction === -1 ? 330 : 210,
-            maxStart: direction === -1 ? 430 : 310
-          }
-        },
-        {
-          type: 'textureSingle',
-          config: {
-            texture: Texture.WHITE
-          }
-        },
-        {
-          type: 'blendMode',
-          config: {
-            blendMode: 'add'
-          }
-        }
-      ]
-    };
-  }, [side]);
 
-  useEffect(() => {
-    if (!container) {
-      return;
-    }
-
-    const emitter = new Emitter(container, config);
-    emitter.updateOwnerPos(0, 0);
-    emitter.resetPositionTracking();
-    emitter.emit = true;
-
-    const ticker = Ticker.shared;
-
-    const tick = (tickerRef: Ticker) => {
-      emitter.update(tickerRef.deltaMS / 1000);
-    };
-
-    ticker.add(tick);
-
-    return () => {
-      ticker.remove(tick);
-      emitter.emit = false;
-      if (typeof emitter.cleanup === 'function') {
-        emitter.cleanup();
+    particles.forEach((particle, index) => {
+      const sprite = spriteRefs.current[index];
+      if (!sprite) {
+        return;
       }
-      emitter.destroy();
-    };
-  }, [config, container]);
 
-  const handleRef = useCallback((instance: Container | null) => {
-    setContainer(instance ?? null);
-  }, []);
+      const travel = (time * particle.speed + index * 11) % 126;
+      const normalized = travel / 126;
+      const xOffset = direction * (2 + normalized * 7 + Math.sin(time * 2 + particle.phase) * particle.drift);
+      const yOffset = particle.baseY - travel + Math.sin(time * 3 + particle.phase) * particle.wobble;
+
+      sprite.x = xOffset;
+      sprite.y = yOffset;
+      sprite.alpha = 0.2 + (1 - normalized) * 0.7;
+      const pulse = 1 + Math.sin(time * 4 + particle.phase) * 0.22;
+      sprite.scale.set(particle.size * pulse);
+    });
+  });
 
   const sideOffset = BASE_SIDE_OFFSET * scale;
   const verticalCenterOffset = 108 * scale;
 
   return (
     <pixiContainer
-      ref={handleRef}
       x={x + (side === 'left' ? -sideOffset : sideOffset)}
       y={y - verticalCenterOffset}
-    />
+    >
+      {particles.map((particle, index) => (
+        <pixiSprite
+          key={index}
+          ref={(instance: Sprite | null) => {
+            spriteRefs.current[index] = instance;
+          }}
+          texture={Texture.WHITE}
+          anchor={0.5}
+          alpha={0}
+          tint={particle.tint}
+          blendMode="add"
+        />
+      ))}
+    </pixiContainer>
   );
 }

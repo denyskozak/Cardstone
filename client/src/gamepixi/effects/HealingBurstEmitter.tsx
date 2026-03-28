@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Emitter } from '@pixi/particle-emitter';
-import { Texture, Ticker, type Container } from 'pixi.js';
+import { useEffect, useMemo, useRef } from 'react';
+import { useTick } from '@pixi/react';
+import { Texture, type Sprite } from 'pixi.js';
 
 interface HealingBurstEmitterProps {
   x: number;
@@ -8,177 +8,103 @@ interface HealingBurstEmitterProps {
   onComplete: () => void;
 }
 
-const EMIT_DURATION_MS = 340;
 const MAX_LIFETIME_MS = 1200;
+const PARTICLE_COUNT = 34;
+
+type HealParticle = {
+  angle: number;
+  startRadius: number;
+  radialVelocity: number;
+  drift: number;
+  lifeMs: number;
+  delayMs: number;
+  size: number;
+  tint: number;
+};
+
+const PALETTE = [0xd2ff8f, 0x9dff9f, 0x5cf27d, 0x27c76f];
+
+const easeOutQuad = (t: number) => 1 - (1 - t) * (1 - t);
+
+function createParticles(): HealParticle[] {
+  return Array.from({ length: PARTICLE_COUNT }, (_, index) => {
+    const angle = (Math.PI * 2 * index) / PARTICLE_COUNT + (Math.random() - 0.5) * 0.5;
+    return {
+      angle,
+      startRadius: 8 + Math.random() * 12,
+      radialVelocity: 60 + Math.random() * 90,
+      drift: 10 + Math.random() * 20,
+      lifeMs: 430 + Math.random() * 650,
+      delayMs: Math.random() * 180,
+      size: 0.14 + Math.random() * 0.24,
+      tint: PALETTE[Math.floor(Math.random() * PALETTE.length)] ?? 0x5cf27d
+    };
+  });
+}
 
 export default function HealingBurstEmitter({ x, y, onComplete }: HealingBurstEmitterProps) {
-  const [container, setContainer] = useState<Container | null>(null);
-
-  const config = useMemo(
-    () => ({
-      lifetime: { min: 0.45, max: 0.9 },
-      frequency: 0.004,
-      spawnChance: 1,
-      particlesPerWave: 2,
-      emitterLifetime: 0.34,
-      maxParticles: 180,
-      addAtBack: false,
-      behaviors: [
-        {
-          type: 'alpha',
-          config: {
-            alpha: {
-              list: [
-                { time: 0, value: 0 },
-                { time: 0.15, value: 0.95 },
-                { time: 1, value: 0 }
-              ]
-            }
-          }
-        },
-        {
-          type: 'scale',
-          config: {
-            scale: {
-              list: [
-                { time: 0, value: 0.52 },
-                { time: 1, value: 0.12 }
-              ]
-            },
-            minMult: 0.7
-          }
-        },
-        {
-          type: 'color',
-          config: {
-            color: {
-              list: [
-                { time: 0, value: '#d2ff8f' },
-                { time: 0.45, value: '#5cf27d' },
-                { time: 1, value: '#27c76f' }
-              ]
-            }
-          }
-        },
-        {
-          type: 'rotationStatic',
-          config: { min: 0, max: 360 }
-        },
-        {
-          type: 'moveSpeed',
-          config: {
-            speed: {
-              list: [
-                { time: 0, value: 260 },
-                { time: 1, value: 70 }
-              ]
-            }
-          }
-        },
-        {
-          type: 'spawnShape',
-          config: {
-            type: 'torus',
-            data: {
-              x: 0,
-              y: 0,
-              radius: 52,
-              innerRadius: 14,
-              affectRotation: false
-            }
-          }
-        },
-        {
-          type: 'rotation',
-          config: {
-            accel: 0,
-            minSpeed: 0,
-            maxSpeed: 0,
-            minStart: 200,
-            maxStart: 340
-          }
-        },
-        {
-          type: 'textureSingle',
-          config: {
-            texture: Texture.WHITE
-          }
-        },
-        {
-          type: 'blendMode',
-          config: {
-            blendMode: 'add'
-          }
-        }
-      ]
-    }),
-    []
-  );
+  const particles = useMemo(() => createParticles(), []);
+  const spriteRefs = useRef<Array<Sprite | null>>([]);
+  const elapsedMs = useRef(0);
+  const completedRef = useRef(false);
 
   useEffect(() => {
-    if (!container) {
-      return;
-    }
-
-    const emitter = new Emitter(container, config);
-    emitter.updateOwnerPos(0, 0);
-    emitter.resetPositionTracking();
-    emitter.emit = true;
-
-    const ticker = Ticker.shared;
-    let completed = false;
-    let elapsed = 0;
-
-    if (typeof window === 'undefined') {
-      emitter.emit = false;
-      if (typeof emitter.cleanup === 'function') {
-        emitter.cleanup();
-      }
-      emitter.destroy();
-      onComplete();
-      return () => {
-        /** noop */
-      };
-    }
-
-    const stopTimer = window.setTimeout(() => {
-      emitter.emit = false;
-    }, EMIT_DURATION_MS);
-
-    const tick = (tickerRef: Ticker) => {
-      const deltaMS = tickerRef.deltaMS;
-      elapsed += deltaMS;
-      emitter.update(deltaMS / 1000);
-      if (elapsed >= MAX_LIFETIME_MS || (!emitter.emit && emitter.particleCount === 0)) {
-        cleanup();
-      }
-    };
-
-    const cleanup = () => {
-      if (completed) {
-        return;
-      }
-      completed = true;
-      window.clearTimeout(stopTimer);
-      ticker.remove(tick);
-      emitter.emit = false;
-      if (typeof emitter.cleanup === 'function') {
-        emitter.cleanup();
-      }
-      emitter.destroy();
-      onComplete();
-    };
-
-    ticker.add(tick);
-
     return () => {
-      cleanup();
+      completedRef.current = true;
     };
-  }, [config, container, onComplete]);
-
-  const handleRef = useCallback((instance: Container | null) => {
-    setContainer(instance ?? null);
   }, []);
 
-  return <pixiContainer ref={handleRef} x={x} y={y} />;
+  useTick((ticker) => {
+    elapsedMs.current += ticker.deltaMS;
+    const elapsed = elapsedMs.current;
+
+    particles.forEach((particle, index) => {
+      const sprite = spriteRefs.current[index];
+      if (!sprite) {
+        return;
+      }
+
+      const localElapsed = elapsed - particle.delayMs;
+      if (localElapsed <= 0 || localElapsed >= particle.lifeMs) {
+        sprite.visible = false;
+        return;
+      }
+
+      const progress = Math.min(1, Math.max(0, localElapsed / particle.lifeMs));
+      const eased = easeOutQuad(progress);
+      const radius = particle.startRadius + particle.radialVelocity * eased;
+      const drift = Math.sin((progress + index * 0.19) * Math.PI * 2) * particle.drift;
+
+      sprite.visible = true;
+      sprite.x = Math.cos(particle.angle) * radius + drift * 0.25;
+      sprite.y = Math.sin(particle.angle) * radius - drift * 0.6;
+      sprite.alpha = (1 - progress) * (0.45 + Math.sin(progress * Math.PI) * 0.55);
+      const bloom = 1 + Math.sin((progress + index * 0.1) * Math.PI * 3) * 0.15;
+      sprite.scale.set(particle.size * bloom * (1 - progress * 0.35));
+    });
+
+    if (!completedRef.current && elapsed >= MAX_LIFETIME_MS) {
+      completedRef.current = true;
+      onComplete();
+    }
+  });
+
+  return (
+    <pixiContainer x={x} y={y}>
+      {particles.map((particle, index) => (
+        <pixiSprite
+          key={index}
+          ref={(instance: Sprite | null) => {
+            spriteRefs.current[index] = instance;
+          }}
+          texture={Texture.WHITE}
+          anchor={0.5}
+          visible={false}
+          alpha={0}
+          tint={particle.tint}
+          blendMode="add"
+        />
+      ))}
+    </pixiContainer>
+  );
 }

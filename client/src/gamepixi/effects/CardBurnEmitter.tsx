@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Emitter } from '@pixi/particle-emitter';
-import { Texture, Ticker, type Container } from 'pixi.js';
+import { useEffect, useMemo, useRef } from 'react';
+import { useTick } from '@pixi/react';
+import { Texture, type Sprite } from 'pixi.js';
 
 interface CardBurnEmitterProps {
   x: number;
@@ -8,168 +8,103 @@ interface CardBurnEmitterProps {
   onComplete: () => void;
 }
 
-const EMIT_DURATION_MS = 450;
 const MAX_LIFETIME_MS = 1400;
+const PARTICLE_COUNT = 40;
+
+type BurstParticle = {
+  angle: number;
+  radiusStart: number;
+  radiusVelocity: number;
+  lifeMs: number;
+  delayMs: number;
+  size: number;
+  tint: number;
+  spin: number;
+};
+
+const PALETTE = [0xffeaa7, 0xffc36d, 0xff8a3c, 0xff5b38, 0xff3f34];
+
+const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
+
+function createParticles(): BurstParticle[] {
+  return Array.from({ length: PARTICLE_COUNT }, (_, index) => {
+    const angle = (Math.PI * 2 * index) / PARTICLE_COUNT + (Math.random() - 0.5) * 0.5;
+    return {
+      angle,
+      radiusStart: 14 + Math.random() * 18,
+      radiusVelocity: 74 + Math.random() * 130,
+      lifeMs: 520 + Math.random() * 760,
+      delayMs: Math.random() * 280,
+      size: 0.16 + Math.random() * 0.28,
+      tint: PALETTE[Math.floor(Math.random() * PALETTE.length)] ?? 0xff8a3c,
+      spin: (Math.random() - 0.5) * 0.35
+    };
+  });
+}
 
 export default function CardBurnEmitter({ x, y, onComplete }: CardBurnEmitterProps) {
-  const [container, setContainer] = useState<Container | null>(null);
-
-  const config = useMemo(
-    () => ({
-      lifetime: { min: 0.4, max: 0.7 },
-      frequency: 0.002,
-      spawnChance: 1,
-      particlesPerWave: 1,
-      emitterLifetime: 0.48,
-      maxParticles: 250,
-      addAtBack: false,
-      behaviors: [
-        {
-          type: 'alpha',
-          config: {
-            alpha: {
-              list: [
-                { time: 0, value: 0.95 },
-                { time: 0.5, value: 0.6 },
-                { time: 1, value: 0 }
-              ]
-            }
-          }
-        },
-        {
-          type: 'scale',
-          config: {
-            scale: {
-              list: [
-                { time: 0, value: 0.9 },
-                { time: 1, value: 0.3 }
-              ]
-            },
-            minMult: 0.6
-          }
-        },
-        {
-          type: 'color',
-          config: {
-            color: {
-              list: [
-                { time: 0, value: '#ffeaa7' },
-                { time: 0.45, value: '#ff8a3c' },
-                { time: 1, value: '#ff3f34' }
-              ]
-            }
-          }
-        },
-        {
-          type: 'rotationStatic',
-          config: { min: 0, max: 360 }
-        },
-        {
-          type: 'moveSpeed',
-          config: {
-            speed: {
-              list: [
-                { time: 0, value: 340 },
-                { time: 1, value: 120 }
-              ]
-            }
-          }
-        },
-        {
-          type: 'spawnShape',
-          config: {
-            type: 'torus',
-            data: {
-              x: 0,
-              y: 0,
-              radius: 68,
-              innerRadius: 18,
-              affectRotation: false
-            }
-          }
-        },
-        {
-          type: 'textureSingle',
-          config: {
-            texture: Texture.WHITE
-          }
-        },
-        {
-          type: 'blendMode',
-          config: {
-            blendMode: 'add'
-          }
-        }
-      ]
-    }),
-    []
-  );
+  const particles = useMemo(() => createParticles(), []);
+  const spriteRefs = useRef<Array<Sprite | null>>([]);
+  const elapsedMs = useRef(0);
+  const completedRef = useRef(false);
 
   useEffect(() => {
-    if (!container) {
-      return;
-    }
-
-    const emitter = new Emitter(container, config);
-    emitter.updateOwnerPos(0, 0);
-    emitter.resetPositionTracking();
-    emitter.emit = true;
-
-    const ticker = Ticker.shared;
-    let completed = false;
-    let elapsed = 0;
-
-    if (typeof window === 'undefined') {
-      emitter.emit = false;
-      if (typeof emitter.cleanup === 'function') {
-        emitter.cleanup();
-      }
-      emitter.destroy();
-      onComplete();
-      return () => {
-        /** noop */
-      };
-    }
-
-    const stopTimer = window.setTimeout(() => {
-      emitter.emit = false;
-    }, EMIT_DURATION_MS);
-
-    const tick = (ticker: Ticker) => {
-      const deltaMS = ticker.deltaMS;
-      const delta = deltaMS / 1000;
-      elapsed += deltaMS;
-      emitter.update(delta);
-      if (elapsed >= MAX_LIFETIME_MS || (!emitter.emit && emitter.particleCount === 0)) {
-        cleanup();
-      }
-    };
-
-    const cleanup = () => {
-      if (completed) {
-        return;
-      }
-      completed = true;
-      window.clearTimeout(stopTimer);
-      ticker.remove(tick);
-      emitter.emit = false;
-      if (typeof emitter.cleanup === 'function') {
-        emitter.cleanup();
-      }
-      emitter.destroy();
-      onComplete();
-    };
-
-    ticker.add(tick);
-
     return () => {
-      cleanup();
+      completedRef.current = true;
     };
-  }, [config, container, onComplete]);
-
-  const handleRef = useCallback((instance: Container | null) => {
-    setContainer(instance ?? null);
   }, []);
 
-  return <pixiContainer ref={handleRef} x={x} y={y} />;
+  useTick((ticker) => {
+    elapsedMs.current += ticker.deltaMS;
+    const elapsed = elapsedMs.current;
+
+    particles.forEach((particle, index) => {
+      const sprite = spriteRefs.current[index];
+      if (!sprite) {
+        return;
+      }
+
+      const localElapsed = elapsed - particle.delayMs;
+      if (localElapsed <= 0 || localElapsed >= particle.lifeMs) {
+        sprite.visible = false;
+        return;
+      }
+
+      const progress = Math.min(1, Math.max(0, localElapsed / particle.lifeMs));
+      const eased = easeOutCubic(progress);
+      const radius = particle.radiusStart + particle.radiusVelocity * eased;
+
+      sprite.visible = true;
+      sprite.x = Math.cos(particle.angle) * radius;
+      sprite.y = Math.sin(particle.angle) * radius;
+      sprite.rotation += particle.spin * ticker.deltaTime;
+      sprite.alpha = 1 - progress;
+      const pulse = 1 + Math.sin((progress + index * 0.07) * Math.PI * 2) * 0.12;
+      sprite.scale.set(particle.size * pulse * (1 - progress * 0.45));
+    });
+
+    if (!completedRef.current && elapsed >= MAX_LIFETIME_MS) {
+      completedRef.current = true;
+      onComplete();
+    }
+  });
+
+  return (
+    <pixiContainer x={x} y={y}>
+      {particles.map((particle, index) => (
+        <pixiSprite
+          key={index}
+          ref={(instance: Sprite | null) => {
+            spriteRefs.current[index] = instance;
+          }}
+          texture={Texture.WHITE}
+          anchor={0.5}
+          visible={false}
+          alpha={0}
+          tint={particle.tint}
+          blendMode="add"
+        />
+      ))}
+    </pixiContainer>
+  );
 }
