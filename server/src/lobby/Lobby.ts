@@ -1,4 +1,4 @@
-import type { DomainId, PlayerSide } from '@cardstone/shared/types';
+import type { PlayerSide } from '@cardstone/shared/types';
 import { Match } from '../match/Match.js';
 
 interface WaitingPlayer {
@@ -8,19 +8,18 @@ interface WaitingPlayer {
 }
 
 export class Lobby {
-  private waitingByDomain = new Map<DomainId, WaitingPlayer>();
+  private waitingPlayer: WaitingPlayer | null = null;
   private matches = new Map<string, Match>();
   private counter = 1;
 
   join(
     playerId: string,
-    deckDomain: DomainId,
     deck: string[],
     notify: (match: Match, side: PlayerSide) => void
   ): Match | null {
-    const waiting = this.waitingByDomain.get(deckDomain);
+    const waiting = this.waitingPlayer;
     if (!waiting) {
-      this.waitingByDomain.set(deckDomain, { playerId, deck, notify });
+      this.waitingPlayer = { playerId, deck, notify };
       return null;
     }
 
@@ -29,7 +28,7 @@ export class Lobby {
     this.matches.set(matchId, match);
     waiting.notify(match, 'A');
     notify(match, 'B');
-    this.waitingByDomain.delete(deckDomain);
+    this.waitingPlayer = null;
     return match;
   }
 
@@ -38,11 +37,8 @@ export class Lobby {
   }
 
   leave(playerId: string): void {
-    for (const [domain, waiting] of this.waitingByDomain.entries()) {
-      if (waiting.playerId === playerId) {
-        this.waitingByDomain.delete(domain);
-        return;
-      }
+    if (this.waitingPlayer?.playerId === playerId) {
+      this.waitingPlayer = null;
     }
   }
 }

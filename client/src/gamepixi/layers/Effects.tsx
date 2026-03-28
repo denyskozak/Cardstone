@@ -77,9 +77,10 @@ const HEAL_DISPLAY_DURATION = 1800;
 const BUFF_DISPLAY_DURATION = 1600;
 const INDICATOR_FLOAT_DISTANCE = 24;
 const DAMAGE_IMPACT_THRESHOLD = 0.5;
-const DRAW_DURATION = 620;
+const DRAW_DURATION = 900;
 const DRAW_LIFT = 26;
-const DRAW_STAGGER = 70;
+const DRAW_STAGGER = 100;
+const DRAW_CARD_SCALE_MULTIPLIER = 0.5;
 const PLACEMENT_FADE_DURATION = 250;
 const MINION_DEATH_FADE_DURATION = 800;
 const CARD_BACK_TEXTURE = '/assets/card_skins/1.webp';
@@ -327,13 +328,13 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
             x: deckPosition.x,
             y: deckPosition.y,
             rotation: 0,
-            scale: DECK_SCALE
+            scale: DECK_SCALE * DRAW_CARD_SCALE_MULTIPLIER
           },
           to: {
             x: target.x,
             y: target.y,
             rotation: target.rotation,
-            scale: target.scale
+            scale: target.scale * DRAW_CARD_SCALE_MULTIPLIER
           },
           elapsed: -index * DRAW_STAGGER,
           duration: DRAW_DURATION
