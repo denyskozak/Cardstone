@@ -23,6 +23,13 @@ const menuItems = [
     cta: 'View Quests',
     accent: 'rgba(34, 197, 94, 0.45)'
   },
+  {
+    title: 'Marketplace',
+    description: 'Browse and buy premium card backs.',
+    href: '/marketplace',
+    cta: 'Open Market',
+    accent: 'rgba(251, 191, 36, 0.45)'
+  },
   // {
   //   title: 'Spectate Match',
   //   description: 'Watch ongoing matches to study strategies and stay ahead of the evolving meta.',
