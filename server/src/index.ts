@@ -821,7 +821,7 @@ async function handleClientMessage(
           return;
         }
         context.deckId = deck.id;
-        const match = lobby.join(playerId, deck.domainId, expandDeckEntries(deck.cards), (m, side) => {
+        const match = lobby.join(playerId, expandDeckEntries(deck.cards), (m, side) => {
           const existing = playerConnections.get(playerId);
           if (existing) {
             attachToMatch(existing, m, side);

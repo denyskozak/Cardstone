@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import type {
   CardId,
   CardInHand,
-  DomainId,
   CardPlacement,
   GameState,
   PlayerSide,
@@ -27,29 +26,6 @@ export interface CommandResult {
   error?: string;
   stateChanged: boolean;
   duplicate?: boolean;
-}
-
-function resolveDeckDomain(deck: CardId[]): DomainId | null {
-  let domain: DomainId | null = null;
-  deck.forEach((cardId) => {
-    const card = getCardDefinition(cardId);
-    if (!domain) {
-      domain = card.domainId;
-      return;
-    }
-    if (card.domainId !== domain) {
-      throw new Error(`Deck contains multiple domains: ${domain} and ${card.domainId}`);
-    }
-  });
-  return domain;
-}
-
-function assertMatchingDeckDomains(deckA: CardId[], deckB: CardId[]): void {
-  const domainA = resolveDeckDomain(deckA);
-  const domainB = resolveDeckDomain(deckB);
-  if (domainA && domainB && domainA !== domainB) {
-    throw new Error(`Deck domains must match (${domainA} vs ${domainB})`);
-  }
 }
 
 export class Match {
@@ -78,7 +54,6 @@ export class Match {
   }
 
   static create(id: string, playerA: string, playerB: string, deckA = DEFAULT_DECK, deckB = DEFAULT_DECK): Match {
-    assertMatchingDeckDomains(deckA, deckB);
     return new Match(id, playerA, playerB, deckA, deckB);
   }
 
