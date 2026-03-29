@@ -1,15 +1,9 @@
-import type {
-  CardInHand,
-  CardPlacement,
-  PlayerSide,
-  TargetDescriptor
-} from '@cardstone/shared/types';
+import type { CardInHand, PlayerSide, TargetDescriptor } from '@cardstone/shared/types';
 import { create } from 'zustand';
 
 type TargetingSource =
   | { kind: 'minion'; entityId: string }
-  | { kind: 'spell'; card: CardInHand }
-  | { kind: 'battlecry'; card: CardInHand; placement?: CardPlacement };
+  | { kind: 'spell'; card: CardInHand };
 
 export interface TargetingState {
   source: TargetingSource;
