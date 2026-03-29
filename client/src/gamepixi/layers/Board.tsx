@@ -806,7 +806,7 @@ export default function Board({
       const widthWithScale = MINION_WIDTH * scale;
       const heightWithScale = MINION_HEIGHT * scale;
 
-      const previewScale = 1.3;
+      const previewScale = 1.5;
       const previewGap = 10 * 0.2;
 
       const previewX =
@@ -926,7 +926,7 @@ export default function Board({
           disabled
           eventMode="none"
           cursor="default"
-          zIndex={10000}
+          zIndex={10000000}
         />
       ) : null}
     </pixiContainer>

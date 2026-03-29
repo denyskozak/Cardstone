@@ -208,7 +208,7 @@ export function Card({
       {"health" in card.card ? (
         <pixiText
           text={card.card.health}
-          x={CARD_WIDTH * 0.87}
+          x={CARD_WIDTH * 0.88}
           y={CARD_HEIGHT * 0.80}
           style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
         />

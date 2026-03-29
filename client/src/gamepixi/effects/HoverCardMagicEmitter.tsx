@@ -19,8 +19,8 @@ type HoverParticle = {
   tint: number;
 };
 
-const BASE_SIDE_OFFSET = 66;
-const PARTICLE_COUNT = 16;
+const BASE_SIDE_OFFSET = 5000;
+const PARTICLE_COUNT = 100;
 
 const PALETTE = [0xfff8cf, 0xdff7ff, 0xbdeaff, 0x7fd6ff];
 
