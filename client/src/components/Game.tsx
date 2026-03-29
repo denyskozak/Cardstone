@@ -328,7 +328,6 @@ export function Game() {
   const canEndTurn = Boolean(
     state && side && state.stage === 'Play' && state.turn.current === side && state.turn.phase === 'Main'
   );
-  const shouldShowReactHand = state?.stage === 'Play' && Boolean(side) && Boolean(player);
   const MULLIGAN_FADE_DURATION = 300;
   const MULLIGAN_REPLACE_DELAY = 2000;
   const mulliganTimeoutsRef = useRef(new Map<number, ReturnType<typeof window.setTimeout>[]>());
@@ -509,30 +508,8 @@ export function Game() {
             canAttack={canAttackMinion}
             width={stageBounds.width}
             height={stageBounds.height}
-            showPlayerHand={!shouldShowReactHand}
           />
         </Application>
-        {shouldShowReactHand && player ? (
-          <div className={styles.playHandOverlay}>
-            <div className={styles.playHandCards}>
-              {player.hand.map((card) => {
-                const disabled = !canPlayCard(card);
-                return (
-                  <button
-                    key={card.instanceId}
-                    type="button"
-                    className={styles.playHandCard}
-                    onClick={() => handlePlayCard(card)}
-                    disabled={disabled}
-                    aria-label={`Play ${card.card.name}`}
-                  >
-                    <InterfaceCard card={card.card} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
         {isMulligan && side && state ? (
           <div className={styles.mulliganOverlay}>
             <div className={styles.mulliganHeader}>

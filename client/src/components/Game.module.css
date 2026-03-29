@@ -85,48 +85,6 @@
     max-height: 200px;
 }
 
-.playHandOverlay {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 8px;
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 6;
-}
-
-.playHandCards {
-    pointer-events: auto;
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    width: min(100%, 1280px);
-    padding: 0 20px;
-    overflow-x: auto;
-}
-
-.playHandCard {
-    background: transparent;
-    border: none;
-    padding: 0;
-    width: 150px;
-    min-width: 150px;
-    color: inherit;
-    cursor: pointer;
-    transition: transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
-}
-
-.playHandCard:hover:not(:disabled) {
-    transform: translateY(-8px);
-    filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
-}
-
-.playHandCard:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-}
-
 .mulliganOverlay {
     position: absolute;
     top: 50%;
