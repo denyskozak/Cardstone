@@ -2,7 +2,7 @@
     position: relative;
     width: 100%;
     aspect-ratio: 160 / 220;
-    min-width: 0;
+    min-width: 200px;
 }
 
 .card {

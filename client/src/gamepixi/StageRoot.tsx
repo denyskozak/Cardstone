@@ -36,7 +36,6 @@ interface StageRootProps {
   canAttack: (minion: MinionEntity) => boolean;
   width?: number;
   height?: number;
-  showPlayerHand?: boolean;
 }
 
 const BASE_WIDTH = 1024;
@@ -53,8 +52,7 @@ export default function StageRoot({
   onAttack,
   canAttack,
   width,
-  height,
-  showPlayerHand = true
+  height
 }: StageRootProps) {
   const { app } = useApplication();
   const previousStateRef = useRef<GameState | null>(null);
@@ -200,17 +198,15 @@ export default function StageRoot({
           height={targetHeight}
         />
         {/* Слой руки игрока: hover, drag&drop, розыгрыш карт. */}
-        {showPlayerHand ? (
-          <HandLayer
-            hand={player.hand}
-            canPlay={canPlayCard}
-            onPlay={(card, options) => onPlayCard(card, options)}
-            boardMinionCount={state.board[playerSide].length}
-            currentMana={player.mana.current}
-            width={targetWidth}
-            height={targetHeight}
-          />
-        ) : null}
+        <HandLayer
+          hand={player.hand}
+          canPlay={canPlayCard}
+          onPlay={(card, options) => onPlayCard(card, options)}
+          boardMinionCount={state.board[playerSide].length}
+          currentMana={player.mana.current}
+          width={targetWidth}
+          height={targetHeight}
+        />
         {/* Визуал карт в руке оппонента (рубашки). */}
         <OpponentHandLayer
           count={opponent.hand.length}
