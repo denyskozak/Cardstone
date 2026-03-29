@@ -775,8 +775,11 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   }, [animations, clearMinionAnimation, setMinionAnimation]);
 
   return (
+    // Глобальный слой визуальных эффектов поверх всех остальных слоёв сцены.
     <pixiContainer>
+      {/* Стрелка таргетинга во время выбора цели способности/карты. */}
       <TargetingArrow playerSide={playerSide} />
+      {/* HUD-тексты: мана игрока и размер руки оппонента. */}
       <pixiText
         text={`Mana ${player.mana.current}/${player.mana.max}`}
         x={width - 220}
@@ -828,6 +831,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         const palette = getIndicatorPalette(indicator.kind);
 
         return (
+          // Контейнер "попапа" боевого статуса (урон/хил/смерть) с плавным fade/float.
           <pixiContainer
             key={indicator.key}
             x={indicator.x}
@@ -861,6 +865,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
         const fadeOut = progress > 0.85 ? 1 - (progress - 0.85) / 0.15 : 1;
 
         return (
+          // Летящая рубашка карты при анимации добора/перемещения карты.
           <pixiContainer
             key={animation.key}
             x={drawPosition.x}

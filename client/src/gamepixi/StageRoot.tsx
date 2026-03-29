@@ -162,6 +162,7 @@ export default function StageRoot({
   }, [app]);
   if (!state || !playerSide) {
     return (
+      // Корневой pixiContainer сцены: здесь только статичный фон, пока матч не готов.
       <pixiContainer width={targetWidth} height={targetHeight} options={{ backgroundAlpha: 0 }}>
         <Background width={targetWidth} height={targetHeight} />
       </pixiContainer>
@@ -173,9 +174,12 @@ export default function StageRoot({
 
 
   return (
+    // Главный контейнер игрового поля (вся Pixi-сцена матча).
     <pixiContainer width={targetWidth} height={targetHeight} options={{ backgroundAlpha: 0 }}>
       <Background width={targetWidth} height={targetHeight} />
+      {/* Контейнер "камеры": сюда применяется screen-shake при сильных ударах. */}
       <pixiContainer x={shakeOffset.x} y={shakeOffset.y}>
+        {/* Слой стола: герои, миньоны, интерактив атаки/таргетинга. */}
         <Board
           state={state}
           playerSide={playerSide}
@@ -185,6 +189,7 @@ export default function StageRoot({
           canAttack={canAttack}
           onCastSpell={(card, target) => onPlayCard(card, { target })}
         />
+        {/* Слой колод игрока и оппонента. */}
         <DecksLayer
           playerSide={playerSide}
           playerCount={player.deck.length}
@@ -192,6 +197,7 @@ export default function StageRoot({
           width={targetWidth}
           height={targetHeight}
         />
+        {/* Слой руки игрока: hover, drag&drop, розыгрыш карт. */}
         <HandLayer
           hand={player.hand}
           canPlay={canPlayCard}
@@ -201,11 +207,13 @@ export default function StageRoot({
           width={targetWidth}
           height={targetHeight}
         />
+        {/* Визуал карт в руке оппонента (рубашки). */}
         <OpponentHandLayer
           count={opponent.hand.length}
           width={targetWidth}
           height={targetHeight}
         />
+        {/* Эффекты поверх поля: стрелка таргетинга, урон/хил, анимации добора и т.д. */}
         <Effects
           state={state}
           playerSide={playerSide}
