@@ -1,5 +1,6 @@
 import type {
   CardInHand,
+  CardPlacement,
   GameState,
   MinionEntity,
   PlayerSide,
@@ -36,7 +37,11 @@ interface BoardProps {
   height: number;
   onAttack: (attackerId: string, target: TargetDescriptor) => void;
   canAttack: (minion: MinionEntity) => boolean;
-  onCastSpell: (card: CardInHand, target: TargetDescriptor) => void;
+  onCastSpell: (
+    card: CardInHand,
+    target: TargetDescriptor,
+    options?: { placement?: CardPlacement }
+  ) => void;
 }
 
 const blurFilter = new BlurFilter(6);
@@ -345,11 +350,11 @@ export default function Board({
     if (targeting.source.kind === 'minion') {
       return getTargetingPredicate({ kind: 'minion' }, playerSide, state);
     }
-    const spellCard = targeting.source.card.card;
-    if (spellCard.type !== 'Spell') {
+    const sourceCard = targeting.source.card.card;
+    if (targeting.source.kind === 'spell' && sourceCard.type !== 'Spell') {
       return null;
     }
-    const action = getPrimaryPlayAction(spellCard);
+    const action = getPrimaryPlayAction(sourceCard);
     if (!action || !actionRequiresTarget(action)) {
       return null;
     }
@@ -445,6 +450,9 @@ export default function Board({
       } else if (action.source.kind === 'spell') {
         setSelected(undefined);
         onCastSpell(action.source.card, target);
+      } else if (action.source.kind === 'battlecry') {
+        setSelected(undefined);
+        onCastSpell(action.source.card, target, { placement: action.source.placement });
       }
     },
     [
