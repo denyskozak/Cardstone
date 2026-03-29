@@ -88,6 +88,7 @@ export function Card({
   }, [card.card.id]);
 
   return (
+    // Контейнер одной карты: трансформы, хитбокс и pointer-события.
     <pixiContainer
       x={x}
       y={y}
@@ -134,6 +135,7 @@ export function Card({
       }}
     >
       {!disabled ? (
+        // pixiGraphics-подсветка играбельной карты (зелёный glow вокруг рамки).
         <pixiGraphics
           blendMode="add"
           anchor={0.5}
@@ -152,6 +154,7 @@ export function Card({
           }}
         />
       ) : null}
+      {/* Иллюстрация карты (внутренний арт). */}
       <pixiSprite
         texture={innerTexture}
         width={CARD_WIDTH * 0.6}
@@ -159,11 +162,13 @@ export function Card({
         x={CARD_WIDTH * 0.2}
         y={CARD_HEIGHT * 0.05}
       />
+      {/* Внешняя рамка/шаблон карты (фон, декоративный бордер). */}
       <pixiSprite
         texture={texture}
         width={CARD_WIDTH}
         height={CARD_HEIGHT}
       />
+      {/* Текстовые слои карты: имя, мана, описание, характеристики. */}
       <pixiText
         text={card.card.name}
         x={CARD_WIDTH * 0.14}

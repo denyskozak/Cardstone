@@ -49,8 +49,10 @@ export default function OpponentHandLayer({ count, width, height }: OpponentHand
   }
 
   return (
+    // Слой "руки" оппонента: только визуальная стопка рубашек без интерактива.
     <pixiContainer sortableChildren eventMode="none">
       {positions.map((pos, index) => (
+        // Контейнер позиции отдельной рубашки в веере руки оппонента.
         <pixiContainer
           key={index}
           x={pos.x}

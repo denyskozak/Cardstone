@@ -57,11 +57,13 @@ export default function DecksLayer({
   ];
 
   return (
+    // Слой обоих "стеков" колод (игрок и оппонент).
     <pixiContainer sortableChildren>
       {decks.map((deck) => {
         const tooltipText = `Deck: ${deck.count}`;
         const tooltipWidth = getTooltipWidth(tooltipText);
         return (
+          // Контейнер одной колоды (позиция + hover для тултипа количества карт).
           <pixiContainer
             key={deck.side}
             x={deck.position.x}
@@ -73,6 +75,7 @@ export default function DecksLayer({
             zIndex={200}
           >
             {Array.from({ length: DECK_STACK_COUNT }, (_, index) => (
+              // Визуальный слой рубашки для создания эффекта "стопки" колоды.
               <pixiContainer
                 key={index}
                 pivot={{ x: CARD_SIZE.width / 2, y: CARD_SIZE.height }}
@@ -90,6 +93,7 @@ export default function DecksLayer({
               </pixiContainer>
             ))}
             {hoveredSide === deck.side ? (
+              // Tooltip колоды: фон через pixiGraphics + текст счётчика.
               <pixiContainer
                 x={CARD_SIZE.width * DECK_SCALE * 0.55}
                 y={-CARD_SIZE.height * DECK_SCALE - 24}

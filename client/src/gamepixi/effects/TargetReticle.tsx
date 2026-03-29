@@ -81,7 +81,9 @@ export default function TargetReticle({
   );
 
   return (
+    // Контейнер прицела цели; scale анимируется через useTick (pulse).
     <pixiContainer x={x} y={y} ref={handleRef} zIndex={zIndex}>
+      {/* pixiGraphics рисует окружности и риски перекрестья. */}
       <pixiGraphics draw={draw} />
     </pixiContainer>
   );

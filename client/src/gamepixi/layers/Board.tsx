@@ -842,6 +842,7 @@ export default function Board({
   ]);
 
   return (
+    // Главный контейнер боевого стола: здесь живут герои, ряды миньонов и таргетинг.
     <pixiContainer
       ref={boardRef}
       eventMode="static"
@@ -852,6 +853,7 @@ export default function Board({
       onPointerUpOutside={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
+      {/* Направляющая pixiGraphics-разметка двух линий миньонов (верх/низ). */}
       <pixiGraphics
         draw={(g: Graphics) => {
           g.clear();
@@ -860,7 +862,7 @@ export default function Board({
           g.drawRoundedRect(laneX, boardBottomY - 20, laneWidth, MINION_HEIGHT + 40, 20);
         }}
       />
-      {/*Opponent*/}
+      {/* Контейнер героя оппонента (аватар + зона таргетинга). */}
       <pixiContainer
         x={laneX + laneWidth * 0.1}
         y={boardTopY - 100}
@@ -885,6 +887,7 @@ export default function Board({
           targetedColor={0xff7675}
         />
       </pixiContainer>
+      {/* Контейнер героя игрока (аватар + зона таргетинга). */}
       <pixiContainer
         x={laneX + laneWidth * 0.1}
         y={boardBottomY + MINION_HEIGHT + 70}
@@ -909,9 +912,11 @@ export default function Board({
           targetedColor={0x55efc4}
         />
       </pixiContainer>
+      {/* Рендер рядов миньонов сверху (оппонент) и снизу (игрок). */}
       {renderRow(opponentSide, boardTopY)}
       {renderRow(playerSide, boardBottomY)}
       {hoveredMinionPreview ? (
+        // Превью карты миньона при наведении на юнита на столе.
         <Card
           card={hoveredMinionPreview.card}
           x={hoveredMinionPreview.x}

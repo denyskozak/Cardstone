@@ -582,6 +582,7 @@ export default function HandLayer({
     );
 
     return (
+      // Контейнер конкретной карты в руке + связанных hover-эффектов поверх неё.
       <pixiContainer key={card.instanceId} sortableChildren zIndex={containerZIndex}>
         <Card
           card={card}
@@ -612,6 +613,7 @@ export default function HandLayer({
         />
         {showHoverPreview ? (
           <>
+            {/* Декоративные частицы магии слева/справа от enlarged-превью карты. */}
             <HoverCardMagicEmitter
               x={state.current.x}
               y={state.current.y}
@@ -624,6 +626,7 @@ export default function HandLayer({
               side="right"
               scale={state.current.scale}
             />
+            {/* Увеличенное превью карты при hover (не интерактивное). */}
             <Card
               card={card}
               x={state.current.x}
@@ -641,6 +644,7 @@ export default function HandLayer({
   });
 
   return (
+    // Корневой слой руки игрока: принимает глобальные pointer-события для drag логики.
     <pixiContainer
       sortableChildren
       eventMode="static"
