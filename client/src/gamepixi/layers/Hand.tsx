@@ -1,5 +1,10 @@
 import type { CardInHand, CardPlacement } from '@cardstone/shared/types';
-import { actionRequiresTarget, getPrimaryPlayAction } from '@cardstone/shared/effects';
+import {
+  actionRequiresTarget,
+  getActionTargetSelector,
+  getEffectsByTrigger,
+  getPrimaryPlayAction
+} from '@cardstone/shared/effects';
 import type { FederatedPointerEvent } from 'pixi.js';
 import type { Container, ContainerChild } from 'pixi.js';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -28,8 +33,6 @@ const DRAG_Z_INDEX = HOVER_Z_INDEX + 1;
 const HOVER_SPEED = 0.15;
 const RETURN_SPEED = 0.18;
 const EPSILON = 0.0001;
-const DRAG_TILT_MAX = 0.25;
-const DRAG_TILT_DISTANCE = 200;
 
 type Transform = {
   x: number;
@@ -57,6 +60,23 @@ function isTargetedSpell(card: CardInHand): boolean {
   return Boolean(action && actionRequiresTarget(action));
 }
 
+function minionBattlecryNeedsManualTarget(card: CardInHand): boolean {
+  if (card.card.type !== 'Minion') {
+    return false;
+  }
+  const effects = getEffectsByTrigger(card.card, 'Battlecry');
+  return effects.some((effect) => {
+    if (!actionRequiresTarget(effect.action)) {
+      return false;
+    }
+    const selector = getActionTargetSelector(effect.action);
+    if (!selector) {
+      return false;
+    }
+    return selector === 'FriendlyMinion' || selector === 'EnemyMinion' || selector === 'AnyMinion';
+  });
+}
+
 function cloneTransform(transform: Transform): Transform {
   return { ...transform };
 }
@@ -81,10 +101,6 @@ function approach(current: number, target: number, factor: number): number {
     return target;
   }
   return current + diff * factor;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
 
 export interface HandLayoutOptions {
@@ -453,10 +469,25 @@ export default function HandLayer({
             const boardCenterX = laneX + laneWidth / 2;
             placement = cardCenterX < boardCenterX ? 'left' : 'right';
           }
-
-          onPlay(card, placement ? { placement } : undefined);
-          setSelected(undefined);
-          playedFromDragRef.current = card.instanceId;
+          if (minionBattlecryNeedsManualTarget(card) && !targeting) {
+            const origin = {
+              x: current.x + CARD_SIZE.width / 2,
+              y: boardBottomY + CARD_SIZE.height * 0.2
+            };
+            setCurrentTarget(null);
+            setTargeting({
+              source: { kind: 'battlecry', card, placement },
+              pointerId: event.pointerId,
+              origin,
+              current: { x: event.global.x, y: event.global.y }
+            });
+            setSelected(card.instanceId);
+            playedFromDragRef.current = undefined;
+          } else {
+            onPlay(card, placement ? { placement } : undefined);
+            setSelected(undefined);
+            playedFromDragRef.current = card.instanceId;
+          }
         } else {
           playedFromDragRef.current = undefined;
         }
@@ -529,6 +560,9 @@ export default function HandLayer({
       }
 
       setSelected(card.instanceId);
+      if (event.button !== 0 && event.pointerType !== 'touch') {
+        return;
+      }
       setDragging({
         card,
         pointerId: event.pointerId,
@@ -564,15 +598,7 @@ export default function HandLayer({
     const cardX = isDraggingThisCard && dragging ? dragging.x : baseTransform.x;
     const cardY = isDraggingThisCard && dragging ? dragging.y : baseTransform.y;
     const cardScale = isDraggingThisCard ? dragScale : baseTransform.scale;
-    console.log("cardScale", cardScale);
-    const dragRotation =
-      isDraggingThisCard && dragging
-        ? clamp(
-            (dragging.x - dragging.startX) / DRAG_TILT_DISTANCE,
-            -DRAG_TILT_MAX,
-            DRAG_TILT_MAX
-          )
-        : 0;
+    const dragRotation = 0;
     const cardRotation = isDraggingThisCard ? dragRotation : baseTransform.rotation;
     const cardZIndex = isDraggingThisCard ? DRAG_Z_INDEX : baseTransform.z;
     const showHoverPreview = !isDraggingThisCard && state.intent === 'hover';
@@ -612,6 +638,12 @@ export default function HandLayer({
           scale={cardScale}
           zIndex={cardZIndex}
         />
+        {isDraggingThisCard && dragging ? (
+          <>
+            <HoverCardMagicEmitter x={cardX} y={cardY} side="left" scale={cardScale} />
+            <HoverCardMagicEmitter x={cardX} y={cardY} side="right" scale={cardScale} />
+          </>
+        ) : null}
         {showHoverPreview ? (
           <>
             {/* Декоративные частицы магии слева/справа от enlarged-превью карты. */}

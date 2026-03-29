@@ -187,7 +187,9 @@ export default function StageRoot({
           height={targetHeight}
           onAttack={onAttack}
           canAttack={canAttack}
-          onCastSpell={(card, target) => onPlayCard(card, { target })}
+          onCastSpell={(card, target, options) =>
+            onPlayCard(card, { target, ...(options?.placement ? { placement: options.placement } : {}) })
+          }
         />
         {/* Слой колод игрока и оппонента. */}
         <DecksLayer
