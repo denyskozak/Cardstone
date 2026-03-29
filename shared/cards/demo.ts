@@ -63,7 +63,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 3,
     health: 4,
     text: 'Deal 2 damage to all enemies.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Damage', amount: 2, target: 'AllEnemies' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Damage', amount: 2, target: 'AllEnemies' }
+      }
+    ]
   },
   [CARD_IDS.axol]: {
     id: CARD_IDS.axol,
@@ -74,7 +79,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 3,
     health: 4,
     text: 'Deal 1 damage to all enemies.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Damage', amount: 1, target: 'AllEnemies' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Damage', amount: 1, target: 'AllEnemies' }
+      }
+    ]
   },
   [CARD_IDS.manifest]: {
     id: CARD_IDS.manifest,
@@ -85,7 +95,9 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 2,
     health: 3,
     text: 'Has +1 Attack while damaged.',
-    effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Berserk', data: { attack: 1 } } }]
+    effects: [
+      { trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Berserk', data: { attack: 1 } } }
+    ]
   },
   [CARD_IDS.scallop]: {
     id: CARD_IDS.scallop,
@@ -107,7 +119,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 4,
     health: 4,
     text: 'Summon 2 Dev Interns.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Summon', cardId: CARD_IDS.devIntern, count: 2, target: 'Board' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Summon', cardId: CARD_IDS.devIntern, count: 2, target: 'Board' }
+      }
+    ]
   },
   [CARD_IDS.deepBook]: {
     id: CARD_IDS.deepBook,
@@ -118,7 +135,9 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 3,
     health: 3,
     text: 'Restore 2 Health to your hero.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 2, target: 'Hero' } }]
+    effects: [
+      { trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 2, target: 'Hero' } }
+    ]
   },
   [CARD_IDS.robot]: {
     id: CARD_IDS.robot,
@@ -151,8 +170,13 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     cost: 3,
     attack: 3,
     health: 2,
-    text: 'Deal 2 damage to a minion.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Damage', amount: 2, target: 'AnyMinion' } }]
+    text: 'Deal 2 damage to a random enemy.',
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Damage', amount: 2, target: 'RandomEnemy' }
+      }
+    ]
   },
   [CARD_IDS.matteo]: {
     id: CARD_IDS.matteo,
@@ -174,7 +198,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 4,
     health: 4,
     text: 'Summon one 2/2 Seal.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Summon', cardId: CARD_IDS.seal, count: 1, target: 'Board' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Summon', cardId: CARD_IDS.seal, count: 1, target: 'Board' }
+      }
+    ]
   },
   [CARD_IDS.seal]: {
     id: CARD_IDS.seal,
@@ -195,7 +224,9 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 3,
     health: 3,
     text: 'Restore 3 Health to your hero.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 3, target: 'Hero' } }]
+    effects: [
+      { trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 3, target: 'Hero' } }
+    ]
   },
   [CARD_IDS.noodls]: {
     id: CARD_IDS.noodls,
@@ -216,8 +247,13 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     cost: 3,
     attack: 3,
     health: 2,
-    text: 'Deal 1 damage to a minion.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Damage', amount: 1, target: 'AnyMinion' } }]
+    text: 'Deal 1 damage to a random enemy.',
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Damage', amount: 1, target: 'RandomEnemy' }
+      }
+    ]
   },
   [CARD_IDS.devIntern]: {
     id: CARD_IDS.devIntern,
@@ -236,8 +272,13 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     cost: 6,
     attack: 5,
     health: 5,
-    text: 'Deal 3 damage to a minion.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Damage', target: 'AnyMinion', amount: 3 } }]
+    text: 'Deal 3 damage to a random enemy.',
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Damage', target: 'RandomEnemy', amount: 3 }
+      }
+    ]
   },
   [CARD_IDS.ika]: {
     id: CARD_IDS.ika,
@@ -259,7 +300,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 4,
     health: 4,
     text: 'Give all friendlies +1 Attack.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Buff', stats: { attack: 1, health: 0 }, target: 'AllFriendlies' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Buff', stats: { attack: 1, health: 0 }, target: 'AllFriendlies' }
+      }
+    ]
   },
   [CARD_IDS.hermes]: {
     id: CARD_IDS.hermes,
@@ -292,7 +338,9 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 1,
     health: 2,
     text: 'Battlecry: Restore 2 Health to your hero.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 2, target: 'Hero' } }]
+    effects: [
+      { trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 2, target: 'Hero' } }
+    ]
   },
   [CARD_IDS.oracle]: {
     id: CARD_IDS.oracle,
@@ -325,7 +373,9 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 2,
     health: 2,
     text: 'Battlecry: Restore 2 Health to your hero.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 2, target: 'Hero' } }]
+    effects: [
+      { trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 2, target: 'Hero' } }
+    ]
   },
   [CARD_IDS.aegisBearer]: {
     id: CARD_IDS.aegisBearer,
@@ -347,7 +397,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 2,
     health: 2,
     text: 'Battlecry: Restore 1 Health to all friendly characters.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 1, target: 'AllFriendlies' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Heal', amount: 1, target: 'AllFriendlies' }
+      }
+    ]
   },
   [CARD_IDS.lyrePlayer]: {
     id: CARD_IDS.lyrePlayer,
@@ -358,7 +413,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 2,
     health: 3,
     text: 'Battlecry: Give all friendly minions +1 Attack.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Buff', stats: { attack: 1, health: 0 }, target: 'AllFriendlies' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Buff', stats: { attack: 1, health: 0 }, target: 'AllFriendlies' }
+      }
+    ]
   },
   [CARD_IDS.triton]: {
     id: CARD_IDS.triton,
@@ -380,7 +440,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 2,
     health: 3,
     text: 'Battlecry: Give all friendly minions +0/+1.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Buff', stats: { attack: 0, health: 1 }, target: 'AllFriendlies' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Buff', stats: { attack: 0, health: 1 }, target: 'AllFriendlies' }
+      }
+    ]
   },
   [CARD_IDS.hephaestus]: {
     id: CARD_IDS.hephaestus,
@@ -391,7 +456,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 2,
     health: 4,
     text: 'Battlecry: Give all friendly minions +0/+1.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Buff', stats: { attack: 0, health: 1 }, target: 'AllFriendlies' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Buff', stats: { attack: 0, health: 1 }, target: 'AllFriendlies' }
+      }
+    ]
   },
   [CARD_IDS.artemis]: {
     id: CARD_IDS.artemis,
@@ -401,8 +471,13 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     cost: 3,
     attack: 3,
     health: 2,
-    text: 'Battlecry: Deal 2 damage to a minion.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Damage', amount: 2, target: 'AnyMinion' } }]
+    text: 'Battlecry: Deal 2 damage to a random enemy.',
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Damage', amount: 2, target: 'RandomEnemy' }
+      }
+    ]
   },
   [CARD_IDS.odysseus]: {
     id: CARD_IDS.odysseus,
@@ -438,7 +513,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 2,
     health: 4,
     text: 'Battlecry: Give all friendly minions +1/+1.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Buff', stats: { attack: 1, health: 1 }, target: 'AllFriendlies' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Buff', stats: { attack: 1, health: 1 }, target: 'AllFriendlies' }
+      }
+    ]
   },
   [CARD_IDS.achilles]: {
     id: CARD_IDS.achilles,
@@ -449,7 +529,9 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 5,
     health: 5,
     text: 'Has +2 Attack while damaged.',
-    effects: [{ trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Berserk', data: { attack: 2 } } }]
+    effects: [
+      { trigger: { type: 'Aura' }, action: { type: 'Custom', key: 'Berserk', data: { attack: 2 } } }
+    ]
   },
   [CARD_IDS.poseidon]: {
     id: CARD_IDS.poseidon,
@@ -460,7 +542,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 4,
     health: 6,
     text: 'Battlecry: Restore 2 Health to all friendly characters.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Heal', amount: 2, target: 'AllFriendlies' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Heal', amount: 2, target: 'AllFriendlies' }
+      }
+    ]
   },
   [CARD_IDS.hades]: {
     id: CARD_IDS.hades,
@@ -471,7 +558,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 5,
     health: 6,
     text: 'Battlecry: Give all friendly minions +0/+2.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Buff', stats: { attack: 0, health: 2 }, target: 'AllFriendlies' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Buff', stats: { attack: 0, health: 2 }, target: 'AllFriendlies' }
+      }
+    ]
   },
   [CARD_IDS.zeus]: {
     id: CARD_IDS.zeus,
@@ -482,7 +574,12 @@ const SUI_MINIONS: Record<string, MinionCard> = {
     attack: 4,
     health: 6,
     text: 'Battlecry: Give all friendly minions +1/+1.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Buff', stats: { attack: 1, health: 1 }, target: 'AllFriendlies' } }]
+    effects: [
+      {
+        trigger: { type: 'Battlecry' },
+        action: { type: 'Buff', stats: { attack: 1, health: 1 }, target: 'AllFriendlies' }
+      }
+    ]
   }
 };
 
@@ -629,8 +726,8 @@ const GREEK_MINIONS: Record<string, MinionCard> = {
     cost: 3,
     attack: 3,
     health: 2,
-    text: 'Battlecry: Deal 2 damage to a minion.',
-    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Damage', amount: 2, target: 'AnyMinion' } }]
+    text: 'Battlecry: Deal 2 damage to a random enemy.',
+    effects: [{ trigger: { type: 'Battlecry' }, action: { type: 'Damage', amount: 2, target: 'RandomEnemy' } }]
   },
   [CARD_IDS.odysseus]: {
     id: CARD_IDS.odysseus,

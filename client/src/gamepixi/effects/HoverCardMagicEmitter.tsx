@@ -19,7 +19,7 @@ type HoverParticle = {
   tint: number;
 };
 
-const BASE_SIDE_OFFSET = 5000;
+const BASE_SIDE_OFFSET = 70;
 const PARTICLE_COUNT = 100;
 
 const PALETTE = [0xfff8cf, 0xdff7ff, 0xbdeaff, 0x7fd6ff];
@@ -30,7 +30,7 @@ function createParticles(): HoverParticle[] {
     wobble: 3 + Math.random() * 10,
     speed: 28 + Math.random() * 48,
     drift: 5 + Math.random() * 10,
-    size: 0.06 + Math.random() * 0.12,
+    size: 4 + Math.random() * 8,
     phase: Math.random() * Math.PI * 2,
     tint: PALETTE[Math.floor(Math.random() * PALETTE.length)] ?? 0xbdeaff
   }));
@@ -53,25 +53,28 @@ export default function HoverCardMagicEmitter({
 
     particles.forEach((particle, index) => {
       const sprite = spriteRefs.current[index];
-      if (!sprite) {
-        return;
-      }
+      if (!sprite) return;
 
       const travel = (time * particle.speed + index * 11) % 126;
       const normalized = travel / 126;
-      const xOffset = direction * (2 + normalized * 7 + Math.sin(time * 2 + particle.phase) * particle.drift);
-      const yOffset = particle.baseY - travel + Math.sin(time * 3 + particle.phase) * particle.wobble;
+      const xOffset =
+        direction * (2 + normalized * 7 + Math.sin(time * 2 + particle.phase) * particle.drift);
+      const yOffset =
+        particle.baseY - travel + Math.sin(time * 3 + particle.phase) * particle.wobble;
 
       sprite.x = xOffset;
       sprite.y = yOffset;
       sprite.alpha = 0.2 + (1 - normalized) * 0.7;
+
       const pulse = 1 + Math.sin(time * 4 + particle.phase) * 0.22;
-      sprite.scale.set(particle.size * pulse);
+      const s = particle.size * pulse;
+      sprite.width = s;
+      sprite.height = s;
     });
   });
 
   const sideOffset = BASE_SIDE_OFFSET * scale;
-  const verticalCenterOffset = 108 * scale;
+  const verticalCenterOffset = 80 * scale;
 
   return (
     <pixiContainer

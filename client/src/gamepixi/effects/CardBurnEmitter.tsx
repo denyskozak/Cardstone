@@ -17,7 +17,7 @@ type BurstParticle = {
   radiusVelocity: number;
   lifeMs: number;
   delayMs: number;
-  size: number;
+  size: number; // теперь это размер в пикселях
   tint: number;
   spin: number;
 };
@@ -29,13 +29,14 @@ const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
 function createParticles(): BurstParticle[] {
   return Array.from({ length: PARTICLE_COUNT }, (_, index) => {
     const angle = (Math.PI * 2 * index) / PARTICLE_COUNT + (Math.random() - 0.5) * 0.5;
+
     return {
       angle,
       radiusStart: 14 + Math.random() * 18,
       radiusVelocity: 74 + Math.random() * 130,
       lifeMs: 520 + Math.random() * 760,
       delayMs: Math.random() * 280,
-      size: 0.16 + Math.random() * 0.28,
+      size: 8 + Math.random() * 16, // было слишком мало
       tint: PALETTE[Math.floor(Math.random() * PALETTE.length)] ?? 0xff8a3c,
       spin: (Math.random() - 0.5) * 0.35
     };
@@ -47,7 +48,7 @@ export default function CardBurnEmitter({ x, y, onComplete }: CardBurnEmitterPro
   const spriteRefs = useRef<Array<Sprite | null>>([]);
   const elapsedMs = useRef(0);
   const completedRef = useRef(false);
-
+console.log("2", 2);
   useEffect(() => {
     return () => {
       completedRef.current = true;
@@ -60,11 +61,10 @@ export default function CardBurnEmitter({ x, y, onComplete }: CardBurnEmitterPro
 
     particles.forEach((particle, index) => {
       const sprite = spriteRefs.current[index];
-      if (!sprite) {
-        return;
-      }
+      if (!sprite) return;
 
       const localElapsed = elapsed - particle.delayMs;
+
       if (localElapsed <= 0 || localElapsed >= particle.lifeMs) {
         sprite.visible = false;
         return;
@@ -79,8 +79,12 @@ export default function CardBurnEmitter({ x, y, onComplete }: CardBurnEmitterPro
       sprite.y = Math.sin(particle.angle) * radius;
       sprite.rotation += particle.spin * ticker.deltaTime;
       sprite.alpha = 1 - progress;
+
       const pulse = 1 + Math.sin((progress + index * 0.07) * Math.PI * 2) * 0.12;
-      sprite.scale.set(particle.size * pulse * (1 - progress * 0.45));
+      const size = particle.size * pulse * (1 - progress * 0.45);
+
+      sprite.width = size;
+      sprite.height = size;
     });
 
     if (!completedRef.current && elapsed >= MAX_LIFETIME_MS) {

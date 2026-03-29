@@ -151,6 +151,7 @@ export default function Effects({ state, playerSide, width, height }: EffectsPro
   const burnPrevStateRef = useRef<GameState | null>(null);
   const burnSequenceRef = useRef(0);
   const [burnBursts, setBurnBursts] = useState<BurnBurst[]>([]);
+
   const [healingBursts, setHealingBursts] = useState<HealingBurst[]>([]);
   const [statusIndicators, setStatusIndicators] = useState<StatusIndicator[]>([]);
   const indicatorSequenceRef = useRef(0);
