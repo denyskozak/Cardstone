@@ -564,6 +564,7 @@ export default function HandLayer({
     const cardX = isDraggingThisCard && dragging ? dragging.x : baseTransform.x;
     const cardY = isDraggingThisCard && dragging ? dragging.y : baseTransform.y;
     const cardScale = isDraggingThisCard ? dragScale : baseTransform.scale;
+    console.log("cardScale", cardScale);
     const dragRotation =
       isDraggingThisCard && dragging
         ? clamp(

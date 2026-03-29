@@ -4,9 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { getCardAssetPath } from '../lib/cardAssets';
 
 
-const CARD_WIDTH = 160;
-const CARD_HEIGHT = 220;
-const PLAYABLE_GLOW_FILTER = new BlurFilter(6);
+const CARD_WIDTH_DEFAUL = 160;
+const CARD_HEIGHT_DEFAULT = 220;
 
 
 interface CardProps {
@@ -51,6 +50,8 @@ export function Card({
   const [texture, setTexture] = useState(Texture.EMPTY)
   const [innerTexture, setInnerTexture] = useState(Texture.EMPTY)
   const combinedScale = scale * (selected ? 1.05 : 1)
+  const CARD_WIDTH = CARD_WIDTH_DEFAUL * combinedScale;
+  const CARD_HEIGHT = CARD_HEIGHT_DEFAULT * combinedScale;
   const hitArea = useMemo(
     () =>
       new Rectangle(
@@ -92,7 +93,7 @@ export function Card({
     <pixiContainer
       x={x}
       y={y}
-      scale={combinedScale}
+      // scale={combinedScale}
       rotation={rotation}
       pivot={{ x: CARD_WIDTH / 2, y: CARD_HEIGHT }}
       eventMode={eventMode}
@@ -140,16 +141,10 @@ export function Card({
           blendMode="add"
           anchor={0.5}
           alpha={0.7}
-          filters={[PLAYABLE_GLOW_FILTER]}
           draw={(g: Graphics) => {
             g.clear();
             g.beginFill(0x78ff5a, 0.85);
-            g.drawEllipse(
-              CARD_WIDTH / 2,
-              CARD_HEIGHT / 2,
-              CARD_WIDTH / 2 + 8,
-              CARD_HEIGHT / 2 + 8
-            );
+            g.drawEllipse(CARD_WIDTH / 2, CARD_HEIGHT / 2, CARD_WIDTH / 2 + 8, CARD_HEIGHT / 2 + 8);
             g.endFill();
           }}
         />
@@ -163,58 +158,76 @@ export function Card({
         y={CARD_HEIGHT * 0.05}
       />
       {/* Внешняя рамка/шаблон карты (фон, декоративный бордер). */}
-      <pixiSprite
-        texture={texture}
-        width={CARD_WIDTH}
-        height={CARD_HEIGHT}
-      />
+      <pixiSprite texture={texture} width={CARD_WIDTH} height={CARD_HEIGHT} />
       {/* Текстовые слои карты: имя, мана, описание, характеристики. */}
       <pixiText
         text={card.card.name}
         x={CARD_WIDTH * 0.14}
-        y={CARD_HEIGHT * 0.50}
+        y={CARD_HEIGHT * 0.5}
         style={{
           fill: 0xffffff,
-          fontSize: 16,
+          fontSize: 16 * combinedScale,
           fontWeight: 'bold',
-          transform: 'translateX(-50%)',
+          stroke: '#000000', // цвет обводки
+          strokeThickness: 2 // толщина обводки
         }}
       />
       <pixiText
         text={card.card.cost}
-        x={CARD_WIDTH * 0.115}
-        y={CARD_HEIGHT * 0.055}
-        style={{ fill: 0xffffff, fontSize: 28, fontWeight: 'bold' }}
-      />
-      {card.card.text ? (<pixiText
-        text={card.card.text}
-        x={CARD_WIDTH * 0.2}
-        y={CARD_HEIGHT * 0.63}
+        x={CARD_WIDTH * 0.107}
+        y={CARD_HEIGHT * 0.052}
         style={{
-          fill: 0xffffff, fontSize: 12 ,
-          wordWrap: true,
-          wordWrapWidth: CARD_WIDTH - 50,
-          breakWords: true,
-      }}
-      />) : null}
-      {"attack" in card.card ? (
+          fill: 0xffffff,
+          fontSize: 28 * combinedScale,
+          fontWeight: 'bold',
+          stroke: '#000000',
+          strokeThickness: 2
+        }}
+      />
+      {card.card.text ? (
+        <pixiText
+          text={card.card.text}
+          x={CARD_WIDTH * 0.2}
+          y={CARD_HEIGHT * 0.63}
+          style={{
+            fill: 0xffffff,
+            fontSize: 12 * combinedScale,
+            wordWrap: true,
+            wordWrapWidth: CARD_WIDTH - 80,
+            breakWords: true
+          }}
+        />
+      ) : null}
+      {'attack' in card.card ? (
         <pixiText
           text={card.card.attack}
           x={CARD_WIDTH * 0.11}
-          y={CARD_HEIGHT * 0.80}
-          style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
+          y={CARD_HEIGHT * 0.795}
+          style={{
+            fill: 0xffffff,
+            fontSize: 22 * combinedScale,
+            fontWeight: 'bold',
+            stroke: '#000000',
+            strokeThickness: 2
+          }}
         />
       ) : null}
-      {"health" in card.card ? (
+      {'health' in card.card ? (
         <pixiText
           text={card.card.health}
-          x={CARD_WIDTH * 0.88}
-          y={CARD_HEIGHT * 0.80}
-          style={{ fill: 0xffffff, fontSize: 22, fontWeight: 'bold' }}
+          x={CARD_WIDTH * 0.878}
+          y={CARD_HEIGHT * 0.795}
+          style={{
+            stroke: '#000000',
+            strokeThickness: 2,
+            fill: 0xffffff,
+            fontSize: 22 * combinedScale,
+            fontWeight: 'bold'
+          }}
         />
       ) : null}
     </pixiContainer>
   );
 }
 
-export const CARD_SIZE = { width: CARD_WIDTH, height: CARD_HEIGHT };
+export const CARD_SIZE = { width: CARD_WIDTH_DEFAUL, height: CARD_HEIGHT_DEFAULT };
